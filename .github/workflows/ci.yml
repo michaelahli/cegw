@@ -93,7 +93,9 @@ jobs:
           echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
 
       - name: Run golangci-lint
-        run: golangci-lint run --out-format=colored-line-number
+        run: |
+          export PATH=$(go env GOPATH)/bin:$PATH
+          golangci-lint run --verbose --timeout=5m ./...
 
   build:
     name: Build
