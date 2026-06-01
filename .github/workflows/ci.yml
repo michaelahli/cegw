@@ -32,10 +32,12 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Download dependencies
-        run: go mod download
+        run: |
+          go mod download
+          go mod verify
 
       - name: Run tests
-        run: go test -v -coverprofile=coverage.out ./...
+        run: go test -v -coverprofile=coverage.out -timeout=10m ./...
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
