@@ -130,6 +130,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.x"
+
+      - name: Install protoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y protobuf-compiler
+
+      - name: Install protoc plugins
+        run: make deps
+
+      - name: Generate protobuf
+        run: make proto
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
