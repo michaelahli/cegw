@@ -1,0 +1,38 @@
+project_name: cegw
+builds:
+  - id: cegw
+    binary: cegw
+    main: ./cmd/cegw
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    ldflags: -s -w
+
+archives:
+  - id: default
+    format: tar.gz
+    files:
+      - LICENSE
+    replacements:
+      darwin: macOS
+      amd64: x86_64
+
+  - id: windows
+    format: zip
+    goos:
+      - windows
+    files:
+      - LICENSE
+
+release:
+  draft: false
+  name_template: "{{ .Tag }}"
+
+changelog:
+  use: git
