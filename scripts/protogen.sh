@@ -6,6 +6,7 @@ PROTO_DIR="proto"
 OUT_DIR="gen"
 
 mkdir -p ${OUT_DIR}
+mkdir -p ${OUT_DIR}/openapiv2
 
 echo "Generating protobuf code..."
 
