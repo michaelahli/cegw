@@ -17,6 +17,11 @@ jobs:
         with:
           go-version: "1.25"
 
+      - name: Install protoc
+        run: |
+          apt-get update
+          apt-get install -y protobuf-compiler
+
       - name: Install protoc dependencies
         run: |
           go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
