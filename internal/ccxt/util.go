@@ -3,8 +3,8 @@ package ccxt
 import (
 	"context"
 
-	"github.com/michaelahli/cegw/gen/cegw/v1"
 	ccxt "github.com/ccxt/ccxt/go/v4"
+	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
 )
 
 func NewClientForExchange(ctx context.Context, exchange cegwv1.Exchange, creds *cegwv1.Credentials) (interface{}, error) {

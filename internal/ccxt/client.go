@@ -18,11 +18,11 @@ import (
 )
 
 type ClientConfig struct {
-	APIKey     string
-	APISecret  string
-	Sandbox    bool
-	ProxyURL   *url.URL
-	Options    map[string]any
+	APIKey    string
+	APISecret string
+	Sandbox   bool
+	ProxyURL  *url.URL
+	Options   map[string]any
 }
 
 type TokocryptoClient struct {
@@ -35,12 +35,12 @@ func NewTokocryptoClient(cfg ClientConfig) *TokocryptoClient {
 
 func (c *TokocryptoClient) Client(ctx context.Context) (*ccxt.Tokocrypto, error) {
 	config := make(map[string]any)
-	
+
 	if c.config.APIKey != "" {
 		config["apiKey"] = c.config.APIKey
 		config["secret"] = c.config.APISecret
 	}
-	
+
 	if c.config.Options != nil {
 		config["options"] = c.config.Options
 	}
@@ -49,7 +49,7 @@ func (c *TokocryptoClient) Client(ctx context.Context) (*ccxt.Tokocrypto, error)
 
 	if c.config.ProxyURL != nil {
 		transport := &http.Transport{}
-		
+
 		switch c.config.ProxyURL.Scheme {
 		case "socks5":
 			var auth *proxy.Auth

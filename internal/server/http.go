@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/michaelahli/cegw/gen/cegw/v1"
+	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
 	"github.com/michaelahli/cegw/internal/config"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"

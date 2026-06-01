@@ -5,7 +5,7 @@ import (
 	"time"
 
 	ccxtlib "github.com/ccxt/ccxt/go/v4"
-	"github.com/michaelahli/cegw/gen/cegw/v1"
+	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
 	"github.com/michaelahli/cegw/internal/ccxt"
 	"github.com/michaelahli/cegw/internal/config"
 	"google.golang.org/grpc/codes"

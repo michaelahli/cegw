@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/michaelahli/cegw/gen/cegw/v1"
+	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
 	"github.com/michaelahli/cegw/internal/config"
 	"github.com/michaelahli/cegw/internal/service"
 	"google.golang.org/grpc"

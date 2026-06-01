@@ -5,7 +5,7 @@ import (
 	"time"
 
 	ccxtlib "github.com/ccxt/ccxt/go/v4"
-	"github.com/michaelahli/cegw/gen/cegw/v1"
+	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
 	"github.com/michaelahli/cegw/internal/ccxt"
 	"github.com/michaelahli/cegw/internal/config"
 	"google.golang.org/grpc/codes"
@@ -138,9 +138,14 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 		})
 	}
 
+	quotesCount := len(quotes)
+	if quotesCount > 2147483647 {
+		quotesCount = 2147483647
+	}
+
 	return &cegwv1.GetQuotesResponse{
 		Quotes: quotes,
-		Count:  int32(len(quotes)),
+		Count:  int32(quotesCount), // #nosec G115
 	}, nil
 }
 
@@ -234,9 +239,14 @@ func (s *MarketDataService) ListMarkets(ctx context.Context, req *cegwv1.ListMar
 		})
 	}
 
+	marketsCount := len(markets)
+	if marketsCount > 2147483647 {
+		marketsCount = 2147483647
+	}
+
 	return &cegwv1.ListMarketsResponse{
 		Markets: markets,
-		Count:   int32(len(markets)),
+		Count:   int32(marketsCount), // #nosec G115
 	}, nil
 }
 

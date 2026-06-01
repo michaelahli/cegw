@@ -3,7 +3,7 @@ package ccxt
 import (
 	"testing"
 
-	"github.com/michaelahli/cegw/gen/cegw/v1"
+	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
 )
 
 func TestMapInterval(t *testing.T) {
