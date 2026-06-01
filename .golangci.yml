@@ -1,9 +1,10 @@
 version: "2"
+
 run:
   timeout: 5m
 
 linters:
-  disable-all: true
+  default: none
   enable:
     - errcheck
     - govet
@@ -14,53 +15,54 @@ linters:
     - unconvert
     - unparam
     - gosec
-
-linters-settings:
-  govet:
-    enable-all: true
-    disable:
-      - shadow
-  gocyclo:
-    min-complexity: 15
-  dupl:
-    threshold: 100
-  goconst:
-    min-len: 2
-    min-occurrences: 3
-  misspell:
-    locale: US
-  lll:
-    line-length: 140
-  goimports:
-    local-prefixes: github.com/michaelahli/cegw
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - dupImport
-      - ifElseChain
-      - octalLiteral
-      - whyNoLint
+  settings:
+    govet:
+      enable-all: true
+      disable:
+        - shadow
+    gocyclo:
+      min-complexity: 15
+    dupl:
+      threshold: 100
+    goconst:
+      min-len: 2
+      min-occurrences: 3
+    misspell:
+      locale: US
+    lll:
+      line-length: 140
+    goimports:
+      local-prefixes: github.com/michaelahli/cegw
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+      disabled-checks:
+        - dupImport
+        - ifElseChain
+        - octalLiteral
+        - whyNoLint
 
 issues:
-  exclusions:
-    paths:
-      - gen
-      - vendor
-    rules:
-      - path: _test\.go
-        linters:
-          - gosec
-          - errcheck
-      - path: internal/ccxt/client.go
-        linters:
-          - gosec
-        text: "(G103|G706)"
-      - path: internal/server/http.go
-        linters:
-          - gosec
-        text: "G118"
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck
+    - path: internal/ccxt/client.go
+      linters:
+        - gosec
+      text: "(G103|G706)"
+    - path: internal/server/http.go
+      linters:
+        - gosec
+      text: "G118"
+  exclude-dirs:
+    - gen
+    - vendor
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*\\.pb\\.gw\\.go$"
