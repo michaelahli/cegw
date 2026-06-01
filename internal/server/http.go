@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/michaelahli/cegw/gen/cegw/v1"
 	"github.com/michaelahli/cegw/internal/config"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -42,13 +44,16 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 	}
 
 	s.server = &http.Server{
-		Addr:    fmt.Sprintf(":%s", s.cfg.HTTPPort),
-		Handler: mux,
+		Addr:              fmt.Sprintf(":%s", s.cfg.HTTPPort),
+		Handler:           mux,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	go func() {
 		<-ctx.Done()
-		s.server.Shutdown(context.Background())
+		if err := s.server.Shutdown(context.Background()); err != nil {
+			logrus.WithError(err).Error("HTTP server shutdown error")
+		}
 	}()
 
 	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {

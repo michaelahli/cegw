@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
+	ccxtlib "github.com/ccxt/ccxt/go/v4"
 	"github.com/michaelahli/cegw/gen/cegw/v1"
 	"github.com/michaelahli/cegw/internal/ccxt"
 	"github.com/michaelahli/cegw/internal/config"
-	ccxtlib "github.com/ccxt/ccxt/go/v4"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -15,8 +15,8 @@ import (
 
 type MarketDataService struct {
 	cegwv1.UnimplementedMarketDataServiceServer
-	cfg    *config.Config
-	avail  []*cegwv1.Ticker
+	cfg   *config.Config
+	avail []*cegwv1.Ticker
 }
 
 func NewMarketDataService(cfg *config.Config) *MarketDataService {
@@ -124,7 +124,7 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 		}
 
 		last := klines[len(klines)-1]
-		shiftedStart = time.UnixMilli(int64(last.Timestamp)).Add(time.Millisecond)
+		shiftedStart = time.UnixMilli(last.Timestamp).Add(time.Millisecond)
 		if !end.IsZero() && shiftedStart.After(end) {
 			break
 		}
@@ -133,7 +133,7 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 	quotes := make([]*cegwv1.Quote, 0, len(mergedKlines))
 	for _, kline := range mergedKlines {
 		quotes = append(quotes, &cegwv1.Quote{
-			Timestamp: timestamppb.New(time.UnixMilli(int64(kline.Timestamp))),
+			Timestamp: timestamppb.New(time.UnixMilli(kline.Timestamp)),
 			Ohlcv:     ccxt.OHLCVToProto(kline),
 		})
 	}
