@@ -17,23 +17,14 @@ builds:
     ldflags: -s -w
 
 archives:
-  - id: unix
+  - id: default
     format: tar.gz
     files:
       - LICENSE
-    filters:
-      exclude:
-        - goos: windows
     name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
-
-  - id: windows
-    format: zip
-    files:
-      - LICENSE
-    filters:
-      only:
-        - goos: windows
-    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    format_overrides:
+      - goos: windows
+        format: zip
 
 release:
   draft: false
