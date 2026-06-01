@@ -1,6 +1,6 @@
 module github.com/michaelahli/cegw
 
-go 1.25.0
+go 1.23
 
 require (
 	github.com/ccxt/ccxt/go/v4 v4.5.56
