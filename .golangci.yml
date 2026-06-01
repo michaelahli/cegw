@@ -61,14 +61,18 @@ issues:
 
 run:
   timeout: 5m
-  skip-dirs:
+  go: '1.23'
+
+issues:
+  exclude-dirs:
     - gen
     - vendor
-  skip-files:
+  exclude-files:
     - ".*\\.pb\\.go$"
     - ".*\\.pb\\.gw\\.go$"
 
 output:
-  format: colored-line-number
+  formats:
+    - format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
