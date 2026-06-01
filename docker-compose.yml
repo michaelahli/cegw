@@ -5,7 +5,7 @@ services:
     image: ghcr.io/michaelahli/cegw:latest
     container_name: cegw
     ports:
-      - "50051:50051"
+      - "8181:50051"
       - "8282:8080"
     restart: unless-stopped
     environment:

@@ -1,103 +1,42 @@
-# CEGW - Crypto Exchange Gateway
+# CEGW
 
-Cloud-native HTTP and gRPC gateway for cryptocurrency exchanges powered by CCXT. Provides a unified API for market data, account management, and trading operations.
+CEGW is a lightweight gateway for cryptocurrency exchange data and trading.
+It provides a simple HTTP/JSON API and gRPC endpoint so your apps can access market prices, symbols, and trading functionality from a unified service.
 
-## Features
+## What it does
 
-- **Dual Protocol Support**: Both gRPC (port 50051) and HTTP/JSON (port 8080) APIs
-- **Multiple Exchanges**: Tokocrypto (with plans for Binance, CEX.IO, Coinbase, Indodax, OKX)
-- **Market Data**: Historical OHLCV quotes, current prices, ticker search
-- **Trading**: Market orders (buy/sell), credential validation
-- **Monitoring**: Price alert evaluation
-- **Cloud Native**: Docker images, Helm charts, Kubernetes-ready
-- **Observability**: Structured logging, health checks
-- **Proxy Support**: HTTP/HTTPS/SOCKS5 proxy configuration
+- Fetch market data for supported exchanges
+- Return current prices, market lists, and trading pairs
+- Place market buy/sell orders
+- Support both HTTP/JSON and gRPC clients
+- Run in Docker for easy local or cloud deployment
 
-## Quick Start
-
-### Prerequisites
-
-- Go 1.23+
-- Protocol Buffers compiler (protoc)
-- Docker (optional)
-- Kubernetes + Helm (optional)
-
-### Installation
+## Run with Docker
 
 ```bash
-# Clone repository
-git clone https://github.com/michaelahli/cegw.git
-cd cegw
-
-# Install dependencies
-make deps
-
-# Generate protobuf files
-make proto
-
-# Build binary
-make build
-
-# Run
-./bin/cegw
+docker run --rm -p 8080:8080 -p 50051:50051 ghcr.io/michaelahli/cegw:latest
 ```
 
-### Using Docker
+Then open:
 
-```bash
-# Build image
-docker build -t cegw:latest -f Dockerfile.alpine .
+- `http://localhost:8080` for the HTTP API gateway
+- `http://localhost:8080/docs` for API docs
 
-# Run container
-docker run -p 50051:50051 -p 8080:8080 cegw:latest
-```
+## Quick usage
 
-### Using Helm
-
-```bash
-# Add Helm repository
-helm repo add cegw https://michaelahli.github.io/cegw
-
-# Install
-helm install cegw cegw/cegw
-
-# With custom values
-helm install cegw cegw/cegw -f values.yaml
-```
-
-## Configuration
-
-Environment variables:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `GRPC_PORT` | `50051` | gRPC server port |
-| `HTTP_PORT` | `8080` | HTTP server port |
-| `LOG_LEVEL` | `info` | Log level (debug, info, warn, error) |
-| `TIMEZONE` | `Asia/Jakarta` | Timezone for date operations |
-| `SANDBOX_MODE` | `false` | Enable sandbox mode for testing |
-| `HTTPS_PROXY` | - | HTTPS proxy URL |
-| `HTTP_PROXY` | - | HTTP proxy URL |
-
-## API Documentation
-
-API documentation is available via Redoc at `docs/index.html`.
-
-### Example Requests
-
-#### Get Current Price (HTTP)
+### Get current price
 
 ```bash
 curl http://localhost:8080/v1/market/price/1/BTC/USDT
 ```
 
-#### List Markets (HTTP)
+### List markets
 
 ```bash
 curl http://localhost:8080/v1/market/list?exchange=1
 ```
 
-#### Create Market Order (HTTP)
+### Create a market order
 
 ```bash
 curl -X POST http://localhost:8080/v1/trading/order \
@@ -108,134 +47,36 @@ curl -X POST http://localhost:8080/v1/trading/order \
     "side": 1,
     "quantity": 0.001,
     "credentials": {
-      "api_key": "your-api-key",
-      "api_secret": "your-api-secret",
+      "api_key": "YOUR_API_KEY",
+      "api_secret": "YOUR_API_SECRET",
       "sandbox": true
     }
   }'
 ```
 
-#### Get Quotes (gRPC)
+## Ports
 
-```bash
-grpcurl -plaintext \
-  -d '{
-    "exchange": 1,
-    "symbol": "BTC/USDT",
-    "interval": 4,
-    "limit": 100
-  }' \
-  localhost:50051 cegw.v1.MarketDataService/GetQuotes
-```
+- `8080` - HTTP/JSON API
+- `50051` - gRPC API
 
-## Development
+## Configuration
 
-### Project Structure
+CEGW supports a few simple environment variables:
 
-```
-.
-├── cmd/cegw/              # Main application entry point
-├── internal/
-│   ├── ccxt/              # CCXT client wrapper
-│   ├── config/            # Configuration management
-│   ├── server/            # gRPC and HTTP servers
-│   └── service/           # Business logic services
-├── proto/cegw/v1/         # Protocol buffer definitions
-├── gen/                   # Generated code (gitignored)
-├── charts/cegw/           # Helm chart
-├── docs/                  # API documentation
-└── scripts/               # Build scripts
-```
+- `GRPC_PORT` (default `50051`)
+- `HTTP_PORT` (default `8080`)
+- `LOG_LEVEL` (default `info`)
+- `TIMEZONE` (default `Asia/Jakarta`)
+- `SANDBOX_MODE` (default `false`)
 
-### Building
+## Docker Compose
 
-```bash
-# Generate protobuf files
-make proto
+Use the included `docker-compose.yml` to start the service locally.
 
-# Build binary
-make build
+## Supported exchange today
 
-# Run tests
-make test
-
-# Run linters
-make lint
-
-# Clean generated files
-make clean
-```
-
-### Testing
-
-```bash
-# Run all tests
-make test
-
-# Run specific package tests
-go test -v ./internal/ccxt/
-
-# Run with coverage
-go test -v -race -coverprofile=coverage.out ./...
-```
-
-## Supported Exchanges
-
-### Phase 1 (Current)
-- ✅ Tokocrypto
-
-### Phase 2 (Planned)
-- ⏳ Binance
-- ⏳ CEX.IO
-- ⏳ Coinbase
-
-### Phase 3 (Future)
-- ⏳ Indodax
-- ⏳ OKX
-
-## Deployment
-
-### Kubernetes
-
-```bash
-# Deploy with Helm
-helm install cegw charts/cegw \
-  --set image.tag=1.0.0 \
-  --set replicaCount=3 \
-  --set config.logLevel=info
-
-# Check status
-kubectl get pods -l app.kubernetes.io/name=cegw
-
-# View logs
-kubectl logs -l app.kubernetes.io/name=cegw -f
-```
-
-### Docker Compose
-
-```yaml
-version: '3.8'
-services:
-  cegw:
-    image: ghcr.io/michaelahli/cegw:latest
-    ports:
-      - "50051:50051"
-      - "8080:8080"
-    environment:
-      - LOG_LEVEL=info
-      - TIMEZONE=Asia/Jakarta
-    restart: unless-stopped
-```
-
-## Architecture
-
-CEGW uses a dual-protocol architecture:
-
-1. **gRPC Server** (port 50051): Binary protocol for high-performance communication
-2. **HTTP Gateway** (port 8080): RESTful JSON API via grpc-gateway
-3. **CCXT Integration**: Unified interface to cryptocurrency exchanges
-4. **Stateless Design**: No credential storage, all auth per-request
+- Tokocrypto
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT
