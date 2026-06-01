@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package cegw.v1;
+
+option go_package = "github.com/michaelahli/cegw/gen/cegw/v1;cegwv1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "cegw/v1/common.proto";
+
+service MarketDataService {
+  rpc GetQuotes(GetQuotesRequest) returns (GetQuotesResponse) {
+    option (google.api.http) = {
+      post: "/v1/market/quotes"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get Historical Quotes"
+      description: "Retrieves historical OHLCV (Open, High, Low, Close, Volume) data for a trading pair from the specified exchange."
+      tags: "Market Data"
+    };
+  }
+
+  rpc GetCurrentPrice(GetCurrentPriceRequest) returns (GetCurrentPriceResponse) {
+    option (google.api.http) = {
+      get: "/v1/market/price/{exchange}/{symbol}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get Current Price"
+      description: "Retrieves the latest ticker price for a trading pair."
+      tags: "Market Data"
+    };
+  }
+
+  rpc SearchTicker(SearchTickerRequest) returns (SearchTickerResponse) {
+    option (google.api.http) = {
+      get: "/v1/market/search"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Search Tickers"
+      description: "Search available trading pairs by query string."
+      tags: "Market Data"
+    };
+  }
+
+  rpc ListMarkets(ListMarketsRequest) returns (ListMarketsResponse) {
+    option (google.api.http) = {
+      get: "/v1/market/list"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "List Markets"
+      description: "Get all available trading pairs for an exchange."
+      tags: "Market Data"
+    };
+  }
+}
+
+message GetQuotesRequest {
+  Exchange exchange = 1;
+  string symbol = 2;
+  Interval interval = 3;
+  google.protobuf.Timestamp start = 4;
+  google.protobuf.Timestamp end = 5;
+  int32 limit = 6;
+}
+
+message Quote {
+  google.protobuf.Timestamp timestamp = 1;
+  OHLCV ohlcv = 2;
+}
+
+message GetQuotesResponse {
+  repeated Quote quotes = 1;
+  int32 count = 2;
+}
+
+message GetCurrentPriceRequest {
+  Exchange exchange = 1;
+  string symbol = 2;
+}
+
+message GetCurrentPriceResponse {
+  string symbol = 1;
+  double price = 2;
+  google.protobuf.Timestamp timestamp = 3;
+}
+
+message SearchTickerRequest {
+  Exchange exchange = 1;
+  string query = 2;
+}
+
+message Ticker {
+  string symbol = 1;
+  string name = 2;
+  string base = 3;
+  string quote = 4;
+}
+
+message SearchTickerResponse {
+  repeated Ticker tickers = 1;
+}
+
+message ListMarketsRequest {
+  Exchange exchange = 1;
+}
+
+message Market {
+  string symbol = 1;
+  string base = 2;
+  string quote = 3;
+  bool active = 4;
+}
+
+message ListMarketsResponse {
+  repeated Market markets = 1;
+  int32 count = 2;
+}

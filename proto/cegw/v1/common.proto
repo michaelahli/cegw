@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package cegw.v1;
+
+option go_package = "github.com/michaelahli/cegw/gen/cegw/v1;cegwv1";
+
+enum Exchange {
+  EXCHANGE_UNSPECIFIED = 0;
+  EXCHANGE_TOKOCRYPTO = 1;
+  EXCHANGE_BINANCE = 2;
+  EXCHANGE_COINBASE = 3;
+  EXCHANGE_CEXIO = 4;
+  EXCHANGE_INDODAX = 5;
+  EXCHANGE_OKX = 6;
+}
+
+enum Interval {
+  INTERVAL_UNSPECIFIED = 0;
+  INTERVAL_1M = 1;
+  INTERVAL_5M = 2;
+  INTERVAL_30M = 3;
+  INTERVAL_1H = 4;
+  INTERVAL_1D = 5;
+  INTERVAL_1W = 6;
+  INTERVAL_1M_MONTH = 7;
+}
+
+enum OrderSide {
+  ORDER_SIDE_UNSPECIFIED = 0;
+  ORDER_SIDE_BUY = 1;
+  ORDER_SIDE_SELL = 2;
+}
+
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  ORDER_STATUS_NEW = 1;
+  ORDER_STATUS_FILLED = 2;
+  ORDER_STATUS_PARTIALLY_FILLED = 3;
+  ORDER_STATUS_CANCELED = 4;
+  ORDER_STATUS_REJECTED = 5;
+}
+
+enum ComparisonOperator {
+  COMPARISON_OPERATOR_UNSPECIFIED = 0;
+  COMPARISON_OPERATOR_GREATER_THAN = 1;
+  COMPARISON_OPERATOR_LESS_THAN = 2;
+}
+
+enum AlertStatus {
+  ALERT_STATUS_UNSPECIFIED = 0;
+  ALERT_STATUS_PENDING = 1;
+  ALERT_STATUS_TRIGGERED = 2;
+}
+
+message OHLCV {
+  double high = 1;
+  double low = 2;
+  double open = 3;
+  double close = 4;
+  double volume = 5;
+}
+
+message Credentials {
+  string api_key = 1;
+  string api_secret = 2;
+  bool sandbox = 3;
+}

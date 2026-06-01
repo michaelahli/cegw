@@ -1,0 +1,250 @@
+package service
+
+import (
+	"context"
+	"time"
+
+	"github.com/michaelahli/cegw/gen/cegw/v1"
+	"github.com/michaelahli/cegw/internal/ccxt"
+	"github.com/michaelahli/cegw/internal/config"
+	ccxtlib "github.com/ccxt/ccxt/go/v4"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
+)
+
+type MarketDataService struct {
+	cegwv1.UnimplementedMarketDataServiceServer
+	cfg    *config.Config
+	avail  []*cegwv1.Ticker
+}
+
+func NewMarketDataService(cfg *config.Config) *MarketDataService {
+	svc := &MarketDataService{
+		cfg: cfg,
+	}
+	go svc.cacheMarkets()
+	return svc
+}
+
+func (s *MarketDataService) cacheMarkets() {
+	ctx := context.Background()
+	client, err := ccxt.NewClientForExchange(ctx, cegwv1.Exchange_EXCHANGE_TOKOCRYPTO, nil)
+	if err != nil || client == nil {
+		return
+	}
+
+	tokocrypto, ok := client.(*ccxtlib.Tokocrypto)
+	if !ok {
+		return
+	}
+
+	markets, err := tokocrypto.LoadMarkets()
+	if err != nil {
+		return
+	}
+
+	tickers := make([]*cegwv1.Ticker, 0, len(markets))
+	for _, market := range markets {
+		tickers = append(tickers, &cegwv1.Ticker{
+			Symbol: ccxt.StringP(market.Symbol),
+		})
+	}
+	s.avail = tickers
+}
+
+func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotesRequest) (*cegwv1.GetQuotesResponse, error) {
+	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
+		return nil, status.Error(codes.InvalidArgument, "exchange is required")
+	}
+
+	if req.Symbol == "" {
+		return nil, status.Error(codes.InvalidArgument, "symbol is required")
+	}
+
+	interval := ccxt.MapInterval(req.Interval)
+	if interval == "" {
+		return nil, status.Error(codes.InvalidArgument, "invalid interval")
+	}
+
+	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	tokocrypto, ok := client.(*ccxtlib.Tokocrypto)
+	if !ok {
+		return nil, status.Error(codes.Unimplemented, "exchange not supported")
+	}
+
+	var mergedKlines []ccxtlib.OHLCV
+	start := req.Start.AsTime()
+	if start.IsZero() {
+		start = time.Now().In(s.cfg.Timezone).Add(-24 * time.Hour)
+	}
+
+	shiftedStart := start
+	end := time.Time{}
+	if req.End != nil && !req.End.AsTime().IsZero() {
+		end = req.End.AsTime()
+	}
+
+	for {
+		limit := int64(1000)
+		if !end.IsZero() {
+			candleDur := ccxt.IntervalDuration(req.Interval)
+			if candleDur > 0 {
+				remaining := end.Sub(shiftedStart)
+				if remaining > 0 {
+					if calc := remaining.Milliseconds() / candleDur; calc < limit {
+						limit = calc
+					}
+					if limit < 1 {
+						limit = 1
+					}
+				}
+			}
+		}
+
+		opts := []ccxtlib.FetchOHLCVOptions{
+			ccxtlib.WithFetchOHLCVTimeframe(interval),
+			ccxtlib.WithFetchOHLCVSince(shiftedStart.UnixMilli()),
+			ccxtlib.WithFetchOHLCVLimit(limit),
+		}
+
+		klines, err := tokocrypto.FetchOHLCV(req.Symbol, opts...)
+		if err != nil {
+			return nil, ccxt.MapError(err)
+		}
+
+		mergedKlines = append(mergedKlines, klines...)
+
+		if len(klines) < 1000 {
+			break
+		}
+
+		last := klines[len(klines)-1]
+		shiftedStart = time.UnixMilli(int64(last.Timestamp)).Add(time.Millisecond)
+		if !end.IsZero() && shiftedStart.After(end) {
+			break
+		}
+	}
+
+	quotes := make([]*cegwv1.Quote, 0, len(mergedKlines))
+	for _, kline := range mergedKlines {
+		quotes = append(quotes, &cegwv1.Quote{
+			Timestamp: timestamppb.New(time.UnixMilli(int64(kline.Timestamp))),
+			Ohlcv:     ccxt.OHLCVToProto(kline),
+		})
+	}
+
+	return &cegwv1.GetQuotesResponse{
+		Quotes: quotes,
+		Count:  int32(len(quotes)),
+	}, nil
+}
+
+func (s *MarketDataService) GetCurrentPrice(ctx context.Context, req *cegwv1.GetCurrentPriceRequest) (*cegwv1.GetCurrentPriceResponse, error) {
+	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
+		return nil, status.Error(codes.InvalidArgument, "exchange is required")
+	}
+
+	if req.Symbol == "" {
+		return nil, status.Error(codes.InvalidArgument, "symbol is required")
+	}
+
+	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	tokocrypto, ok := client.(*ccxtlib.Tokocrypto)
+	if !ok {
+		return nil, status.Error(codes.Unimplemented, "exchange not supported")
+	}
+
+	ticker, err := tokocrypto.FetchTicker(req.Symbol)
+	if err != nil {
+		return nil, ccxt.MapError(err)
+	}
+
+	price := ccxt.Float64P(ticker.Close)
+
+	return &cegwv1.GetCurrentPriceResponse{
+		Symbol:    req.Symbol,
+		Price:     price,
+		Timestamp: timestamppb.Now(),
+	}, nil
+}
+
+func (s *MarketDataService) SearchTicker(ctx context.Context, req *cegwv1.SearchTickerRequest) (*cegwv1.SearchTickerResponse, error) {
+	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
+		return nil, status.Error(codes.InvalidArgument, "exchange is required")
+	}
+
+	if req.Query == "" {
+		return &cegwv1.SearchTickerResponse{Tickers: s.avail}, nil
+	}
+
+	var filtered []*cegwv1.Ticker
+	for _, ticker := range s.avail {
+		if contains(ticker.Symbol, req.Query) {
+			filtered = append(filtered, ticker)
+		}
+	}
+
+	return &cegwv1.SearchTickerResponse{Tickers: filtered}, nil
+}
+
+func (s *MarketDataService) ListMarkets(ctx context.Context, req *cegwv1.ListMarketsRequest) (*cegwv1.ListMarketsResponse, error) {
+	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
+		return nil, status.Error(codes.InvalidArgument, "exchange is required")
+	}
+
+	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	tokocrypto, ok := client.(*ccxtlib.Tokocrypto)
+	if !ok {
+		return nil, status.Error(codes.Unimplemented, "exchange not supported")
+	}
+
+	marketData, err := tokocrypto.LoadMarkets()
+	if err != nil {
+		return nil, ccxt.MapError(err)
+	}
+
+	markets := make([]*cegwv1.Market, 0, len(marketData))
+	for _, m := range marketData {
+		base := ""
+		quote := ""
+		if m.BaseId != nil {
+			base = *m.BaseId
+		}
+		if m.QuoteId != nil {
+			quote = *m.QuoteId
+		}
+		markets = append(markets, &cegwv1.Market{
+			Symbol: ccxt.StringP(m.Symbol),
+			Base:   base,
+			Quote:  quote,
+			Active: m.Active != nil && *m.Active,
+		})
+	}
+
+	return &cegwv1.ListMarketsResponse{
+		Markets: markets,
+		Count:   int32(len(markets)),
+	}, nil
+}
+
+func contains(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}

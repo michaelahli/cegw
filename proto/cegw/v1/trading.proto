@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package cegw.v1;
+
+option go_package = "github.com/michaelahli/cegw/gen/cegw/v1;cegwv1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "cegw/v1/common.proto";
+
+service TradingService {
+  rpc CreateMarketOrder(CreateMarketOrderRequest) returns (CreateMarketOrderResponse) {
+    option (google.api.http) = {
+      post: "/v1/trading/order"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Create Market Order"
+      description: "Place a market buy or sell order on the specified exchange."
+      tags: "Trading"
+    };
+  }
+
+  rpc TestCredentials(TestCredentialsRequest) returns (TestCredentialsResponse) {
+    option (google.api.http) = {
+      post: "/v1/trading/credentials/test"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Test Credentials"
+      description: "Validate API credentials for an exchange."
+      tags: "Trading"
+    };
+  }
+}
+
+message CreateMarketOrderRequest {
+  Exchange exchange = 1;
+  string symbol = 2;
+  OrderSide side = 3;
+  double quantity = 4;
+  Credentials credentials = 5;
+}
+
+message Order {
+  string order_id = 1;
+  string symbol = 2;
+  OrderSide side = 3;
+  double quantity = 4;
+  double price = 5;
+  OrderStatus status = 6;
+  google.protobuf.Timestamp timestamp = 7;
+}
+
+message CreateMarketOrderResponse {
+  Order order = 1;
+}
+
+message TestCredentialsRequest {
+  Exchange exchange = 1;
+  Credentials credentials = 2;
+}
+
+message TestCredentialsResponse {
+  bool valid = 1;
+  string message = 2;
+}

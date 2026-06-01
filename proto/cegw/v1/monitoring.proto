@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package cegw.v1;
+
+option go_package = "github.com/michaelahli/cegw/gen/cegw/v1;cegwv1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "cegw/v1/common.proto";
+
+service MonitoringService {
+  rpc CheckPriceAlerts(CheckPriceAlertsRequest) returns (CheckPriceAlertsResponse) {
+    option (google.api.http) = {
+      post: "/v1/monitoring/alerts"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Check Price Alerts"
+      description: "Evaluate price alert conditions against current market prices."
+      tags: "Monitoring"
+    };
+  }
+}
+
+message PriceAlert {
+  string id = 1;
+  string symbol = 2;
+  double target_price = 3;
+  ComparisonOperator operator = 4;
+  AlertStatus status = 5;
+}
+
+message CheckPriceAlertsRequest {
+  Exchange exchange = 1;
+  repeated PriceAlert alerts = 2;
+}
+
+message CheckPriceAlertsResponse {
+  repeated PriceAlert alerts = 1;
+  google.protobuf.Timestamp checked_at = 2;
+}
