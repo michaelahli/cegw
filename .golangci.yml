@@ -45,6 +45,10 @@ linters:
     - unparam
     - gosec
 
+run:
+  timeout: 5m
+  go: '1.23'
+
 issues:
   exclude-rules:
     - path: _test\.go
@@ -58,12 +62,6 @@ issues:
     - linters:
         - staticcheck
       text: "SA1019:"
-
-run:
-  timeout: 5m
-  go: '1.23'
-
-issues:
   exclude-dirs:
     - gen
     - vendor
