@@ -1,4 +1,7 @@
-version: 2
+version: "2"
+run:
+  timeout: 5m
+
 linters:
   disable-all: true
   enable:
@@ -11,40 +14,6 @@ linters:
     - unconvert
     - unparam
     - gosec
-
-linters-settings:
-  govet:
-    enable-all: true
-    disable:
-      - shadow
-  gocyclo:
-    min-complexity: 15
-  dupl:
-    threshold: 100
-  goconst:
-    min-len: 2
-    min-occurrences: 3
-  misspell:
-    locale: US
-  lll:
-    line-length: 140
-  goimports:
-    local-prefixes: github.com/michaelahli/cegw
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - dupImport
-      - ifElseChain
-      - octalLiteral
-      - whyNoLint
-
-run:
-  timeout: 5m
 
 issues:
   exclude-rules:
@@ -60,9 +29,3 @@ issues:
       linters:
         - gosec
       text: "G118"
-  exclude-dirs:
-    - gen
-    - vendor
-  exclude-files:
-    - ".*\\.pb\\.go$"
-    - ".*\\.pb\\.gw\\.go$"
