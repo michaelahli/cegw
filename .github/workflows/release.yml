@@ -39,6 +39,6 @@ jobs:
         uses: goreleaser/goreleaser-action@v7
         with:
           version: latest
-          args: release --clean --parallelism 2
+          args: release --clean --parallelism 1 --verbose
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
