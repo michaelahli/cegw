@@ -24,7 +24,7 @@ service MarketDataService {
 
   rpc GetCurrentPrice(GetCurrentPriceRequest) returns (GetCurrentPriceResponse) {
     option (google.api.http) = {
-      get: "/v1/market/price/{exchange}/{symbol}"
+      get: "/v1/market/price/{exchange}/{symbol=**}"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       summary: "Get Current Price"
