@@ -4,12 +4,13 @@ import (
 	"context"
 
 	ccxtlib "github.com/ccxt/ccxt/go/v4"
-	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
-	"github.com/michaelahli/cegw/internal/ccxt"
-	"github.com/michaelahli/cegw/internal/config"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
+	"github.com/michaelahli/cegw/internal/ccxt"
+	"github.com/michaelahli/cegw/internal/config"
 )
 
 type MonitoringService struct {

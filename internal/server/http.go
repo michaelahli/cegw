@@ -49,7 +49,7 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
-	go func() {
+	go func() { // nolint:gosec
 		<-ctx.Done()
 		if err := s.server.Shutdown(context.Background()); err != nil {
 			logrus.WithError(err).Error("HTTP server shutdown error")

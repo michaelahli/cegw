@@ -10,10 +10,10 @@ type Config struct {
 	GRPCPort    string
 	HTTPPort    string
 	LogLevel    string
-	Timezone    *time.Location
-	SandboxMode bool
 	HTTPSProxy  string
 	HTTPProxy   string
+	Timezone    *time.Location
+	SandboxMode bool
 }
 
 func Load() (*Config, error) {

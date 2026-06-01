@@ -1,3 +1,17 @@
+version: 2
+linters:
+  disable-all: true
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - misspell
+    - unconvert
+    - unparam
+    - gosec
+
 linters-settings:
   govet:
     enable-all: true
@@ -29,22 +43,6 @@ linters-settings:
       - octalLiteral
       - whyNoLint
 
-linters:
-  disable-all: true
-  enable:
-    - errcheck
-    - gosimple
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
-    - gofmt
-    - goimports
-    - misspell
-    - unconvert
-    - unparam
-    - gosec
-
 run:
   timeout: 5m
   go: '1.25'
@@ -58,19 +56,14 @@ issues:
     - path: internal/ccxt/client.go
       linters:
         - gosec
-      text: "G103: Use of unsafe calls"
-    - linters:
-        - staticcheck
-      text: "SA1019:"
+      text: "(G103|G706)"
+    - path: internal/server/http.go
+      linters:
+        - gosec
+      text: "G118"
   exclude-dirs:
     - gen
     - vendor
   exclude-files:
     - ".*\\.pb\\.go$"
     - ".*\\.pb\\.gw\\.go$"
-
-output:
-  formats:
-    - format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true

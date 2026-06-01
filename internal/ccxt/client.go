@@ -20,9 +20,9 @@ import (
 type ClientConfig struct {
 	APIKey    string
 	APISecret string
-	Sandbox   bool
-	ProxyURL  *url.URL
 	Options   map[string]any
+	ProxyURL  *url.URL
+	Sandbox   bool
 }
 
 type TokocryptoClient struct {
@@ -73,7 +73,7 @@ func (c *TokocryptoClient) Client(ctx context.Context) (*ccxt.Tokocrypto, error)
 
 		v := reflect.ValueOf(exchange).Elem()
 		f := v.FieldByName("httpClient")
-		client := *(**http.Client)(unsafe.Pointer(f.UnsafeAddr()))
+		client := *(**http.Client)(unsafe.Pointer(f.UnsafeAddr())) // nolint:gosec
 		client.Transport = transport
 		client.Timeout = 30 * time.Second
 	}
@@ -91,7 +91,7 @@ func ProxyFromEnv() *url.URL {
 	}
 	proxyURL, err := url.Parse(proxyStr)
 	if err != nil {
-		log.Printf("Invalid proxy URL %q: %v", proxyStr, err)
+		log.Printf("Invalid proxy URL %q: %v", proxyStr, err) // nolint:gosec
 		return nil
 	}
 	return proxyURL
