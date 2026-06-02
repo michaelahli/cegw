@@ -5,12 +5,26 @@ import (
 
 	ccxt "github.com/ccxt/ccxt/go/v4"
 	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
+	"github.com/michaelahli/cegw/internal/logger"
 )
 
 func NewClientForExchange(ctx context.Context, exchange cegwv1.Exchange, creds *cegwv1.Credentials) (interface{}, error) {
+	// Get logger from context or create a new one
+	var log *logger.Logger
+	if logVal := ctx.Value("logger"); logVal != nil {
+		if l, ok := logVal.(*logger.Logger); ok {
+			log = l
+		}
+	}
+
+	// Fallback: create a noop logger if not in context
+	if log == nil {
+		log = logger.New("error", nil) // This will log only errors
+	}
+
 	cfg := ClientConfig{
 		Sandbox:  false,
-		ProxyURL: ProxyFromEnv(),
+		ProxyURL: ProxyFromEnv(log),
 		Options: map[string]any{
 			"recvWindow": 5000,
 		},
@@ -27,9 +41,12 @@ func NewClientForExchange(ctx context.Context, exchange cegwv1.Exchange, creds *
 
 	switch exchange {
 	case cegwv1.Exchange_EXCHANGE_TOKOCRYPTO:
-		client := NewTokocryptoClient(cfg)
+		client := NewTokocryptoClient(cfg, log)
 		return client.Client(ctx)
 	default:
+		log.WithContext(ctx).
+			WithField("exchange", exchange.String()).
+			Warnf("unsupported exchange")
 		return nil, nil
 	}
 }

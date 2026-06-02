@@ -2,7 +2,6 @@ package ccxt
 
 import (
 	"context"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -15,6 +14,8 @@ import (
 	"golang.org/x/net/proxy"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/michaelahli/cegw/internal/logger"
 )
 
 type ClientConfig struct {
@@ -27,27 +28,39 @@ type ClientConfig struct {
 
 type TokocryptoClient struct {
 	config ClientConfig
+	log    *logger.Logger
 }
 
-func NewTokocryptoClient(cfg ClientConfig) *TokocryptoClient {
-	return &TokocryptoClient{config: cfg}
+func NewTokocryptoClient(cfg ClientConfig, log *logger.Logger) *TokocryptoClient {
+	return &TokocryptoClient{
+		config: cfg,
+		log:    log,
+	}
 }
 
 func (c *TokocryptoClient) Client(ctx context.Context) (*ccxt.Tokocrypto, error) {
+	log := c.log.WithContext(ctx).WithField("operation", "InitializeTokocryptoClient")
+
 	config := make(map[string]any)
 
 	if c.config.APIKey != "" {
 		config["apiKey"] = c.config.APIKey
 		config["secret"] = c.config.APISecret
+		log.Debugf("configuring with API credentials")
 	}
 
 	if c.config.Options != nil {
 		config["options"] = c.config.Options
 	}
 
+	log.Debugf("creating Tokocrypto exchange instance")
 	exchange := ccxt.NewTokocrypto(config)
 
 	if c.config.ProxyURL != nil {
+		log.WithField("proxy_scheme", c.config.ProxyURL.Scheme).
+			WithField("proxy_host", c.config.ProxyURL.Host).
+			Debugf("configuring proxy")
+
 		transport := &http.Transport{}
 
 		switch c.config.ProxyURL.Scheme {
@@ -59,15 +72,21 @@ func (c *TokocryptoClient) Client(ctx context.Context) (*ccxt.Tokocrypto, error)
 					User:     c.config.ProxyURL.User.Username(),
 					Password: password,
 				}
+				log.Debugf("SOCKS5 proxy configured with authentication")
+			} else {
+				log.Debugf("SOCKS5 proxy configured without authentication")
 			}
+
 			dialer, err := proxy.SOCKS5("tcp", c.config.ProxyURL.Host, auth, proxy.Direct)
 			if err != nil {
+				log.WithError(err).Errorf("failed to create SOCKS5 proxy dialer")
 				return nil, status.Error(codes.Internal, "network connection failed")
 			}
 			transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 				return dialer.Dial(network, addr)
 			}
 		default:
+			log.Debugf("configuring HTTP proxy")
 			transport.Proxy = http.ProxyURL(c.config.ProxyURL)
 		}
 
@@ -76,23 +95,34 @@ func (c *TokocryptoClient) Client(ctx context.Context) (*ccxt.Tokocrypto, error)
 		client := *(**http.Client)(unsafe.Pointer(f.UnsafeAddr())) // nolint:gosec
 		client.Transport = transport
 		client.Timeout = 30 * time.Second
+		log.Debugf("HTTP client transport updated with proxy configuration")
 	}
 
+	log.Infof("Tokocrypto client initialized successfully")
 	return exchange, nil
 }
 
-func ProxyFromEnv() *url.URL {
+func ProxyFromEnv(log *logger.Logger) *url.URL {
 	proxyStr := os.Getenv("HTTPS_PROXY")
 	if proxyStr == "" {
 		proxyStr = os.Getenv("HTTP_PROXY")
 	}
 	if proxyStr == "" {
+		log.Debugf("no proxy configured in environment")
 		return nil
 	}
+
 	proxyURL, err := url.Parse(proxyStr)
 	if err != nil {
-		log.Printf("Invalid proxy URL %q: %v", proxyStr, err) // nolint:gosec
+		log.WithError(err).
+			WithField("proxy_url", proxyStr).
+			Warnf("invalid proxy URL configuration")
 		return nil
 	}
+
+	log.WithField("proxy_scheme", proxyURL.Scheme).
+		WithField("proxy_host", proxyURL.Host).
+		Infof("proxy loaded from environment")
+
 	return proxyURL
 }

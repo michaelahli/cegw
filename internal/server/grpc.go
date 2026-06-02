@@ -7,6 +7,8 @@ import (
 
 	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
 	"github.com/michaelahli/cegw/internal/config"
+	"github.com/michaelahli/cegw/internal/logger"
+	"github.com/michaelahli/cegw/internal/middleware"
 	"github.com/michaelahli/cegw/internal/service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
@@ -17,14 +19,18 @@ import (
 type GRPCServer struct {
 	server *grpc.Server
 	cfg    *config.Config
+	log    *logger.Logger
 }
 
-func NewGRPCServer(cfg *config.Config) *GRPCServer {
-	s := grpc.NewServer()
+func NewGRPCServer(cfg *config.Config, log *logger.Logger) *GRPCServer {
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(middleware.GRPCUnaryLoggingInterceptor(log)),
+		grpc.StreamInterceptor(middleware.GRPCStreamLoggingInterceptor(log)),
+	)
 
-	marketDataSvc := service.NewMarketDataService(cfg)
-	tradingSvc := service.NewTradingService(cfg)
-	monitoringSvc := service.NewMonitoringService(cfg)
+	marketDataSvc := service.NewMarketDataService(cfg, log)
+	tradingSvc := service.NewTradingService(cfg, log)
+	monitoringSvc := service.NewMonitoringService(cfg, log)
 
 	cegwv1.RegisterMarketDataServiceServer(s, marketDataSvc)
 	cegwv1.RegisterTradingServiceServer(s, tradingSvc)
@@ -39,6 +45,7 @@ func NewGRPCServer(cfg *config.Config) *GRPCServer {
 	return &GRPCServer{
 		server: s,
 		cfg:    cfg,
+		log:    log,
 	}
 }
 

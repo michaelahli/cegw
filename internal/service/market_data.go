@@ -12,17 +12,20 @@ import (
 	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
 	"github.com/michaelahli/cegw/internal/ccxt"
 	"github.com/michaelahli/cegw/internal/config"
+	"github.com/michaelahli/cegw/internal/logger"
 )
 
 type MarketDataService struct {
 	cegwv1.UnimplementedMarketDataServiceServer
 	cfg   *config.Config
+	log   *logger.Logger
 	avail []*cegwv1.Ticker
 }
 
-func NewMarketDataService(cfg *config.Config) *MarketDataService {
+func NewMarketDataService(cfg *config.Config, log *logger.Logger) *MarketDataService {
 	svc := &MarketDataService{
 		cfg: cfg,
+		log: log,
 	}
 	go svc.cacheMarkets()
 	return svc
@@ -30,18 +33,26 @@ func NewMarketDataService(cfg *config.Config) *MarketDataService {
 
 func (s *MarketDataService) cacheMarkets() {
 	ctx := context.Background()
+	log := s.log.WithContext(ctx).WithField("operation", "cacheMarkets")
+
+	log.Debugf("initializing market cache")
+
 	client, err := ccxt.NewClientForExchange(ctx, cegwv1.Exchange_EXCHANGE_TOKOCRYPTO, nil)
 	if err != nil || client == nil {
+		log.WithError(err).WithField("exchange", "TOKOCRYPTO").Warnf("failed to initialize CCXT client for market cache")
 		return
 	}
 
 	tokocrypto, ok := client.(*ccxtlib.Tokocrypto)
 	if !ok {
+		log.Warnf("failed to cast client to Tokocrypto")
 		return
 	}
 
+	log.Debugf("loading markets from Tokocrypto")
 	markets, err := tokocrypto.LoadMarkets()
 	if err != nil {
+		log.WithError(err).Errorf("failed to load markets from Tokocrypto")
 		return
 	}
 
@@ -52,29 +63,43 @@ func (s *MarketDataService) cacheMarkets() {
 		})
 	}
 	s.avail = tickers
+	log.WithField("ticker_count", len(tickers)).Infof("market cache initialized successfully")
 }
 
 func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotesRequest) (*cegwv1.GetQuotesResponse, error) {
+	log := s.log.WithContext(ctx).
+		WithField("operation", "GetQuotes").
+		WithField("symbol", req.Symbol).
+		WithField("exchange", req.Exchange.String())
+
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
+		log.Warnf("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.Symbol == "" {
+		log.Warnf("invalid request: symbol empty")
 		return nil, status.Error(codes.InvalidArgument, "symbol is required")
 	}
 
 	interval := ccxt.MapInterval(req.Interval)
 	if interval == "" {
+		log.WithField("interval", req.Interval).Warnf("invalid interval")
 		return nil, status.Error(codes.InvalidArgument, "invalid interval")
 	}
 
+	log = log.WithField("interval", interval)
+	log.Debugf("fetching quotes")
+
 	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, nil)
 	if err != nil {
+		log.WithError(err).Errorf("failed to create CCXT client")
 		return nil, err
 	}
 
 	tokocrypto, ok := client.(*ccxtlib.Tokocrypto)
 	if !ok {
+		log.Warnf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
@@ -90,6 +115,7 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 		end = req.End.AsTime()
 	}
 
+	batchCount := 0
 	for {
 		limit := int64(1000)
 		if !end.IsZero() {
@@ -115,8 +141,11 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 
 		klines, err := tokocrypto.FetchOHLCV(req.Symbol, opts...)
 		if err != nil {
+			log.WithError(err).WithField("batch_number", batchCount+1).Errorf("failed to fetch OHLCV data")
 			return nil, ccxt.MapError(err)
 		}
+		batchCount++
+		log.WithField("batch_number", batchCount).WithField("batch_size", len(klines)).Debugf("fetched OHLCV batch")
 
 		mergedKlines = append(mergedKlines, klines...)
 
@@ -144,6 +173,7 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 		quotesCount = 2147483647
 	}
 
+	log.WithField("quote_count", quotesCount).WithField("batch_count", batchCount).Infof("quotes fetched successfully")
 	return &cegwv1.GetQuotesResponse{
 		Quotes: quotes,
 		Count:  int32(quotesCount), // #nosec G115
@@ -151,30 +181,43 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 }
 
 func (s *MarketDataService) GetCurrentPrice(ctx context.Context, req *cegwv1.GetCurrentPriceRequest) (*cegwv1.GetCurrentPriceResponse, error) {
+	log := s.log.WithContext(ctx).
+		WithField("operation", "GetCurrentPrice").
+		WithField("symbol", req.Symbol).
+		WithField("exchange", req.Exchange.String())
+
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
+		log.Warnf("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.Symbol == "" {
+		log.Warnf("invalid request: symbol empty")
 		return nil, status.Error(codes.InvalidArgument, "symbol is required")
 	}
 
+	log.Debugf("fetching current price")
+
 	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, nil)
 	if err != nil {
+		log.WithError(err).Errorf("failed to create CCXT client")
 		return nil, err
 	}
 
 	tokocrypto, ok := client.(*ccxtlib.Tokocrypto)
 	if !ok {
+		log.Warnf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
 	ticker, err := tokocrypto.FetchTicker(req.Symbol)
 	if err != nil {
+		log.WithError(err).Errorf("failed to fetch ticker")
 		return nil, ccxt.MapError(err)
 	}
 
 	price := ccxt.Float64P(ticker.Close)
+	log.WithField("price", price).Infof("current price fetched successfully")
 
 	return &cegwv1.GetCurrentPriceResponse{
 		Symbol:    req.Symbol,
@@ -184,13 +227,22 @@ func (s *MarketDataService) GetCurrentPrice(ctx context.Context, req *cegwv1.Get
 }
 
 func (s *MarketDataService) SearchTicker(ctx context.Context, req *cegwv1.SearchTickerRequest) (*cegwv1.SearchTickerResponse, error) {
+	log := s.log.WithContext(ctx).
+		WithField("operation", "SearchTicker").
+		WithField("query", req.Query).
+		WithField("exchange", req.Exchange.String())
+
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
+		log.Warnf("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.Query == "" {
+		log.Warnf("invalid request: query empty")
 		return nil, status.Error(codes.InvalidArgument, "query is required")
 	}
+
+	log.Debugf("searching tickers")
 
 	var filtered []*cegwv1.Ticker
 	for _, ticker := range s.avail {
@@ -199,26 +251,37 @@ func (s *MarketDataService) SearchTicker(ctx context.Context, req *cegwv1.Search
 		}
 	}
 
+	log.WithField("result_count", len(filtered)).Infof("search completed")
 	return &cegwv1.SearchTickerResponse{Tickers: filtered}, nil
 }
 
 func (s *MarketDataService) ListMarkets(ctx context.Context, req *cegwv1.ListMarketsRequest) (*cegwv1.ListMarketsResponse, error) {
+	log := s.log.WithContext(ctx).
+		WithField("operation", "ListMarkets").
+		WithField("exchange", req.Exchange.String())
+
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
+		log.Warnf("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
+	log.Debugf("loading markets")
+
 	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, nil)
 	if err != nil {
+		log.WithError(err).Errorf("failed to create CCXT client")
 		return nil, err
 	}
 
 	tokocrypto, ok := client.(*ccxtlib.Tokocrypto)
 	if !ok {
+		log.Warnf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
 	marketData, err := tokocrypto.LoadMarkets()
 	if err != nil {
+		log.WithError(err).Errorf("failed to load markets")
 		return nil, ccxt.MapError(err)
 	}
 
@@ -245,6 +308,7 @@ func (s *MarketDataService) ListMarkets(ctx context.Context, req *cegwv1.ListMar
 		marketsCount = 2147483647
 	}
 
+	log.WithField("market_count", marketsCount).Infof("markets loaded successfully")
 	return &cegwv1.ListMarketsResponse{
 		Markets: markets,
 		Count:   int32(marketsCount), // #nosec G115

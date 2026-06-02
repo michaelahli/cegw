@@ -8,42 +8,49 @@ import (
 	"syscall"
 
 	"github.com/michaelahli/cegw/internal/config"
+	"github.com/michaelahli/cegw/internal/logger"
 	"github.com/michaelahli/cegw/internal/server"
-	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	log := logrus.New()
-	log.SetFormatter(&logrus.JSONFormatter{})
+	log := logger.New("info", os.Stdout)
 
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("failed to load config: %v", err)
+		log.WithError(err).Fatalf("failed to load config")
 	}
 
-	level, err := logrus.ParseLevel(cfg.LogLevel)
-	if err != nil {
-		level = logrus.InfoLevel
+	// Set log level from config
+	logLevel := cfg.LogLevel
+	if logLevel == "" {
+		logLevel = "info"
 	}
-	log.SetLevel(level)
+	log = logger.New(logLevel, os.Stdout)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	grpcServer := server.NewGRPCServer(cfg)
-	httpServer := server.NewHTTPServer(cfg)
+	log.WithFields(map[string]interface{}{
+		"grpc_port":   cfg.GRPCPort,
+		"http_port":   cfg.HTTPPort,
+		"log_level":   logLevel,
+		"sandbox_mode": cfg.SandboxMode,
+	}).Infof("CEGW starting up")
+
+	grpcServer := server.NewGRPCServer(cfg, log)
+	httpServer := server.NewHTTPServer(cfg, log)
 
 	errChan := make(chan error, 2)
 
 	go func() {
-		log.Infof("Starting gRPC server on port %s", cfg.GRPCPort)
+		log.WithField("component", "grpc").Infof("Starting gRPC server on port %s", cfg.GRPCPort)
 		if err := grpcServer.Start(ctx); err != nil {
 			errChan <- fmt.Errorf("grpc server error: %w", err)
 		}
 	}()
 
 	go func() {
-		log.Infof("Starting HTTP server on port %s", cfg.HTTPPort)
+		log.WithField("component", "http").Infof("Starting HTTP server on port %s", cfg.HTTPPort)
 		if err := httpServer.Start(ctx); err != nil {
 			errChan <- fmt.Errorf("http server error: %w", err)
 		}
@@ -54,12 +61,12 @@ func main() {
 
 	select {
 	case err := <-errChan:
-		log.Errorf("Server error: %v", err)
+		log.WithError(err).WithField("component", "server").Errorf("Server error")
 		cancel()
 	case sig := <-sigChan:
-		log.Infof("Received signal %v, shutting down gracefully", sig)
+		log.WithField("signal", sig.String()).Infof("Received signal, shutting down gracefully")
 		cancel()
 	}
 
-	log.Info("Server stopped")
+	log.Infof("CEGW shutdown complete")
 }

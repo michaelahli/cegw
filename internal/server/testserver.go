@@ -3,12 +3,14 @@ package server
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"testing"
 	"time"
 
 	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
 	"github.com/michaelahli/cegw/internal/config"
+	"github.com/michaelahli/cegw/internal/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
@@ -39,7 +41,10 @@ func NewTestServer(t *testing.T) *TestServer {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	grpcServer := NewGRPCServer(cfg)
+	// Create logger that discards output for tests
+	log := logger.New("error", io.Discard)
+
+	grpcServer := NewGRPCServer(cfg, log)
 	listener := bufconn.Listen(bufSize)
 
 	go func() {
@@ -135,8 +140,11 @@ func StartRealServer(t *testing.T) (string, string, context.CancelFunc) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	grpcServer := NewGRPCServer(cfg)
-	httpServer := NewHTTPServer(cfg)
+	// Create logger that discards output for tests
+	log := logger.New("error", io.Discard)
+
+	grpcServer := NewGRPCServer(cfg, log)
+	httpServer := NewHTTPServer(cfg, log)
 
 	go func() {
 		if err := grpcServer.Start(ctx); err != nil {

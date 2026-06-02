@@ -18,7 +18,7 @@ func TestTradingService_CreateMarketOrder(t *testing.T) {
 		SandboxMode: true,
 	}
 
-	svc := NewTradingService(cfg)
+	svc := NewTradingService(cfg, newTestLogger())
 	ctx := context.Background()
 
 	tests := []struct {
@@ -192,7 +192,7 @@ func TestTradingService_TestCredentials(t *testing.T) {
 		SandboxMode: true,
 	}
 
-	svc := NewTradingService(cfg)
+	svc := NewTradingService(cfg, newTestLogger())
 	ctx := context.Background()
 
 	tests := []struct {
