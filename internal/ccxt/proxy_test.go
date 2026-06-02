@@ -58,8 +58,8 @@ func TestShouldUseProxy(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("NO_PROXY", tt.noProxy)
-			defer os.Unsetenv("NO_PROXY")
+			_ = os.Setenv("NO_PROXY", tt.noProxy)
+			defer func() { _ = os.Unsetenv("NO_PROXY") }()
 
 			result := shouldUseProxy(tt.addr)
 			if result != tt.expected {
