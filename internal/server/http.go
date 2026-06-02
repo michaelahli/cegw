@@ -68,7 +68,7 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 
 	go func() {
 		<-ctx.Done()
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
 		defer cancel()
 		if err := s.server.Shutdown(shutdownCtx); err != nil {
 			s.log.WithError(err).WithField("component", "http").Errorf("HTTP server shutdown error")
