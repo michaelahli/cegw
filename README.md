@@ -22,6 +22,19 @@ Then open:
 - `http://localhost:8080` for the HTTP API gateway
 - `http://localhost:8080/docs` for API docs
 
+## Deploy with Helm
+
+```bash
+# Add Helm repository
+helm repo add cegw https://michaelahli.github.io/cegw
+helm repo update
+
+# Install chart
+helm install cegw cegw/cegw
+```
+
+See [charts/cegw/README.md](charts/cegw/README.md) for more options.
+
 ## Quick usage
 
 ### Get current price
