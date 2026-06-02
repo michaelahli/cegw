@@ -26,6 +26,14 @@ func NewHTTPServer(cfg *config.Config) *HTTPServer {
 }
 
 func (s *HTTPServer) Start(ctx context.Context) error {
+	// Create main HTTP mux for routing
+	mainMux := http.NewServeMux()
+
+	// Serve static docs
+	fs := http.FileServer(http.Dir("docs"))
+	mainMux.Handle("/docs/", http.StripPrefix("/docs/", fs))
+
+	// gRPC gateway mux
 	mux := runtime.NewServeMux()
 
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
@@ -43,9 +51,12 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to register monitoring handler: %w", err)
 	}
 
+	// Mount gRPC gateway under root path
+	mainMux.Handle("/", mux)
+
 	s.server = &http.Server{
 		Addr:              fmt.Sprintf(":%s", s.cfg.HTTPPort),
-		Handler:           mux,
+		Handler:           mainMux,
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
