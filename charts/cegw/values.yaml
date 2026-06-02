@@ -72,6 +72,7 @@ config:
   sandboxMode: false
   httpsProxy: ""
   httpProxy: ""
+  noProxy: ""
 
 livenessProbe:
   grpc:

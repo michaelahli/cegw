@@ -83,6 +83,10 @@ func (c *TokocryptoClient) Client(ctx context.Context) (*ccxt.Tokocrypto, error)
 				return nil, status.Error(codes.Internal, "network connection failed")
 			}
 			transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+				if !shouldUseProxy(addr) {
+					log.WithField("addr", addr).Debugf("bypassing proxy due to NO_PROXY")
+					return proxy.Direct.Dial(network, addr)
+				}
 				return dialer.Dial(network, addr)
 			}
 		default:

@@ -81,6 +81,11 @@ CEGW supports a few simple environment variables:
 - `LOG_LEVEL` (default `info`)
 - `TIMEZONE` (default `Asia/Jakarta`)
 - `SANDBOX_MODE` (default `false`)
+- `HTTPS_PROXY` (optional, supports `http://`, `https://`, `socks5://`)
+- `HTTP_PROXY` (optional, supports `http://`, `https://`, `socks5://`)
+- `NO_PROXY` (optional, comma-separated list of hosts to bypass proxy)
+- `TIMEZONE` (default `Asia/Jakarta`)
+- `SANDBOX_MODE` (default `false`)
 
 ## Docker Compose
 

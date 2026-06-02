@@ -32,12 +32,15 @@ See [values.yaml](charts/cegw/values.yaml) for all configuration options.
 ### Key parameters
 
 | Parameter | Description | Default |
-|-----------|-------------|---------|
+|-----------|-------------|------|
 | `replicaCount` | Number of replicas | `1` |
 | `image.repository` | Image repository | `ghcr.io/michaelahli/cegw` |
 | `image.tag` | Image tag | `1.0.0` |
 | `service.grpcPort` | gRPC port | `50051` |
 | `service.httpPort` | HTTP port | `8080` |
+| `config.httpsProxy` | HTTPS proxy URL (supports http/https/socks5) | `""` |
+| `config.httpProxy` | HTTP proxy URL (supports http/https/socks5) | `""` |
+| `config.noProxy` | Comma-separated list of hosts to bypass proxy | `""` |
 
 ## Uninstall
 

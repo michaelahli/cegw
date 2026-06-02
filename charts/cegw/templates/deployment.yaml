@@ -59,6 +59,10 @@ spec:
         - name: HTTP_PROXY
           value: {{ .Values.config.httpProxy | quote }}
         {{- end }}
+        {{- if .Values.config.noProxy }}
+        - name: NO_PROXY
+          value: {{ .Values.config.noProxy | quote }}
+        {{- end }}
         livenessProbe:
           {{- toYaml .Values.livenessProbe | nindent 12 }}
         readinessProbe:
