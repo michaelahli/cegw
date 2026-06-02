@@ -9,6 +9,7 @@ import (
 
 	"github.com/michaelahli/cegw/internal/config"
 	"github.com/michaelahli/cegw/internal/logger"
+	"github.com/michaelahli/cegw/internal/metrics"
 	"github.com/michaelahli/cegw/internal/server"
 )
 
@@ -26,6 +27,12 @@ func main() {
 		logLevel = "info"
 	}
 	log = logger.New(logLevel, os.Stdout)
+
+	// Initialize Prometheus metrics
+	_, err = metrics.InitPrometheus(context.Background())
+	if err != nil {
+		log.WithError(err).Warnf("failed to initialize metrics")
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

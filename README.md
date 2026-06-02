@@ -72,6 +72,10 @@ curl -X POST http://localhost:8080/v1/trading/order \
 - `8080` - HTTP/JSON API
 - `50051` - gRPC API
 
+## Observability
+
+- `/metrics` - Prometheus metrics endpoint (on HTTP port)
+
 ## Configuration
 
 CEGW supports a few simple environment variables:

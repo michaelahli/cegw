@@ -10,6 +10,7 @@ import (
 	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
 	"github.com/michaelahli/cegw/internal/config"
 	"github.com/michaelahli/cegw/internal/logger"
+	"github.com/michaelahli/cegw/internal/metrics"
 	"github.com/michaelahli/cegw/internal/middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -52,6 +53,9 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 
 	// Create main HTTP mux for routing
 	mainMux := http.NewServeMux()
+
+	// Serve Prometheus metrics
+	mainMux.Handle("/metrics", metrics.Handler())
 
 	// Serve static docs
 	fs := http.FileServer(http.Dir("docs"))
