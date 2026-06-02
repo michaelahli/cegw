@@ -3,6 +3,11 @@ proto:
 	@echo "Generating protobuf files..."
 	@bash scripts/protogen.sh
 
+.PHONY: docs
+docs: proto
+	@echo "Merging OpenAPI specifications..."
+	@bash scripts/merge-openapi.sh
+
 .PHONY: build
 build: proto
 	@echo "Building cegw..."
@@ -41,6 +46,7 @@ run: build
 help:
 	@echo "Available targets:"
 	@echo "  proto  - Generate protobuf files"
+	@echo "  docs   - Merge OpenAPI specifications"
 	@echo "  build  - Build the binary"
 	@echo "  test   - Run tests"
 	@echo "  lint   - Run linters"

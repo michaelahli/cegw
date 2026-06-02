@@ -1,12 +1,22 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "cegw/v1/monitoring.proto",
-    "version": "version not set"
+    "title": "CEGW API",
+    "version": "1.0.0",
+    "description": "Crypto Exchange Gateway - Unified API for cryptocurrency exchange integration"
   },
   "tags": [
     {
-      "name": "MonitoringService"
+      "name": "Market Data",
+      "description": "Market data operations"
+    },
+    {
+      "name": "Trading",
+      "description": "Trading operations"
+    },
+    {
+      "name": "Monitoring",
+      "description": "Monitoring and alerts"
     }
   ],
   "consumes": [
@@ -97,7 +107,8 @@
             "name": "symbol",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "pattern": ".+"
           }
         ],
         "tags": [
@@ -187,6 +198,40 @@
         ]
       }
     },
+    "/v1/monitoring/alerts": {
+      "post": {
+        "summary": "Check Price Alerts",
+        "description": "Evaluate price alert conditions against current market prices.",
+        "operationId": "MonitoringService_CheckPriceAlerts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CheckPriceAlertsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CheckPriceAlertsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Monitoring"
+        ]
+      }
+    },
     "/v1/trading/credentials/test": {
       "post": {
         "summary": "Test Credentials",
@@ -252,40 +297,6 @@
         ],
         "tags": [
           "Trading"
-        ]
-      }
-    },
-    "/v1/monitoring/alerts": {
-      "post": {
-        "summary": "Check Price Alerts",
-        "description": "Evaluate price alert conditions against current market prices.",
-        "operationId": "MonitoringService_CheckPriceAlerts",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1CheckPriceAlertsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v1CheckPriceAlertsRequest"
-            }
-          }
-        ],
-        "tags": [
-          "Monitoring"
         ]
       }
     }
@@ -503,6 +514,76 @@
         }
       }
     },
+    "v1AlertStatus": {
+      "type": "string",
+      "enum": [
+        "ALERT_STATUS_UNSPECIFIED",
+        "ALERT_STATUS_PENDING",
+        "ALERT_STATUS_TRIGGERED"
+      ],
+      "default": "ALERT_STATUS_UNSPECIFIED"
+    },
+    "v1CheckPriceAlertsRequest": {
+      "type": "object",
+      "properties": {
+        "exchange": {
+          "$ref": "#/definitions/v1Exchange"
+        },
+        "alerts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1PriceAlert"
+          }
+        }
+      }
+    },
+    "v1CheckPriceAlertsResponse": {
+      "type": "object",
+      "properties": {
+        "alerts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1PriceAlert"
+          }
+        },
+        "checkedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1ComparisonOperator": {
+      "type": "string",
+      "enum": [
+        "COMPARISON_OPERATOR_UNSPECIFIED",
+        "COMPARISON_OPERATOR_GREATER_THAN",
+        "COMPARISON_OPERATOR_LESS_THAN"
+      ],
+      "default": "COMPARISON_OPERATOR_UNSPECIFIED"
+    },
+    "v1PriceAlert": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "targetPrice": {
+          "type": "number",
+          "format": "double"
+        },
+        "operator": {
+          "$ref": "#/definitions/v1ComparisonOperator"
+        },
+        "status": {
+          "$ref": "#/definitions/v1AlertStatus"
+        }
+      }
+    },
     "v1CreateMarketOrderRequest": {
       "type": "object",
       "properties": {
@@ -615,76 +696,6 @@
         },
         "message": {
           "type": "string"
-        }
-      }
-    },
-    "v1AlertStatus": {
-      "type": "string",
-      "enum": [
-        "ALERT_STATUS_UNSPECIFIED",
-        "ALERT_STATUS_PENDING",
-        "ALERT_STATUS_TRIGGERED"
-      ],
-      "default": "ALERT_STATUS_UNSPECIFIED"
-    },
-    "v1CheckPriceAlertsRequest": {
-      "type": "object",
-      "properties": {
-        "exchange": {
-          "$ref": "#/definitions/v1Exchange"
-        },
-        "alerts": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v1PriceAlert"
-          }
-        }
-      }
-    },
-    "v1CheckPriceAlertsResponse": {
-      "type": "object",
-      "properties": {
-        "alerts": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/v1PriceAlert"
-          }
-        },
-        "checkedAt": {
-          "type": "string",
-          "format": "date-time"
-        }
-      }
-    },
-    "v1ComparisonOperator": {
-      "type": "string",
-      "enum": [
-        "COMPARISON_OPERATOR_UNSPECIFIED",
-        "COMPARISON_OPERATOR_GREATER_THAN",
-        "COMPARISON_OPERATOR_LESS_THAN"
-      ],
-      "default": "COMPARISON_OPERATOR_UNSPECIFIED"
-    },
-    "v1PriceAlert": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "symbol": {
-          "type": "string"
-        },
-        "targetPrice": {
-          "type": "number",
-          "format": "double"
-        },
-        "operator": {
-          "$ref": "#/definitions/v1ComparisonOperator"
-        },
-        "status": {
-          "$ref": "#/definitions/v1AlertStatus"
         }
       }
     }
