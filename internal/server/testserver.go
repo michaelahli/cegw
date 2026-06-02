@@ -48,6 +48,7 @@ func NewTestServer(t *testing.T) *TestServer {
 		}
 	}()
 
+	//nolint:staticcheck // bufnet dialer requires DialContext pattern
 	conn, err := grpc.DialContext(ctx, "bufnet",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return listener.Dial()
@@ -72,13 +73,13 @@ func NewTestServer(t *testing.T) *TestServer {
 func (ts *TestServer) Close() {
 	ts.t.Helper()
 	if ts.Conn != nil {
-		ts.Conn.Close()
+		_ = ts.Conn.Close()
 	}
 	if ts.GRPCServer != nil {
 		ts.GRPCServer.server.GracefulStop()
 	}
 	if ts.Listener != nil {
-		ts.Listener.Close()
+		_ = ts.Listener.Close()
 	}
 	if ts.cancel != nil {
 		ts.cancel()
@@ -107,7 +108,7 @@ func GetFreePort() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer l.Close()
+	defer func() { _ = l.Close() }()
 	return l.Addr().(*net.TCPAddr).Port, nil
 }
 

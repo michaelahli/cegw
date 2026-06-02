@@ -33,7 +33,7 @@ func TestHTTP_MarketDataEndpoints(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(resp.Body)
@@ -56,7 +56,7 @@ func TestHTTP_MarketDataEndpoints(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusOK {
 			t.Error("Expected error status for invalid exchange")
@@ -69,7 +69,7 @@ func TestHTTP_MarketDataEndpoints(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusOK {
 			t.Error("Expected error status for invalid exchange")
@@ -83,7 +83,7 @@ func TestHTTP_MarketDataEndpoints(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(resp.Body)
@@ -102,7 +102,7 @@ func TestHTTP_MarketDataEndpoints(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusOK {
 			t.Error("Expected error status for empty query")
@@ -123,7 +123,7 @@ func TestHTTP_MarketDataEndpoints(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(resp.Body)
@@ -159,7 +159,7 @@ func TestHTTP_TradingEndpoints(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusOK {
 			t.Error("Expected error status for missing credentials")
@@ -185,7 +185,7 @@ func TestHTTP_TradingEndpoints(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusOK {
 			t.Error("Expected error status for invalid exchange")
@@ -211,7 +211,7 @@ func TestHTTP_TradingEndpoints(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusOK {
 			t.Error("Expected error status for zero quantity")
@@ -234,7 +234,7 @@ func TestHTTP_TradingEndpoints(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusOK {
 			t.Error("Expected error status for invalid exchange")
@@ -252,7 +252,7 @@ func TestHTTP_TradingEndpoints(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusOK {
 			t.Error("Expected error status for missing credentials")
@@ -291,7 +291,7 @@ func TestHTTP_MonitoringEndpoints(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusOK {
 			t.Error("Expected error status for invalid exchange")
@@ -310,7 +310,7 @@ func TestHTTP_MonitoringEndpoints(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusOK {
 			t.Error("Expected error status for empty alerts")
@@ -335,7 +335,7 @@ func TestHTTP_MonitoringEndpoints(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusOK {
 			t.Error("Expected error status for invalid target price")
@@ -370,7 +370,7 @@ func TestHTTP_ConcurrentRequests(t *testing.T) {
 				errChan <- err
 				return
 			}
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			if resp.StatusCode != http.StatusOK {
 				errChan <- fmt.Errorf("unexpected status: %d", resp.StatusCode)
@@ -408,7 +408,7 @@ func TestHTTP_JSONResponseFormat(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		contentType := resp.Header.Get("Content-Type")
 		if contentType != "application/json" {
@@ -427,7 +427,7 @@ func TestHTTP_JSONResponseFormat(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request failed: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		contentType := resp.Header.Get("Content-Type")
 		if contentType != "application/json" {
