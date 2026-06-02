@@ -3,7 +3,7 @@ replicaCount: 2
 image:
   repository: ghcr.io/michaelahli/cegw
   pullPolicy: IfNotPresent
-  tag: ""
+  tag: "latest"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -25,7 +25,7 @@ securityContext:
   allowPrivilegeEscalation: false
   capabilities:
     drop:
-    - ALL
+      - ALL
   readOnlyRootFilesystem: true
 
 service:
