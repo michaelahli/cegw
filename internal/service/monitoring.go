@@ -29,6 +29,16 @@ func (s *MonitoringService) CheckPriceAlerts(ctx context.Context, req *cegwv1.Ch
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
+	if len(req.Alerts) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "alerts cannot be empty")
+	}
+
+	for _, alert := range req.Alerts {
+		if alert.TargetPrice <= 0 {
+			return nil, status.Error(codes.InvalidArgument, "target_price must be greater than 0")
+		}
+	}
+
 	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, nil)
 	if err != nil {
 		return nil, err
