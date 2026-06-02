@@ -189,7 +189,7 @@ func (s *MarketDataService) SearchTicker(ctx context.Context, req *cegwv1.Search
 	}
 
 	if req.Query == "" {
-		return &cegwv1.SearchTickerResponse{Tickers: s.avail}, nil
+		return nil, status.Error(codes.InvalidArgument, "query is required")
 	}
 
 	var filtered []*cegwv1.Ticker

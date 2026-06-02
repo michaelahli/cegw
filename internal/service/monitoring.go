@@ -34,8 +34,14 @@ func (s *MonitoringService) CheckPriceAlerts(ctx context.Context, req *cegwv1.Ch
 	}
 
 	for _, alert := range req.Alerts {
+		if alert.Symbol == "" {
+			return nil, status.Error(codes.InvalidArgument, "alert symbol is required")
+		}
 		if alert.TargetPrice <= 0 {
 			return nil, status.Error(codes.InvalidArgument, "target_price must be greater than 0")
+		}
+		if alert.Operator == cegwv1.ComparisonOperator_COMPARISON_OPERATOR_UNSPECIFIED {
+			return nil, status.Error(codes.InvalidArgument, "alert operator is required")
 		}
 	}
 

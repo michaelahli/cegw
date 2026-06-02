@@ -46,6 +46,30 @@ func (s *TradingService) CreateMarketOrder(ctx context.Context, req *cegwv1.Crea
 		return nil, status.Error(codes.InvalidArgument, "credentials are required")
 	}
 
+	if req.Credentials.ApiKey == "" {
+		return nil, status.Error(codes.InvalidArgument, "api_key is required")
+	}
+
+	if req.Credentials.ApiSecret == "" {
+		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
+	}
+
+	if req.Credentials.ApiKey == "" {
+		return nil, status.Error(codes.InvalidArgument, "api_key is required")
+	}
+
+	if req.Credentials.ApiSecret == "" {
+		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
+	}
+
+	if req.Credentials.ApiKey == "" {
+		return nil, status.Error(codes.InvalidArgument, "api_key is required")
+	}
+
+	if req.Credentials.ApiSecret == "" {
+		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
+	}
+
 	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, req.Credentials)
 	if err != nil {
 		return nil, err
@@ -132,6 +156,14 @@ func (s *TradingService) TestCredentials(ctx context.Context, req *cegwv1.TestCr
 
 	if req.Credentials == nil {
 		return nil, status.Error(codes.InvalidArgument, "credentials are required")
+	}
+
+	if req.Credentials.ApiKey == "" {
+		return nil, status.Error(codes.InvalidArgument, "api_key is required")
+	}
+
+	if req.Credentials.ApiSecret == "" {
+		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
 	}
 
 	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, req.Credentials)
