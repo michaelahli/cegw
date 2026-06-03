@@ -1,0 +1,703 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "CEGW API",
+    "version": "1.0.0",
+    "description": "Crypto Exchange Gateway - Unified API for cryptocurrency exchange integration"
+  },
+  "tags": [
+    {
+      "name": "Market Data",
+      "description": "Market data operations"
+    },
+    {
+      "name": "Trading",
+      "description": "Trading operations"
+    },
+    {
+      "name": "Monitoring",
+      "description": "Monitoring and alerts"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/market/list": {
+      "get": {
+        "summary": "List Markets",
+        "description": "Get all available trading pairs for an exchange.",
+        "operationId": "MarketDataService_ListMarkets",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListMarketsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "exchange",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "EXCHANGE_UNSPECIFIED",
+              "EXCHANGE_TOKOCRYPTO",
+              "EXCHANGE_BINANCE",
+              "EXCHANGE_COINBASE",
+              "EXCHANGE_CEXIO",
+              "EXCHANGE_INDODAX",
+              "EXCHANGE_OKX"
+            ],
+            "default": "EXCHANGE_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "Market Data"
+        ]
+      }
+    },
+    "/v1/market/price/{exchange}/{symbol}": {
+      "get": {
+        "summary": "Get Current Price",
+        "description": "Retrieves the latest ticker price for a trading pair.",
+        "operationId": "MarketDataService_GetCurrentPrice",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetCurrentPriceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "exchange",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "EXCHANGE_UNSPECIFIED",
+              "EXCHANGE_TOKOCRYPTO",
+              "EXCHANGE_BINANCE",
+              "EXCHANGE_COINBASE",
+              "EXCHANGE_CEXIO",
+              "EXCHANGE_INDODAX",
+              "EXCHANGE_OKX"
+            ]
+          },
+          {
+            "name": "symbol",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "pattern": ".+"
+          }
+        ],
+        "tags": [
+          "Market Data"
+        ]
+      }
+    },
+    "/v1/market/quotes": {
+      "post": {
+        "summary": "Get Historical Quotes",
+        "description": "Retrieves historical OHLCV (Open, High, Low, Close, Volume) data for a trading pair from the specified exchange.",
+        "operationId": "MarketDataService_GetQuotes",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetQuotesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1GetQuotesRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Market Data"
+        ]
+      }
+    },
+    "/v1/market/search": {
+      "get": {
+        "summary": "Search Tickers",
+        "description": "Search available trading pairs by query string.",
+        "operationId": "MarketDataService_SearchTicker",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1SearchTickerResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "exchange",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "EXCHANGE_UNSPECIFIED",
+              "EXCHANGE_TOKOCRYPTO",
+              "EXCHANGE_BINANCE",
+              "EXCHANGE_COINBASE",
+              "EXCHANGE_CEXIO",
+              "EXCHANGE_INDODAX",
+              "EXCHANGE_OKX"
+            ],
+            "default": "EXCHANGE_UNSPECIFIED"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Market Data"
+        ]
+      }
+    },
+    "/v1/monitoring/alerts": {
+      "post": {
+        "summary": "Check Price Alerts",
+        "description": "Evaluate price alert conditions against current market prices.",
+        "operationId": "MonitoringService_CheckPriceAlerts",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CheckPriceAlertsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CheckPriceAlertsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Monitoring"
+        ]
+      }
+    },
+    "/v1/trading/credentials/test": {
+      "post": {
+        "summary": "Test Credentials",
+        "description": "Validate API credentials for an exchange.",
+        "operationId": "TradingService_TestCredentials",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1TestCredentialsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1TestCredentialsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Trading"
+        ]
+      }
+    },
+    "/v1/trading/order": {
+      "post": {
+        "summary": "Create Market Order",
+        "description": "Place a market buy or sell order on the specified exchange.",
+        "operationId": "TradingService_CreateMarketOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateMarketOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateMarketOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Trading"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1Exchange": {
+      "type": "string",
+      "enum": [
+        "EXCHANGE_UNSPECIFIED",
+        "EXCHANGE_TOKOCRYPTO",
+        "EXCHANGE_BINANCE",
+        "EXCHANGE_COINBASE",
+        "EXCHANGE_CEXIO",
+        "EXCHANGE_INDODAX",
+        "EXCHANGE_OKX"
+      ],
+      "default": "EXCHANGE_UNSPECIFIED"
+    },
+    "v1GetCurrentPriceResponse": {
+      "type": "object",
+      "properties": {
+        "symbol": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number",
+          "format": "double"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1GetQuotesRequest": {
+      "type": "object",
+      "properties": {
+        "exchange": {
+          "$ref": "#/definitions/v1Exchange"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "interval": {
+          "$ref": "#/definitions/v1Interval"
+        },
+        "start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1GetQuotesResponse": {
+      "type": "object",
+      "properties": {
+        "quotes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Quote"
+          }
+        },
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1Interval": {
+      "type": "string",
+      "enum": [
+        "INTERVAL_UNSPECIFIED",
+        "INTERVAL_1M",
+        "INTERVAL_5M",
+        "INTERVAL_30M",
+        "INTERVAL_1H",
+        "INTERVAL_1D",
+        "INTERVAL_1W",
+        "INTERVAL_1M_MONTH"
+      ],
+      "default": "INTERVAL_UNSPECIFIED"
+    },
+    "v1ListMarketsResponse": {
+      "type": "object",
+      "properties": {
+        "markets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Market"
+          }
+        },
+        "count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1Market": {
+      "type": "object",
+      "properties": {
+        "symbol": {
+          "type": "string"
+        },
+        "base": {
+          "type": "string"
+        },
+        "quote": {
+          "type": "string"
+        },
+        "active": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1OHLCV": {
+      "type": "object",
+      "properties": {
+        "high": {
+          "type": "number",
+          "format": "double"
+        },
+        "low": {
+          "type": "number",
+          "format": "double"
+        },
+        "open": {
+          "type": "number",
+          "format": "double"
+        },
+        "close": {
+          "type": "number",
+          "format": "double"
+        },
+        "volume": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "v1Quote": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ohlcv": {
+          "$ref": "#/definitions/v1OHLCV"
+        }
+      }
+    },
+    "v1SearchTickerResponse": {
+      "type": "object",
+      "properties": {
+        "tickers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Ticker"
+          }
+        }
+      }
+    },
+    "v1Ticker": {
+      "type": "object",
+      "properties": {
+        "symbol": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "base": {
+          "type": "string"
+        },
+        "quote": {
+          "type": "string"
+        }
+      }
+    },
+    "v1AlertStatus": {
+      "type": "string",
+      "enum": [
+        "ALERT_STATUS_UNSPECIFIED",
+        "ALERT_STATUS_PENDING",
+        "ALERT_STATUS_TRIGGERED"
+      ],
+      "default": "ALERT_STATUS_UNSPECIFIED"
+    },
+    "v1CheckPriceAlertsRequest": {
+      "type": "object",
+      "properties": {
+        "exchange": {
+          "$ref": "#/definitions/v1Exchange"
+        },
+        "alerts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1PriceAlert"
+          }
+        }
+      }
+    },
+    "v1CheckPriceAlertsResponse": {
+      "type": "object",
+      "properties": {
+        "alerts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1PriceAlert"
+          }
+        },
+        "checkedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1ComparisonOperator": {
+      "type": "string",
+      "enum": [
+        "COMPARISON_OPERATOR_UNSPECIFIED",
+        "COMPARISON_OPERATOR_GREATER_THAN",
+        "COMPARISON_OPERATOR_LESS_THAN"
+      ],
+      "default": "COMPARISON_OPERATOR_UNSPECIFIED"
+    },
+    "v1PriceAlert": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "targetPrice": {
+          "type": "number",
+          "format": "double"
+        },
+        "operator": {
+          "$ref": "#/definitions/v1ComparisonOperator"
+        },
+        "status": {
+          "$ref": "#/definitions/v1AlertStatus"
+        }
+      }
+    },
+    "v1CreateMarketOrderRequest": {
+      "type": "object",
+      "properties": {
+        "exchange": {
+          "$ref": "#/definitions/v1Exchange"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "side": {
+          "$ref": "#/definitions/v1OrderSide"
+        },
+        "quantity": {
+          "type": "number",
+          "format": "double"
+        },
+        "credentials": {
+          "$ref": "#/definitions/v1Credentials"
+        }
+      }
+    },
+    "v1CreateMarketOrderResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/v1Order"
+        }
+      }
+    },
+    "v1Credentials": {
+      "type": "object",
+      "properties": {
+        "apiKey": {
+          "type": "string"
+        },
+        "apiSecret": {
+          "type": "string"
+        },
+        "sandbox": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1Order": {
+      "type": "object",
+      "properties": {
+        "orderId": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "side": {
+          "$ref": "#/definitions/v1OrderSide"
+        },
+        "quantity": {
+          "type": "number",
+          "format": "double"
+        },
+        "price": {
+          "type": "number",
+          "format": "double"
+        },
+        "status": {
+          "$ref": "#/definitions/v1OrderStatus"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1OrderSide": {
+      "type": "string",
+      "enum": [
+        "ORDER_SIDE_UNSPECIFIED",
+        "ORDER_SIDE_BUY",
+        "ORDER_SIDE_SELL"
+      ],
+      "default": "ORDER_SIDE_UNSPECIFIED"
+    },
+    "v1OrderStatus": {
+      "type": "string",
+      "enum": [
+        "ORDER_STATUS_UNSPECIFIED",
+        "ORDER_STATUS_NEW",
+        "ORDER_STATUS_FILLED",
+        "ORDER_STATUS_PARTIALLY_FILLED",
+        "ORDER_STATUS_CANCELED",
+        "ORDER_STATUS_REJECTED"
+      ],
+      "default": "ORDER_STATUS_UNSPECIFIED"
+    },
+    "v1TestCredentialsRequest": {
+      "type": "object",
+      "properties": {
+        "exchange": {
+          "$ref": "#/definitions/v1Exchange"
+        },
+        "credentials": {
+          "$ref": "#/definitions/v1Credentials"
+        }
+      }
+    },
+    "v1TestCredentialsResponse": {
+      "type": "object",
+      "properties": {
+        "valid": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
