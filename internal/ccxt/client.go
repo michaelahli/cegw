@@ -534,6 +534,95 @@ func (c *CEXIOClient) Client(ctx context.Context) (*ccxt.Cex, error) {
 	return exchange, nil
 }
 
+type KuCoinClient struct {
+	config ClientConfig
+	log    *logger.Logger
+}
+
+func NewKuCoinClient(cfg ClientConfig, log *logger.Logger) *KuCoinClient {
+	return &KuCoinClient{
+		config: cfg,
+		log:    log,
+	}
+}
+
+func (c *KuCoinClient) Client(ctx context.Context) (*ccxt.Kucoin, error) {
+	log := c.log.WithContext(ctx).WithField("operation", "InitializeKuCoinClient")
+
+	config := make(map[string]any)
+
+	if c.config.APIKey != "" {
+		config["apiKey"] = c.config.APIKey
+		config["secret"] = c.config.APISecret
+		log.Debugf("configuring with API credentials")
+	}
+
+	if c.config.Options != nil {
+		config["options"] = c.config.Options
+	}
+
+	if c.config.Sandbox {
+		log.Debugf("enabling sandbox mode")
+		if config["options"] == nil {
+			config["options"] = make(map[string]any)
+		}
+		opts := config["options"].(map[string]any)
+		opts["sandboxMode"] = true
+	}
+
+	log.Debugf("creating KuCoin exchange instance")
+	exchange := ccxt.NewKucoin(config)
+
+	if c.config.ProxyURL != nil {
+		log.WithField("proxy_scheme", c.config.ProxyURL.Scheme).
+			WithField("proxy_host", c.config.ProxyURL.Host).
+			Debugf("configuring proxy")
+
+		transport := &http.Transport{}
+
+		switch c.config.ProxyURL.Scheme {
+		case "socks5":
+			var auth *proxy.Auth
+			if c.config.ProxyURL.User != nil {
+				password, _ := c.config.ProxyURL.User.Password()
+				auth = &proxy.Auth{
+					User:     c.config.ProxyURL.User.Username(),
+					Password: password,
+				}
+				log.Debugf("SOCKS5 proxy configured with authentication")
+			} else {
+				log.Debugf("SOCKS5 proxy configured without authentication")
+			}
+
+			dialer, err := proxy.SOCKS5("tcp", c.config.ProxyURL.Host, auth, proxy.Direct)
+			if err != nil {
+				log.WithError(err).Errorf("failed to create SOCKS5 proxy dialer")
+				return nil, status.Error(codes.Internal, "network connection failed")
+			}
+			transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+				if !shouldUseProxy(addr) {
+					log.WithField("addr", addr).Debugf("bypassing proxy due to NO_PROXY")
+					return proxy.Direct.Dial(network, addr)
+				}
+				return dialer.Dial(network, addr)
+			}
+		default:
+			log.Debugf("configuring HTTP proxy")
+			transport.Proxy = http.ProxyURL(c.config.ProxyURL)
+		}
+
+		v := reflect.ValueOf(exchange).Elem()
+		f := v.FieldByName("httpClient")
+		client := *(**http.Client)(unsafe.Pointer(f.UnsafeAddr())) // nolint:gosec
+		client.Transport = transport
+		client.Timeout = 30 * time.Second
+		log.Debugf("HTTP client transport updated with proxy configuration")
+	}
+
+	log.Infof("KuCoin client initialized successfully")
+	return exchange, nil
+}
+
 func ProxyFromEnv(log *logger.Logger) *url.URL {
 	proxyStr := os.Getenv("HTTPS_PROXY")
 	if proxyStr == "" {

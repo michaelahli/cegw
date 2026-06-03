@@ -118,6 +118,7 @@ Use the included `docker-compose.yml` to start the service locally.
 - CEX.IO
 - Indodax
 - OKX
+- KuCoin
 
 ## License
 
