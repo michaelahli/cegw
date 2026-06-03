@@ -16,6 +16,7 @@ enum Exchange {
   EXCHANGE_CRYPTOCOM = 8;
   EXCHANGE_BYBIT = 9;
   EXCHANGE_BITGET = 10;
+  EXCHANGE_COINEX = 11;
 }
 
 enum Interval {

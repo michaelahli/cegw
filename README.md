@@ -122,6 +122,7 @@ Use the included `docker-compose.yml` to start the service locally.
 - Crypto.com
 - Bybit
 - Bitget
+- Coinex
 
 ## License
 
