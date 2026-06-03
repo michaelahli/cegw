@@ -34,21 +34,23 @@ const (
 	Exchange_EXCHANGE_KUCOIN      Exchange = 7
 	Exchange_EXCHANGE_CRYPTOCOM   Exchange = 8
 	Exchange_EXCHANGE_BYBIT       Exchange = 9
+	Exchange_EXCHANGE_BITGET      Exchange = 10
 )
 
 // Enum value maps for Exchange.
 var (
 	Exchange_name = map[int32]string{
-		0: "EXCHANGE_UNSPECIFIED",
-		1: "EXCHANGE_TOKOCRYPTO",
-		2: "EXCHANGE_BINANCE",
-		3: "EXCHANGE_COINBASE",
-		4: "EXCHANGE_CEXIO",
-		5: "EXCHANGE_INDODAX",
-		6: "EXCHANGE_OKX",
-		7: "EXCHANGE_KUCOIN",
-		8: "EXCHANGE_CRYPTOCOM",
-		9: "EXCHANGE_BYBIT",
+		0:  "EXCHANGE_UNSPECIFIED",
+		1:  "EXCHANGE_TOKOCRYPTO",
+		2:  "EXCHANGE_BINANCE",
+		3:  "EXCHANGE_COINBASE",
+		4:  "EXCHANGE_CEXIO",
+		5:  "EXCHANGE_INDODAX",
+		6:  "EXCHANGE_OKX",
+		7:  "EXCHANGE_KUCOIN",
+		8:  "EXCHANGE_CRYPTOCOM",
+		9:  "EXCHANGE_BYBIT",
+		10: "EXCHANGE_BITGET",
 	}
 	Exchange_value = map[string]int32{
 		"EXCHANGE_UNSPECIFIED": 0,
@@ -61,6 +63,7 @@ var (
 		"EXCHANGE_KUCOIN":      7,
 		"EXCHANGE_CRYPTOCOM":   8,
 		"EXCHANGE_BYBIT":       9,
+		"EXCHANGE_BITGET":      10,
 	}
 )
 
@@ -511,7 +514,7 @@ const file_cegw_v1_common_proto_rawDesc = "" +
 	"\aapi_key\x18\x01 \x01(\tR\x06apiKey\x12\x1d\n" +
 	"\n" +
 	"api_secret\x18\x02 \x01(\tR\tapiSecret\x12\x18\n" +
-	"\asandbox\x18\x03 \x01(\bR\asandbox*\xe7\x01\n" +
+	"\asandbox\x18\x03 \x01(\bR\asandbox*\xfc\x01\n" +
 	"\bExchange\x12\x18\n" +
 	"\x14EXCHANGE_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13EXCHANGE_TOKOCRYPTO\x10\x01\x12\x14\n" +
@@ -522,7 +525,9 @@ const file_cegw_v1_common_proto_rawDesc = "" +
 	"\fEXCHANGE_OKX\x10\x06\x12\x13\n" +
 	"\x0fEXCHANGE_KUCOIN\x10\a\x12\x16\n" +
 	"\x12EXCHANGE_CRYPTOCOM\x10\b\x12\x12\n" +
-	"\x0eEXCHANGE_BYBIT\x10\t*\xa2\x01\n" +
+	"\x0eEXCHANGE_BYBIT\x10\t\x12\x13\n" +
+	"\x0fEXCHANGE_BITGET\x10\n" +
+	"*\xa2\x01\n" +
 	"\bInterval\x12\x18\n" +
 	"\x14INTERVAL_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vINTERVAL_1M\x10\x01\x12\x0f\n" +

@@ -67,6 +67,9 @@ func NewClientForExchange(ctx context.Context, exchange cegwv1.Exchange, creds *
 	case cegwv1.Exchange_EXCHANGE_BYBIT:
 		client := NewBybitClient(cfg, log)
 		return client.Client(ctx)
+	case cegwv1.Exchange_EXCHANGE_BITGET:
+		client := NewBitgetClient(cfg, log)
+		return client.Client(ctx)
 	default:
 		log.WithContext(ctx).
 			WithField("exchange", exchange.String()).

@@ -32,6 +32,8 @@ func AsExchange(client interface{}) Exchange {
 		return v
 	case *ccxt.Bybit:
 		return v
+	case *ccxt.Bitget:
+		return v
 	default:
 		return nil
 	}

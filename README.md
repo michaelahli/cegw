@@ -121,6 +121,7 @@ Use the included `docker-compose.yml` to start the service locally.
 - KuCoin
 - Crypto.com
 - Bybit
+- Bitget
 
 ## License
 
