@@ -58,6 +58,11 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 	// Serve Prometheus metrics
 	mainMux.Handle("/metrics", metrics.Handler())
 
+	// Serve OpenAPI documentation
+	mainMux.HandleFunc("/docs", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "docs/openapi.json")
+	})
+
 	// Health check endpoints for Kubernetes
 	grpcEndpointHealth := fmt.Sprintf("localhost:%s", s.cfg.GRPCPort)
 	mainMux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
