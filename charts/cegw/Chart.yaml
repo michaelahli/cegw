@@ -2,8 +2,8 @@ apiVersion: v2
 name: cegw
 description: Crypto Exchange Gateway - HTTP and gRPC API for cryptocurrency exchanges
 type: application
-version: 1.0.1
-appVersion: "0.0.7"
+version: 1.0.2
+appVersion: "0.0.10"
 keywords:
   - cryptocurrency
   - exchange
