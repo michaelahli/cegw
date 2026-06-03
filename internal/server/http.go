@@ -14,6 +14,7 @@ import (
 	"github.com/michaelahli/cegw/internal/middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
 type HTTPServer struct {
@@ -56,6 +57,55 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 
 	// Serve Prometheus metrics
 	mainMux.Handle("/metrics", metrics.Handler())
+
+	// Health check endpoints for Kubernetes
+	grpcEndpointHealth := fmt.Sprintf("localhost:%s", s.cfg.GRPCPort)
+	mainMux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+		defer cancel()
+
+		conn, err := grpc.DialContext(ctx, grpcEndpointHealth, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte("unhealthy"))
+			return
+		}
+		defer conn.Close()
+
+		healthClient := grpc_health_v1.NewHealthClient(conn)
+		resp, err := healthClient.Check(ctx, &grpc_health_v1.HealthCheckRequest{})
+		if err != nil || resp.Status != grpc_health_v1.HealthCheckResponse_SERVING {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte("unhealthy"))
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+	mainMux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+		defer cancel()
+
+		conn, err := grpc.DialContext(ctx, grpcEndpointHealth, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte("not ready"))
+			return
+		}
+		defer conn.Close()
+
+		healthClient := grpc_health_v1.NewHealthClient(conn)
+		resp, err := healthClient.Check(ctx, &grpc_health_v1.HealthCheckRequest{})
+		if err != nil || resp.Status != grpc_health_v1.HealthCheckResponse_SERVING {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write([]byte("not ready"))
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ready"))
+	})
 
 	// Mount gRPC gateway under root path with logging middleware
 	mainMux.Handle("/", middleware.HTTPLoggingMiddleware(s.log)(mux))

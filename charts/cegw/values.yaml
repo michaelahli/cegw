@@ -75,16 +75,18 @@ config:
   noProxy: ""
 
 livenessProbe:
-  grpc:
-    port: 50051
+  httpGet:
+    path: /healthz
+    port: 8080
   initialDelaySeconds: 10
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 3
 
 readinessProbe:
-  grpc:
-    port: 50051
+  httpGet:
+    path: /readyz
+    port: 8080
   initialDelaySeconds: 5
   periodSeconds: 5
   timeoutSeconds: 3
