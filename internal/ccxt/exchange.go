@@ -36,6 +36,8 @@ func AsExchange(client interface{}) Exchange {
 		return v
 	case *ccxt.Coinex:
 		return v
+	case *ccxt.Hashkey:
+		return v
 	default:
 		return nil
 	}
