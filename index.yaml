@@ -2,6 +2,27 @@ apiVersion: v1
 entries:
   cegw:
   - apiVersion: v2
+    appVersion: 0.0.12
+    created: "2026-06-03T15:49:15.576877538Z"
+    description: Crypto Exchange Gateway - HTTP and gRPC API for cryptocurrency exchanges
+    digest: 281af2c2693e3f9da9002a09204d6aff5cd0e4d109d420d0e277a307a9aaa447
+    home: https://github.com/michaelahli/cegw
+    keywords:
+    - cryptocurrency
+    - exchange
+    - grpc
+    - api
+    - ccxt
+    maintainers:
+    - name: Michael Ahli
+    name: cegw
+    sources:
+    - https://github.com/michaelahli/cegw
+    type: application
+    urls:
+    - https://github.com/michaelahli/cegw/releases/download/cegw-1.0.3/cegw-1.0.3.tgz
+    version: 1.0.3
+  - apiVersion: v2
     appVersion: 0.0.10
     created: "2026-06-03T07:48:44.671450687Z"
     description: Crypto Exchange Gateway - HTTP and gRPC API for cryptocurrency exchanges
@@ -64,4 +85,4 @@ entries:
     urls:
     - https://github.com/michaelahli/cegw/releases/download/cegw-1.0.0/cegw-1.0.0.tgz
     version: 1.0.0
-generated: "2026-06-03T07:48:44.671461818Z"
+generated: "2026-06-03T15:49:15.576895151Z"
