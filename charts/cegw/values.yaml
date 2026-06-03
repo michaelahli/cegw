@@ -73,6 +73,13 @@ config:
   httpsProxy: ""
   httpProxy: ""
   noProxy: ""
+  auth:
+    enabled: false
+    type: "basic"  # basic or oauth2
+    basicUsername: ""
+    basicPassword: ""
+    oauth2Issuer: ""
+    oauth2Audience: ""
 
 livenessProbe:
   httpGet:

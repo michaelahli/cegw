@@ -25,6 +25,26 @@ helm install cegw cegw/cegw \
   --set resources.limits.memory=512Mi
 ```
 
+### Enable Basic Authentication
+
+```bash
+helm install cegw cegw/cegw \
+  --set config.auth.enabled=true \
+  --set config.auth.type=basic \
+  --set config.auth.basicUsername=admin \
+  --set config.auth.basicPassword=secret
+```
+
+### Enable OAuth2 Authentication
+
+```bash
+helm install cegw cegw/cegw \
+  --set config.auth.enabled=true \
+  --set config.auth.type=oauth2 \
+  --set config.auth.oauth2Issuer=https://accounts.google.com \
+  --set config.auth.oauth2Audience=your-app-id
+```
+
 ## Configuration
 
 See [values.yaml](charts/cegw/values.yaml) for all configuration options.
@@ -41,6 +61,12 @@ See [values.yaml](charts/cegw/values.yaml) for all configuration options.
 | `config.httpsProxy` | HTTPS proxy URL (supports http/https/socks5) | `""` |
 | `config.httpProxy` | HTTP proxy URL (supports http/https/socks5) | `""` |
 | `config.noProxy` | Comma-separated list of hosts to bypass proxy | `""` |
+| `config.auth.enabled` | Enable authentication | `false` |
+| `config.auth.type` | Auth type: `basic` or `oauth2` | `"basic"` |
+| `config.auth.basicUsername` | Basic auth username | `""` |
+| `config.auth.basicPassword` | Basic auth password | `""` |
+| `config.auth.oauth2Issuer` | OAuth2 issuer URL | `""` |
+| `config.auth.oauth2Audience` | OAuth2 audience | `""` |
 
 ## Uninstall
 

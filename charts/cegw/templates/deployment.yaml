@@ -63,6 +63,32 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.config.noProxy | quote }}
         {{- end }}
+        {{- if .Values.config.auth.enabled }}
+        - name: AUTH_ENABLED
+          value: {{ .Values.config.auth.enabled | quote }}
+        - name: AUTH_TYPE
+          value: {{ .Values.config.auth.type | quote }}
+        {{- if eq .Values.config.auth.type "basic" }}
+        {{- if .Values.config.auth.basicUsername }}
+        - name: AUTH_BASIC_USERNAME
+          value: {{ .Values.config.auth.basicUsername | quote }}
+        {{- end }}
+        {{- if .Values.config.auth.basicPassword }}
+        - name: AUTH_BASIC_PASSWORD
+          value: {{ .Values.config.auth.basicPassword | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if eq .Values.config.auth.type "oauth2" }}
+        {{- if .Values.config.auth.oauth2Issuer }}
+        - name: AUTH_OAUTH2_ISSUER
+          value: {{ .Values.config.auth.oauth2Issuer | quote }}
+        {{- end }}
+        {{- if .Values.config.auth.oauth2Audience }}
+        - name: AUTH_OAUTH2_AUDIENCE
+          value: {{ .Values.config.auth.oauth2Audience | quote }}
+        {{- end }}
+        {{- end }}
+        {{- end }}
         livenessProbe:
           {{- toYaml .Values.livenessProbe | nindent 12 }}
         readinessProbe:
