@@ -18,6 +18,8 @@ func AsExchange(client interface{}) Exchange {
 		return v
 	case *ccxt.Binance:
 		return v
+	case *ccxt.Coinbase:
+		return v
 	default:
 		return nil
 	}
