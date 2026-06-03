@@ -13,19 +13,22 @@ import (
 	"github.com/michaelahli/cegw/internal/ccxt"
 	"github.com/michaelahli/cegw/internal/config"
 	"github.com/michaelahli/cegw/internal/logger"
+	"github.com/michaelahli/cegw/internal/metrics"
 )
 
 type MarketDataService struct {
 	cegwv1.UnimplementedMarketDataServiceServer
-	cfg   *config.Config
-	log   *logger.Logger
-	avail []*cegwv1.Ticker
+	cfg     *config.Config
+	log     *logger.Logger
+	avail   []*cegwv1.Ticker
+	metrics *metrics.Metrics
 }
 
-func NewMarketDataService(cfg *config.Config, log *logger.Logger) *MarketDataService {
+func NewMarketDataService(cfg *config.Config, log *logger.Logger, m *metrics.Metrics) *MarketDataService {
 	svc := &MarketDataService{
-		cfg: cfg,
-		log: log,
+		cfg:     cfg,
+		log:     log,
+		metrics: m,
 	}
 	go svc.cacheMarkets()
 	return svc

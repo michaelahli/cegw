@@ -8,6 +8,7 @@ import (
 	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
 	"github.com/michaelahli/cegw/internal/config"
 	"github.com/michaelahli/cegw/internal/logger"
+	"github.com/michaelahli/cegw/internal/metrics"
 	"github.com/michaelahli/cegw/internal/middleware"
 	"github.com/michaelahli/cegw/internal/service"
 	"google.golang.org/grpc"
@@ -23,14 +24,27 @@ type GRPCServer struct {
 }
 
 func NewGRPCServer(cfg *config.Config, log *logger.Logger) *GRPCServer {
+	m, err := metrics.New(context.Background())
+	if err != nil {
+		log.WithError(err).Warnf("failed to initialize metrics")
+		m = nil
+	}
+
+	interceptors := []grpc.UnaryServerInterceptor{
+		middleware.GRPCUnaryLoggingInterceptor(log),
+	}
+	if m != nil {
+		interceptors = append(interceptors, middleware.GRPCMetricsInterceptor(m))
+	}
+
 	s := grpc.NewServer(
-		grpc.UnaryInterceptor(middleware.GRPCUnaryLoggingInterceptor(log)),
+		grpc.ChainUnaryInterceptor(interceptors...),
 		grpc.StreamInterceptor(middleware.GRPCStreamLoggingInterceptor(log)),
 	)
 
-	marketDataSvc := service.NewMarketDataService(cfg, log)
-	tradingSvc := service.NewTradingService(cfg, log)
-	monitoringSvc := service.NewMonitoringService(cfg, log)
+	marketDataSvc := service.NewMarketDataService(cfg, log, m)
+	tradingSvc := service.NewTradingService(cfg, log, m)
+	monitoringSvc := service.NewMonitoringService(cfg, log, m)
 
 	cegwv1.RegisterMarketDataServiceServer(s, marketDataSvc)
 	cegwv1.RegisterTradingServiceServer(s, tradingSvc)

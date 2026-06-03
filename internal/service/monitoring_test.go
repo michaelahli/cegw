@@ -18,7 +18,7 @@ func TestMonitoringService_CheckPriceAlerts(t *testing.T) {
 		SandboxMode: true,
 	}
 
-	svc := NewMonitoringService(cfg, newTestLogger())
+	svc := NewMonitoringService(cfg, newTestLogger(), nil)
 	ctx := context.Background()
 
 	tests := []struct {

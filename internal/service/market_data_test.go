@@ -18,7 +18,7 @@ func TestMarketDataService_GetCurrentPrice(t *testing.T) {
 		SandboxMode: true,
 	}
 
-	svc := NewMarketDataService(cfg, newTestLogger())
+	svc := NewMarketDataService(cfg, newTestLogger(), nil)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -89,7 +89,7 @@ func TestMarketDataService_ListMarkets(t *testing.T) {
 		SandboxMode: true,
 	}
 
-	svc := NewMarketDataService(cfg, newTestLogger())
+	svc := NewMarketDataService(cfg, newTestLogger(), nil)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -158,7 +158,7 @@ func TestMarketDataService_SearchTicker(t *testing.T) {
 		SandboxMode: true,
 	}
 
-	svc := NewMarketDataService(cfg, newTestLogger())
+	svc := NewMarketDataService(cfg, newTestLogger(), nil)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -226,7 +226,7 @@ func TestMarketDataService_GetQuotes(t *testing.T) {
 		SandboxMode: true,
 	}
 
-	svc := NewMarketDataService(cfg, newTestLogger())
+	svc := NewMarketDataService(cfg, newTestLogger(), nil)
 	ctx := context.Background()
 
 	tests := []struct {

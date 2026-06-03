@@ -13,18 +13,21 @@ import (
 	"github.com/michaelahli/cegw/internal/ccxt"
 	"github.com/michaelahli/cegw/internal/config"
 	"github.com/michaelahli/cegw/internal/logger"
+	"github.com/michaelahli/cegw/internal/metrics"
 )
 
 type TradingService struct {
 	cegwv1.UnimplementedTradingServiceServer
-	cfg *config.Config
-	log *logger.Logger
+	cfg     *config.Config
+	log     *logger.Logger
+	metrics *metrics.Metrics
 }
 
-func NewTradingService(cfg *config.Config, log *logger.Logger) *TradingService {
+func NewTradingService(cfg *config.Config, log *logger.Logger, m *metrics.Metrics) *TradingService {
 	return &TradingService{
-		cfg: cfg,
-		log: log,
+		cfg:     cfg,
+		log:     log,
+		metrics: m,
 	}
 }
 

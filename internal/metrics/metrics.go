@@ -11,6 +11,8 @@ type Metrics struct {
 	RequestCount    metric.Int64Counter
 	RequestDuration metric.Float64Histogram
 	ErrorCount      metric.Int64Counter
+	CCXTCallCount   metric.Int64Counter
+	CCXTCallDuration metric.Float64Histogram
 }
 
 func New(ctx context.Context) (*Metrics, error) {
@@ -41,9 +43,28 @@ func New(ctx context.Context) (*Metrics, error) {
 		return nil, err
 	}
 
+	ccxtCallCount, err := meter.Int64Counter(
+		"cegw.ccxt.calls.total",
+		metric.WithDescription("Total number of CCXT API calls"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	ccxtCallDuration, err := meter.Float64Histogram(
+		"cegw.ccxt.call.duration",
+		metric.WithDescription("CCXT API call duration in seconds"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Metrics{
-		RequestCount:    requestCount,
-		RequestDuration: requestDuration,
-		ErrorCount:      errorCount,
+		RequestCount:     requestCount,
+		RequestDuration:  requestDuration,
+		ErrorCount:       errorCount,
+		CCXTCallCount:    ccxtCallCount,
+		CCXTCallDuration: ccxtCallDuration,
 	}, nil
 }
