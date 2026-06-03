@@ -1,3 +1,4 @@
+// Package client provides a simple gRPC client for CEGW API.
 package client
 
 import (
@@ -36,13 +37,9 @@ func New(ctx context.Context, cfg Config) (*Client, error) {
 
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithBlock(),
 	}
 
-	dialCtx, cancel := context.WithTimeout(ctx, cfg.Timeout)
-	defer cancel()
-
-	conn, err := grpc.DialContext(dialCtx, cfg.Address, opts...)
+	conn, err := grpc.NewClient(cfg.Address, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect: %w", err)
 	}
