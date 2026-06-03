@@ -33,9 +33,6 @@ go.work.sum
 .idea/
 .vscode/
 
-# Generated protobuf files
-gen/
-*.pb.go
-*.pb.gw.go
+# Generated protobuf files (committed for easy go get)
 *.swagger.json
 *.swagger.yaml
