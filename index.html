@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CEGW - Cryptocurrency Exchange Gateway</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+</head>
+<body>
+  <h1>🚀 CEGW</h1>
+  <p><strong>Cryptocurrency Exchange Gateway</strong> - Unified HTTP/JSON API and gRPC endpoints for cryptocurrency exchanges.</p>
+  
+  <p>
+    <a href="docs/">📖 API Documentation</a> | 
+    <a href="https://github.com/michaelahli/cegw">💻 GitHub</a>
+  </p>
+
+  <h2>🎯 Quick Start with Helm</h2>
+  <pre><code>helm repo add cegw https://michaelahli.github.io/cegw
+helm repo update
+helm install cegw cegw/cegw</code></pre>
+
+  <h2>🔐 Authentication</h2>
+  <p><strong>Basic Auth:</strong></p>
+  <pre><code>helm install cegw cegw/cegw \
+  --set config.auth.enabled=true \
+  --set config.auth.type=basic \
+  --set config.auth.basicUsername=admin \
+  --set config.auth.basicPassword=secret</code></pre>
+
+  <p><strong>OAuth2:</strong></p>
+  <pre><code>helm install cegw cegw/cegw \
+  --set config.auth.enabled=true \
+  --set config.auth.type=oauth2 \
+  --set config.auth.oauth2Issuer=https://accounts.google.com \
+  --set config.auth.oauth2Audience=your-app-id</code></pre>
+
+  <h2>🌐 Supported Exchanges</h2>
+  <p>Tokocrypto • Binance • Coinbase • CEX.IO • Indodax • OKX • KuCoin • Crypto.com • Bybit • Bitget • Coinex • Hashkey</p>
+
+  <h2>📦 Docker</h2>
+  <pre><code>docker run --rm -p 8080:8080 -p 50051:50051 ghcr.io/michaelahli/cegw:latest</code></pre>
+
+  <h2>✨ Features</h2>
+  <ul>
+    <li>12 cryptocurrency exchanges</li>
+    <li>Dual protocol: gRPC + HTTP/REST</li>
+    <li>Basic Auth & OAuth2 JWT</li>
+    <li>Prometheus metrics</li>
+    <li>Proxy support (HTTP/HTTPS/SOCKS5)</li>
+    <li>Kubernetes/Helm ready</li>
+  </ul>
+
+  <h2>🔗 Resources</h2>
+  <ul>
+    <li><a href="docs/">API Documentation (Redoc)</a></li>
+    <li><a href="https://github.com/michaelahli/cegw">GitHub Repository</a></li>
+    <li><a href="https://github.com/michaelahli/cegw/blob/main/charts/cegw/README.md">Helm Chart Docs</a></li>
+  </ul>
+
+  <footer>
+    <p>CEGW © 2024 | MIT License</p>
+  </footer>
+</body>
+</html>
