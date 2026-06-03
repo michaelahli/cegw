@@ -13,6 +13,7 @@ enum Exchange {
   EXCHANGE_INDODAX = 5;
   EXCHANGE_OKX = 6;
   EXCHANGE_KUCOIN = 7;
+  EXCHANGE_CRYPTOCOM = 8;
 }
 
 enum Interval {

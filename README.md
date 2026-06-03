@@ -119,6 +119,7 @@ Use the included `docker-compose.yml` to start the service locally.
 - Indodax
 - OKX
 - KuCoin
+- Crypto.com
 
 ## License
 
