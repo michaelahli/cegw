@@ -30,6 +30,8 @@ func AsExchange(client interface{}) Exchange {
 		return v
 	case *ccxt.Cryptocom:
 		return v
+	case *ccxt.Bybit:
+		return v
 	default:
 		return nil
 	}

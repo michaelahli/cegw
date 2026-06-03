@@ -120,6 +120,7 @@ Use the included `docker-compose.yml` to start the service locally.
 - OKX
 - KuCoin
 - Crypto.com
+- Bybit
 
 ## License
 
