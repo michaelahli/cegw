@@ -64,47 +64,47 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 		defer cancel()
 
-		conn, err := grpc.DialContext(ctx, grpcEndpointHealth, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.NewClient(grpcEndpointHealth, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write([]byte("unhealthy"))
+			_, _ = w.Write([]byte("unhealthy"))
 			return
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		healthClient := grpc_health_v1.NewHealthClient(conn)
 		resp, err := healthClient.Check(ctx, &grpc_health_v1.HealthCheckRequest{})
 		if err != nil || resp.Status != grpc_health_v1.HealthCheckResponse_SERVING {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write([]byte("unhealthy"))
+			_, _ = w.Write([]byte("unhealthy"))
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
+		_, _ = w.Write([]byte("ok"))
 	})
 	mainMux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 		defer cancel()
 
-		conn, err := grpc.DialContext(ctx, grpcEndpointHealth, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		conn, err := grpc.NewClient(grpcEndpointHealth, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		if err != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write([]byte("not ready"))
+			_, _ = w.Write([]byte("not ready"))
 			return
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		healthClient := grpc_health_v1.NewHealthClient(conn)
 		resp, err := healthClient.Check(ctx, &grpc_health_v1.HealthCheckRequest{})
 		if err != nil || resp.Status != grpc_health_v1.HealthCheckResponse_SERVING {
 			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write([]byte("not ready"))
+			_, _ = w.Write([]byte("not ready"))
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ready"))
+		_, _ = w.Write([]byte("ready"))
 	})
 
 	// Mount gRPC gateway under root path with logging middleware
