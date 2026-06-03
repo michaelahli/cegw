@@ -88,8 +88,23 @@ CEGW supports a few simple environment variables:
 - `HTTPS_PROXY` (optional, supports `http://`, `https://`, `socks5://`)
 - `HTTP_PROXY` (optional, supports `http://`, `https://`, `socks5://`)
 - `NO_PROXY` (optional, comma-separated list of hosts to bypass proxy)
-- `TIMEZONE` (default `Asia/Jakarta`)
-- `SANDBOX_MODE` (default `false`)
+
+### Authentication (optional)
+
+- `AUTH_ENABLED` (default `false`) - Enable authentication
+- `AUTH_TYPE` (default `basic`) - Auth type: `basic` or `oauth2`
+
+**Basic Auth:**
+
+- `AUTH_BASIC_USERNAME` - Username for basic auth
+- `AUTH_BASIC_PASSWORD` - Password for basic auth
+
+**OAuth2:**
+
+- `AUTH_OAUTH2_ISSUER` - OAuth2 issuer URL
+- `AUTH_OAUTH2_AUDIENCE` - OAuth2 audience
+
+Note: Health check endpoints (`/healthz`, `/readyz`, `/metrics`) are always accessible without auth.
 
 ## Docker Compose
 

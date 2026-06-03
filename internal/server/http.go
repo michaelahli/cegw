@@ -107,8 +107,10 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 		_, _ = w.Write([]byte("ready"))
 	})
 
-	// Mount gRPC gateway under root path with logging middleware
-	mainMux.Handle("/", middleware.HTTPLoggingMiddleware(s.log)(mux))
+	// Mount gRPC gateway under root path with auth and logging middleware
+	handler := middleware.AuthMiddleware(s.cfg, s.log)(mux)
+	handler = middleware.HTTPLoggingMiddleware(s.log)(handler)
+	mainMux.Handle("/", handler)
 
 	s.server = &http.Server{
 		Addr:              fmt.Sprintf(":%s", s.cfg.HTTPPort),

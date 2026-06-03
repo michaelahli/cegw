@@ -6,6 +6,15 @@ import (
 	"time"
 )
 
+type AuthConfig struct {
+	Enabled       bool
+	Type          string // "basic" or "oauth2"
+	BasicUsername string
+	BasicPassword string
+	OAuth2Issuer  string
+	OAuth2Audience string
+}
+
 type Config struct {
 	GRPCPort    string
 	HTTPPort    string
@@ -14,6 +23,7 @@ type Config struct {
 	HTTPProxy   string
 	Timezone    *time.Location
 	SandboxMode bool
+	Auth        AuthConfig
 }
 
 func Load() (*Config, error) {
@@ -30,6 +40,14 @@ func Load() (*Config, error) {
 		loc = time.UTC
 	}
 
+	// Load auth config
+	authEnabled := getEnvBool("AUTH_ENABLED", false)
+	authType := getEnv("AUTH_TYPE", "basic")
+	basicUsername := getEnv("AUTH_BASIC_USERNAME", "")
+	basicPassword := getEnv("AUTH_BASIC_PASSWORD", "")
+	oauth2Issuer := getEnv("AUTH_OAUTH2_ISSUER", "")
+	oauth2Audience := getEnv("AUTH_OAUTH2_AUDIENCE", "")
+
 	return &Config{
 		GRPCPort:    grpcPort,
 		HTTPPort:    httpPort,
@@ -38,6 +56,14 @@ func Load() (*Config, error) {
 		SandboxMode: sandboxMode,
 		HTTPSProxy:  httpsProxy,
 		HTTPProxy:   httpProxy,
+		Auth: AuthConfig{
+			Enabled:       authEnabled,
+			Type:          authType,
+			BasicUsername: basicUsername,
+			BasicPassword: basicPassword,
+			OAuth2Issuer:  oauth2Issuer,
+			OAuth2Audience: oauth2Audience,
+		},
 	}, nil
 }
 
