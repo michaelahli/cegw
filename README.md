@@ -98,6 +98,7 @@ Use the included `docker-compose.yml` to start the service locally.
 ## Supported exchange today
 
 - Tokocrypto
+- Binance
 
 ## License
 

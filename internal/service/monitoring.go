@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	ccxtlib "github.com/ccxt/ccxt/go/v4"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -72,8 +71,8 @@ func (s *MonitoringService) CheckPriceAlerts(ctx context.Context, req *cegwv1.Ch
 		return nil, err
 	}
 
-	tokocrypto, ok := client.(*ccxtlib.Tokocrypto)
-	if !ok {
+	exchange := ccxt.AsExchange(client)
+	if exchange == nil {
 		log.Warnf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
@@ -92,7 +91,7 @@ func (s *MonitoringService) CheckPriceAlerts(ctx context.Context, req *cegwv1.Ch
 		price, exists := priceCache[alert.Symbol]
 		if !exists {
 			alertLog.Debugf("fetching ticker price")
-			ticker, err := tokocrypto.FetchTicker(alert.Symbol)
+			ticker, err := exchange.FetchTicker(alert.Symbol)
 			if err != nil {
 				alertLog.WithError(err).Warnf("failed to fetch ticker, keeping alert pending")
 				updatedAlerts = append(updatedAlerts, alert)

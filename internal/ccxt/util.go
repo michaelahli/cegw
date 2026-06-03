@@ -43,6 +43,9 @@ func NewClientForExchange(ctx context.Context, exchange cegwv1.Exchange, creds *
 	case cegwv1.Exchange_EXCHANGE_TOKOCRYPTO:
 		client := NewTokocryptoClient(cfg, log)
 		return client.Client(ctx)
+	case cegwv1.Exchange_EXCHANGE_BINANCE:
+		client := NewBinanceClient(cfg, log)
+		return client.Client(ctx)
 	default:
 		log.WithContext(ctx).
 			WithField("exchange", exchange.String()).

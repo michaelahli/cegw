@@ -82,8 +82,8 @@ func (s *TradingService) CreateMarketOrder(ctx context.Context, req *cegwv1.Crea
 		return nil, err
 	}
 
-	tokocrypto, ok := client.(*ccxtlib.Tokocrypto)
-	if !ok {
+	exchange := ccxt.AsExchange(client)
+	if exchange == nil {
 		log.Warnf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
@@ -93,7 +93,7 @@ func (s *TradingService) CreateMarketOrder(ctx context.Context, req *cegwv1.Crea
 	switch req.Side {
 	case cegwv1.OrderSide_ORDER_SIDE_BUY:
 		log.Debugf("fetching ticker for buy order")
-		ticker, err := tokocrypto.FetchTicker(req.Symbol)
+		ticker, err := exchange.FetchTicker(req.Symbol)
 		if err != nil {
 			log.WithError(err).Errorf("failed to fetch ticker")
 			return nil, ccxt.MapError(err)
@@ -109,7 +109,7 @@ func (s *TradingService) CreateMarketOrder(ctx context.Context, req *cegwv1.Crea
 		}
 
 		log.WithField("ask_price", ask).Debugf("creating buy market order")
-		order, err = tokocrypto.CreateMarketOrder(req.Symbol, "buy", req.Quantity,
+		order, err = exchange.CreateMarketOrder(req.Symbol, "buy", req.Quantity,
 			ccxtlib.WithCreateMarketOrderPrice(ask))
 		if err != nil {
 			log.WithError(err).Errorf("failed to create buy market order")
@@ -118,7 +118,7 @@ func (s *TradingService) CreateMarketOrder(ctx context.Context, req *cegwv1.Crea
 
 	case cegwv1.OrderSide_ORDER_SIDE_SELL:
 		log.Debugf("creating sell market order")
-		order, err = tokocrypto.CreateMarketOrder(req.Symbol, "sell", req.Quantity)
+		order, err = exchange.CreateMarketOrder(req.Symbol, "sell", req.Quantity)
 		if err != nil {
 			log.WithError(err).Errorf("failed to create sell market order")
 			return nil, ccxt.MapError(err)
@@ -205,13 +205,13 @@ func (s *TradingService) TestCredentials(ctx context.Context, req *cegwv1.TestCr
 		}, nil
 	}
 
-	tokocrypto, ok := client.(*ccxtlib.Tokocrypto)
-	if !ok {
+	exchange := ccxt.AsExchange(client)
+	if exchange == nil {
 		log.Warnf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
-	balances, err := tokocrypto.FetchBalance()
+	balances, err := exchange.FetchBalance()
 	if err != nil {
 		log.WithError(err).Warnf("failed to fetch balance during credential test")
 		return &cegwv1.TestCredentialsResponse{

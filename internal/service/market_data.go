@@ -46,14 +46,14 @@ func (s *MarketDataService) cacheMarkets() {
 		return
 	}
 
-	tokocrypto, ok := client.(*ccxtlib.Tokocrypto)
-	if !ok {
-		log.Warnf("failed to cast client to Tokocrypto")
+	exchange := ccxt.AsExchange(client)
+	if exchange == nil {
+		log.Warnf("failed to cast client to exchange interface")
 		return
 	}
 
 	log.Debugf("loading markets from Tokocrypto")
-	markets, err := tokocrypto.LoadMarkets()
+	markets, err := exchange.LoadMarkets()
 	if err != nil {
 		log.WithError(err).Errorf("failed to load markets from Tokocrypto")
 		return
@@ -100,8 +100,8 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 		return nil, err
 	}
 
-	tokocrypto, ok := client.(*ccxtlib.Tokocrypto)
-	if !ok {
+	exchange := ccxt.AsExchange(client)
+	if exchange == nil {
 		log.Warnf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
@@ -142,7 +142,7 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 			ccxtlib.WithFetchOHLCVLimit(limit),
 		}
 
-		klines, err := tokocrypto.FetchOHLCV(req.Symbol, opts...)
+		klines, err := exchange.FetchOHLCV(req.Symbol, opts...)
 		if err != nil {
 			log.WithError(err).WithField("batch_number", batchCount+1).Errorf("failed to fetch OHLCV data")
 			return nil, ccxt.MapError(err)
@@ -207,13 +207,13 @@ func (s *MarketDataService) GetCurrentPrice(ctx context.Context, req *cegwv1.Get
 		return nil, err
 	}
 
-	tokocrypto, ok := client.(*ccxtlib.Tokocrypto)
-	if !ok {
+	exchange := ccxt.AsExchange(client)
+	if exchange == nil {
 		log.Warnf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
-	ticker, err := tokocrypto.FetchTicker(req.Symbol)
+	ticker, err := exchange.FetchTicker(req.Symbol)
 	if err != nil {
 		log.WithError(err).Errorf("failed to fetch ticker")
 		return nil, ccxt.MapError(err)
@@ -276,13 +276,13 @@ func (s *MarketDataService) ListMarkets(ctx context.Context, req *cegwv1.ListMar
 		return nil, err
 	}
 
-	tokocrypto, ok := client.(*ccxtlib.Tokocrypto)
-	if !ok {
+	exchange := ccxt.AsExchange(client)
+	if exchange == nil {
 		log.Warnf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
-	marketData, err := tokocrypto.LoadMarkets()
+	marketData, err := exchange.LoadMarkets()
 	if err != nil {
 		log.WithError(err).Errorf("failed to load markets")
 		return nil, ccxt.MapError(err)
