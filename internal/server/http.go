@@ -57,10 +57,6 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 	// Serve Prometheus metrics
 	mainMux.Handle("/metrics", metrics.Handler())
 
-	// Serve static docs
-	fs := http.FileServer(http.Dir("docs"))
-	mainMux.Handle("/docs/", http.StripPrefix("/docs/", fs))
-
 	// Mount gRPC gateway under root path with logging middleware
 	mainMux.Handle("/", middleware.HTTPLoggingMiddleware(s.log)(mux))
 
