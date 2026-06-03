@@ -22,6 +22,8 @@ func AsExchange(client interface{}) Exchange {
 		return v
 	case *ccxt.Indodax:
 		return v
+	case *ccxt.Okx:
+		return v
 	default:
 		return nil
 	}
