@@ -100,6 +100,7 @@ Use the included `docker-compose.yml` to start the service locally.
 - Tokocrypto
 - Binance
 - Coinbase
+- Indodax
 
 ## License
 
