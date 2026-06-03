@@ -49,6 +49,9 @@ func NewClientForExchange(ctx context.Context, exchange cegwv1.Exchange, creds *
 	case cegwv1.Exchange_EXCHANGE_COINBASE:
 		client := NewCoinbaseClient(cfg, log)
 		return client.Client(ctx)
+	case cegwv1.Exchange_EXCHANGE_CEXIO:
+		client := NewCEXIOClient(cfg, log)
+		return client.Client(ctx)
 	case cegwv1.Exchange_EXCHANGE_INDODAX:
 		client := NewIndodaxClient(cfg, log)
 		return client.Client(ctx)
