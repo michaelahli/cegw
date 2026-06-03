@@ -19,7 +19,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect: %v", err)
 	}
-	defer c.Close()
+	defer func() {
+		if err := c.Close(); err != nil {
+			log.Printf("Failed to close client: %v", err)
+		}
+	}()
 
 	// Example 1: Get current price
 	priceResp, err := c.MarketDataService.GetCurrentPrice(ctx, &cegwv1.GetCurrentPriceRequest{
