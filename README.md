@@ -35,6 +35,13 @@ helm install cegw cegw/cegw
 
 See [charts/cegw/README.md](charts/cegw/README.md) for more options.
 
+## API Documentation
+
+View the interactive API documentation:
+
+- **Local**: `http://localhost:8080/docs` (when running the application)
+- **Online**: [https://michaelahli.github.io/cegw/docs/](https://michaelahli.github.io/cegw/docs/)
+
 ## Quick usage
 
 ### Get current price
