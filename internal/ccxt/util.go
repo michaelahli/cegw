@@ -113,8 +113,14 @@ func MapInterval(interval cegwv1.Interval) string {
 		return "5m"
 	case cegwv1.Interval_INTERVAL_30M:
 		return "30m"
+	case cegwv1.Interval_INTERVAL_45M:
+		return "45m"
 	case cegwv1.Interval_INTERVAL_1H:
 		return "1h"
+	case cegwv1.Interval_INTERVAL_2H:
+		return "2h"
+	case cegwv1.Interval_INTERVAL_4H:
+		return "4h"
 	case cegwv1.Interval_INTERVAL_1D:
 		return "1d"
 	case cegwv1.Interval_INTERVAL_1W:
