@@ -60,6 +60,9 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 
 	// Serve OpenAPI documentation
 	mainMux.HandleFunc("/docs", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "docs/index.html")
+	})
+	mainMux.HandleFunc("/docs/openapi.json", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "docs/openapi.json")
 	})
 
