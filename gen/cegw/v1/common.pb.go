@@ -107,33 +107,42 @@ const (
 	Interval_INTERVAL_1M          Interval = 1
 	Interval_INTERVAL_5M          Interval = 2
 	Interval_INTERVAL_30M         Interval = 3
-	Interval_INTERVAL_1H          Interval = 4
-	Interval_INTERVAL_1D          Interval = 5
-	Interval_INTERVAL_1W          Interval = 6
-	Interval_INTERVAL_1M_MONTH    Interval = 7
+	Interval_INTERVAL_45M         Interval = 4
+	Interval_INTERVAL_1H          Interval = 5
+	Interval_INTERVAL_2H          Interval = 6
+	Interval_INTERVAL_4H          Interval = 7
+	Interval_INTERVAL_1D          Interval = 8
+	Interval_INTERVAL_1W          Interval = 9
+	Interval_INTERVAL_1M_MONTH    Interval = 10
 )
 
 // Enum value maps for Interval.
 var (
 	Interval_name = map[int32]string{
-		0: "INTERVAL_UNSPECIFIED",
-		1: "INTERVAL_1M",
-		2: "INTERVAL_5M",
-		3: "INTERVAL_30M",
-		4: "INTERVAL_1H",
-		5: "INTERVAL_1D",
-		6: "INTERVAL_1W",
-		7: "INTERVAL_1M_MONTH",
+		0:  "INTERVAL_UNSPECIFIED",
+		1:  "INTERVAL_1M",
+		2:  "INTERVAL_5M",
+		3:  "INTERVAL_30M",
+		4:  "INTERVAL_45M",
+		5:  "INTERVAL_1H",
+		6:  "INTERVAL_2H",
+		7:  "INTERVAL_4H",
+		8:  "INTERVAL_1D",
+		9:  "INTERVAL_1W",
+		10: "INTERVAL_1M_MONTH",
 	}
 	Interval_value = map[string]int32{
 		"INTERVAL_UNSPECIFIED": 0,
 		"INTERVAL_1M":          1,
 		"INTERVAL_5M":          2,
 		"INTERVAL_30M":         3,
-		"INTERVAL_1H":          4,
-		"INTERVAL_1D":          5,
-		"INTERVAL_1W":          6,
-		"INTERVAL_1M_MONTH":    7,
+		"INTERVAL_45M":         4,
+		"INTERVAL_1H":          5,
+		"INTERVAL_2H":          6,
+		"INTERVAL_4H":          7,
+		"INTERVAL_1D":          8,
+		"INTERVAL_1W":          9,
+		"INTERVAL_1M_MONTH":    10,
 	}
 )
 
@@ -535,16 +544,20 @@ const file_cegw_v1_common_proto_rawDesc = "" +
 	"\x0fEXCHANGE_BITGET\x10\n" +
 	"\x12\x13\n" +
 	"\x0fEXCHANGE_COINEX\x10\v\x12\x14\n" +
-	"\x10EXCHANGE_HASHKEY\x10\f*\xa2\x01\n" +
+	"\x10EXCHANGE_HASHKEY\x10\f*\xd6\x01\n" +
 	"\bInterval\x12\x18\n" +
 	"\x14INTERVAL_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vINTERVAL_1M\x10\x01\x12\x0f\n" +
 	"\vINTERVAL_5M\x10\x02\x12\x10\n" +
-	"\fINTERVAL_30M\x10\x03\x12\x0f\n" +
-	"\vINTERVAL_1H\x10\x04\x12\x0f\n" +
-	"\vINTERVAL_1D\x10\x05\x12\x0f\n" +
-	"\vINTERVAL_1W\x10\x06\x12\x15\n" +
-	"\x11INTERVAL_1M_MONTH\x10\a*P\n" +
+	"\fINTERVAL_30M\x10\x03\x12\x10\n" +
+	"\fINTERVAL_45M\x10\x04\x12\x0f\n" +
+	"\vINTERVAL_1H\x10\x05\x12\x0f\n" +
+	"\vINTERVAL_2H\x10\x06\x12\x0f\n" +
+	"\vINTERVAL_4H\x10\a\x12\x0f\n" +
+	"\vINTERVAL_1D\x10\b\x12\x0f\n" +
+	"\vINTERVAL_1W\x10\t\x12\x15\n" +
+	"\x11INTERVAL_1M_MONTH\x10\n" +
+	"*P\n" +
 	"\tOrderSide\x12\x1a\n" +
 	"\x16ORDER_SIDE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eORDER_SIDE_BUY\x10\x01\x12\x13\n" +
