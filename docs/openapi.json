@@ -54,7 +54,13 @@
               "EXCHANGE_COINBASE",
               "EXCHANGE_CEXIO",
               "EXCHANGE_INDODAX",
-              "EXCHANGE_OKX"
+              "EXCHANGE_OKX",
+              "EXCHANGE_KUCOIN",
+              "EXCHANGE_CRYPTOCOM",
+              "EXCHANGE_BYBIT",
+              "EXCHANGE_BITGET",
+              "EXCHANGE_COINEX",
+              "EXCHANGE_HASHKEY"
             ],
             "default": "EXCHANGE_UNSPECIFIED"
           }
@@ -94,7 +100,13 @@
               "EXCHANGE_COINBASE",
               "EXCHANGE_CEXIO",
               "EXCHANGE_INDODAX",
-              "EXCHANGE_OKX"
+              "EXCHANGE_OKX",
+              "EXCHANGE_KUCOIN",
+              "EXCHANGE_CRYPTOCOM",
+              "EXCHANGE_BYBIT",
+              "EXCHANGE_BITGET",
+              "EXCHANGE_COINEX",
+              "EXCHANGE_HASHKEY"
             ]
           },
           {
@@ -172,7 +184,13 @@
               "EXCHANGE_COINBASE",
               "EXCHANGE_CEXIO",
               "EXCHANGE_INDODAX",
-              "EXCHANGE_OKX"
+              "EXCHANGE_OKX",
+              "EXCHANGE_KUCOIN",
+              "EXCHANGE_CRYPTOCOM",
+              "EXCHANGE_BYBIT",
+              "EXCHANGE_BITGET",
+              "EXCHANGE_COINEX",
+              "EXCHANGE_HASHKEY"
             ],
             "default": "EXCHANGE_UNSPECIFIED"
           },
@@ -321,7 +339,13 @@
         "EXCHANGE_COINBASE",
         "EXCHANGE_CEXIO",
         "EXCHANGE_INDODAX",
-        "EXCHANGE_OKX"
+        "EXCHANGE_OKX",
+        "EXCHANGE_KUCOIN",
+        "EXCHANGE_CRYPTOCOM",
+        "EXCHANGE_BYBIT",
+        "EXCHANGE_BITGET",
+        "EXCHANGE_COINEX",
+        "EXCHANGE_HASHKEY"
       ],
       "default": "EXCHANGE_UNSPECIFIED"
     },
@@ -390,7 +414,10 @@
         "INTERVAL_1M",
         "INTERVAL_5M",
         "INTERVAL_30M",
+        "INTERVAL_45M",
         "INTERVAL_1H",
+        "INTERVAL_2H",
+        "INTERVAL_4H",
         "INTERVAL_1D",
         "INTERVAL_1W",
         "INTERVAL_1M_MONTH"
