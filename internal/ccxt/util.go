@@ -162,3 +162,29 @@ func OHLCVToProto(ohlcv ccxt.OHLCV) *cegwv1.OHLCV {
 		Volume: ohlcv.Volume,
 	}
 }
+
+// IsIntervalSupported checks if an interval is supported by a specific exchange
+// Based on CCXT timeframe compatibility testing (June 2026)
+func IsIntervalSupported(exchange cegwv1.Exchange, interval cegwv1.Interval) bool {
+	// 45m is not supported by any exchange
+	if interval == cegwv1.Interval_INTERVAL_45M {
+		return false
+	}
+
+	// 2h is missing on Indodax and Crypto.com
+	if interval == cegwv1.Interval_INTERVAL_2H {
+		if exchange == cegwv1.Exchange_EXCHANGE_INDODAX || exchange == cegwv1.Exchange_EXCHANGE_CRYPTOCOM {
+			return false
+		}
+	}
+
+	// 4h is missing on Coinbase
+	if interval == cegwv1.Interval_INTERVAL_4H {
+		if exchange == cegwv1.Exchange_EXCHANGE_COINBASE {
+			return false
+		}
+	}
+
+	// All other intervals are universally supported
+	return true
+}

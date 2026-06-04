@@ -85,6 +85,12 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 		return nil, status.Error(codes.InvalidArgument, "symbol is required")
 	}
 
+	// Validate interval support for the exchange
+	if !ccxt.IsIntervalSupported(req.Exchange, req.Interval) {
+		log.WithField("interval", req.Interval.String()).Warnf("interval not supported by exchange")
+		return nil, status.Errorf(codes.InvalidArgument, "interval %s is not supported by %s", req.Interval.String(), req.Exchange.String())
+	}
+
 	interval := ccxt.MapInterval(req.Interval)
 	if interval == "" {
 		log.WithField("interval", req.Interval).Warnf("invalid interval")

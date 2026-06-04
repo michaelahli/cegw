@@ -88,3 +88,43 @@ func TestStringP(t *testing.T) {
 		t.Errorf("StringP(nil) = %v, want empty string", got)
 	}
 }
+
+func TestIsIntervalSupported(t *testing.T) {
+	tests := []struct {
+		name     string
+		exchange cegwv1.Exchange
+		interval cegwv1.Interval
+		want     bool
+	}{
+		// 45m is not supported by any exchange
+		{"45m on Binance", cegwv1.Exchange_EXCHANGE_BINANCE, cegwv1.Interval_INTERVAL_45M, false},
+		{"45m on Tokocrypto", cegwv1.Exchange_EXCHANGE_TOKOCRYPTO, cegwv1.Interval_INTERVAL_45M, false},
+		{"45m on OKX", cegwv1.Exchange_EXCHANGE_OKX, cegwv1.Interval_INTERVAL_45M, false},
+		
+		// 2h is missing on Indodax and Crypto.com
+		{"2h on Binance", cegwv1.Exchange_EXCHANGE_BINANCE, cegwv1.Interval_INTERVAL_2H, true},
+		{"2h on Indodax", cegwv1.Exchange_EXCHANGE_INDODAX, cegwv1.Interval_INTERVAL_2H, false},
+		{"2h on Crypto.com", cegwv1.Exchange_EXCHANGE_CRYPTOCOM, cegwv1.Interval_INTERVAL_2H, false},
+		{"2h on OKX", cegwv1.Exchange_EXCHANGE_OKX, cegwv1.Interval_INTERVAL_2H, true},
+		
+		// 4h is missing on Coinbase
+		{"4h on Binance", cegwv1.Exchange_EXCHANGE_BINANCE, cegwv1.Interval_INTERVAL_4H, true},
+		{"4h on Coinbase", cegwv1.Exchange_EXCHANGE_COINBASE, cegwv1.Interval_INTERVAL_4H, false},
+		{"4h on Indodax", cegwv1.Exchange_EXCHANGE_INDODAX, cegwv1.Interval_INTERVAL_4H, true},
+		
+		// Common intervals should be supported everywhere
+		{"1m on Binance", cegwv1.Exchange_EXCHANGE_BINANCE, cegwv1.Interval_INTERVAL_1M, true},
+		{"5m on Coinbase", cegwv1.Exchange_EXCHANGE_COINBASE, cegwv1.Interval_INTERVAL_5M, true},
+		{"1h on Indodax", cegwv1.Exchange_EXCHANGE_INDODAX, cegwv1.Interval_INTERVAL_1H, true},
+		{"1d on OKX", cegwv1.Exchange_EXCHANGE_OKX, cegwv1.Interval_INTERVAL_1D, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := IsIntervalSupported(tt.exchange, tt.interval); got != tt.want {
+				t.Errorf("IsIntervalSupported(%s, %s) = %v, want %v", 
+					tt.exchange.String(), tt.interval.String(), got, tt.want)
+			}
+		})
+	}
+}
