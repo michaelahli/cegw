@@ -71,7 +71,7 @@ func main() {
 
 ## WebSocket Clients
 
-Standard WebSocket clients can consume latest price updates from the HTTP server without using this Go client package:
+Standard WebSocket clients can consume latest price updates from the HTTP server without using this Go client package. A browser example is available at `pkg/client/example/websocket.html` and connects to Tokocrypto `BTC/USDT` by default.
 
 ```javascript
 const ws = new WebSocket("ws://localhost:8080/v1/ws/market/price?exchange=1&symbol=BTC/USDT");
@@ -80,4 +80,4 @@ ws.onmessage = (event) => console.log(JSON.parse(event.data));
 
 ## Examples
 
-See `pkg/client/example/main.go` for complete usage examples.
+See `pkg/client/example/main.go` for gRPC usage and `pkg/client/example/websocket.html` for a browser WebSocket example.
