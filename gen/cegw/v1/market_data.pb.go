@@ -696,12 +696,14 @@ const file_cegw_v1_market_data_proto_rawDesc = "" +
 	"\x06active\x18\x04 \x01(\bR\x06active\"V\n" +
 	"\x13ListMarketsResponse\x12)\n" +
 	"\amarkets\x18\x01 \x03(\v2\x0f.cegw.v1.MarketR\amarkets\x12\x14\n" +
-	"\x05count\x18\x02 \x01(\x05R\x05count2\xe2\x06\n" +
+	"\x05count\x18\x02 \x01(\x05R\x05count2\xfd\b\n" +
 	"\x11MarketDataService\x12\xfb\x01\n" +
 	"\tGetQuotes\x12\x19.cegw.v1.GetQuotesRequest\x1a\x1a.cegw.v1.GetQuotesResponse\"\xb6\x01\x92A\x96\x01\n" +
 	"\vMarket Data\x12\x15Get Historical Quotes\x1apRetrieves historical OHLCV (Open, High, Low, Close, Volume) data for a trading pair from the specified exchange.\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/v1/market/quotes\x12\xe0\x01\n" +
 	"\x0fGetCurrentPrice\x12\x1f.cegw.v1.GetCurrentPriceRequest\x1a .cegw.v1.GetCurrentPriceResponse\"\x89\x01\x92AW\n" +
-	"\vMarket Data\x12\x11Get Current Price\x1a5Retrieves the latest ticker price for a trading pair.\x82\xd3\xe4\x93\x02)\x12'/v1/market/price/{exchange}/{symbol=**}\x12\xb7\x01\n" +
+	"\vMarket Data\x12\x11Get Current Price\x1a5Retrieves the latest ticker price for a trading pair.\x82\xd3\xe4\x93\x02)\x12'/v1/market/price/{exchange}/{symbol=**}\x12\x98\x02\n" +
+	"\x12StreamCurrentPrice\x12\x1f.cegw.v1.GetCurrentPriceRequest\x1a .cegw.v1.GetCurrentPriceResponse\"\xbc\x01\x92A\xb8\x01\n" +
+	"\vMarket Data\x12\x14Stream Current Price\x1a\x92\x01Streams the latest ticker price for a trading pair using the exchange WebSocket feed when supported by CCXT. This endpoint is available over gRPC.0\x01\x12\xb7\x01\n" +
 	"\fSearchTicker\x12\x1c.cegw.v1.SearchTickerRequest\x1a\x1d.cegw.v1.SearchTickerResponse\"j\x92AN\n" +
 	"\vMarket Data\x12\x0eSearch Tickers\x1a/Search available trading pairs by query string.\x82\xd3\xe4\x93\x02\x13\x12\x11/v1/market/search\x12\xb1\x01\n" +
 	"\vListMarkets\x12\x1b.cegw.v1.ListMarketsRequest\x1a\x1c.cegw.v1.ListMarketsResponse\"g\x92AM\n" +
@@ -753,14 +755,16 @@ var file_cegw_v1_market_data_proto_depIdxs = []int32{
 	9,  // 12: cegw.v1.ListMarketsResponse.markets:type_name -> cegw.v1.Market
 	0,  // 13: cegw.v1.MarketDataService.GetQuotes:input_type -> cegw.v1.GetQuotesRequest
 	3,  // 14: cegw.v1.MarketDataService.GetCurrentPrice:input_type -> cegw.v1.GetCurrentPriceRequest
-	5,  // 15: cegw.v1.MarketDataService.SearchTicker:input_type -> cegw.v1.SearchTickerRequest
-	8,  // 16: cegw.v1.MarketDataService.ListMarkets:input_type -> cegw.v1.ListMarketsRequest
-	2,  // 17: cegw.v1.MarketDataService.GetQuotes:output_type -> cegw.v1.GetQuotesResponse
-	4,  // 18: cegw.v1.MarketDataService.GetCurrentPrice:output_type -> cegw.v1.GetCurrentPriceResponse
-	7,  // 19: cegw.v1.MarketDataService.SearchTicker:output_type -> cegw.v1.SearchTickerResponse
-	10, // 20: cegw.v1.MarketDataService.ListMarkets:output_type -> cegw.v1.ListMarketsResponse
-	17, // [17:21] is the sub-list for method output_type
-	13, // [13:17] is the sub-list for method input_type
+	3,  // 15: cegw.v1.MarketDataService.StreamCurrentPrice:input_type -> cegw.v1.GetCurrentPriceRequest
+	5,  // 16: cegw.v1.MarketDataService.SearchTicker:input_type -> cegw.v1.SearchTickerRequest
+	8,  // 17: cegw.v1.MarketDataService.ListMarkets:input_type -> cegw.v1.ListMarketsRequest
+	2,  // 18: cegw.v1.MarketDataService.GetQuotes:output_type -> cegw.v1.GetQuotesResponse
+	4,  // 19: cegw.v1.MarketDataService.GetCurrentPrice:output_type -> cegw.v1.GetCurrentPriceResponse
+	4,  // 20: cegw.v1.MarketDataService.StreamCurrentPrice:output_type -> cegw.v1.GetCurrentPriceResponse
+	7,  // 21: cegw.v1.MarketDataService.SearchTicker:output_type -> cegw.v1.SearchTickerResponse
+	10, // 22: cegw.v1.MarketDataService.ListMarkets:output_type -> cegw.v1.ListMarketsResponse
+	18, // [18:23] is the sub-list for method output_type
+	13, // [13:18] is the sub-list for method input_type
 	13, // [13:13] is the sub-list for extension type_name
 	13, // [13:13] is the sub-list for extension extendee
 	0,  // [0:13] is the sub-list for field type_name

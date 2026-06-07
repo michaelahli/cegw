@@ -235,6 +235,75 @@ func (s *MarketDataService) GetCurrentPrice(ctx context.Context, req *cegwv1.Get
 	}, nil
 }
 
+func (s *MarketDataService) StreamCurrentPrice(req *cegwv1.GetCurrentPriceRequest, stream cegwv1.MarketDataService_StreamCurrentPriceServer) error {
+	ctx := stream.Context()
+	log := s.log.WithContext(ctx).
+		WithField("operation", "StreamCurrentPrice").
+		WithField("symbol", req.Symbol).
+		WithField("exchange", req.Exchange.String())
+
+	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
+		log.Warnf("invalid request: exchange unspecified")
+		return status.Error(codes.InvalidArgument, "exchange is required")
+	}
+
+	if req.Symbol == "" {
+		log.Warnf("invalid request: symbol empty")
+		return status.Error(codes.InvalidArgument, "symbol is required")
+	}
+
+	log.Debugf("starting current price stream")
+
+	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, nil)
+	if err != nil {
+		log.WithError(err).Errorf("failed to create CCXT client")
+		return err
+	}
+
+	exchange := ccxt.AsStreamingExchange(client)
+	if exchange == nil {
+		log.Warnf("exchange streaming not supported")
+		return status.Error(codes.Unimplemented, "exchange streaming not supported")
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Debugf("current price stream closed by client")
+			return nil
+		default:
+		}
+
+		ticker, err := exchange.WatchTicker(req.Symbol)
+		if err != nil {
+			if ctx.Err() != nil {
+				log.Debugf("current price stream closed during ticker watch")
+				return nil
+			}
+			log.WithError(err).Errorf("failed to watch ticker")
+			return ccxt.MapError(err)
+		}
+
+		price := ccxt.Float64P(ticker.Close)
+		if price == 0 {
+			price = ccxt.Float64P(ticker.Last)
+		}
+
+		resp := &cegwv1.GetCurrentPriceResponse{
+			Symbol:    req.Symbol,
+			Price:     price,
+			Timestamp: timestamppb.Now(),
+		}
+
+		if err := stream.Send(resp); err != nil {
+			log.WithError(err).Debugf("failed to send current price update")
+			return err
+		}
+
+		log.WithField("price", price).Debugf("current price update streamed")
+	}
+}
+
 func (s *MarketDataService) SearchTicker(ctx context.Context, req *cegwv1.SearchTickerRequest) (*cegwv1.SearchTickerResponse, error) {
 	log := s.log.WithContext(ctx).
 		WithField("operation", "SearchTicker").

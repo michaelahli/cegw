@@ -7,7 +7,9 @@ import (
 
 	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
 	"github.com/michaelahli/cegw/internal/config"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -214,6 +216,81 @@ func TestMarketDataService_SearchTicker(t *testing.T) {
 
 			if resp == nil {
 				t.Errorf("Response is nil")
+			}
+		})
+	}
+}
+
+type fakeCurrentPriceStream struct {
+	grpc.ServerStream
+	ctx context.Context
+}
+
+func (s fakeCurrentPriceStream) Context() context.Context {
+	return s.ctx
+}
+
+func (s fakeCurrentPriceStream) Send(*cegwv1.GetCurrentPriceResponse) error {
+	return nil
+}
+
+func (s fakeCurrentPriceStream) SetHeader(metadata.MD) error {
+	return nil
+}
+
+func (s fakeCurrentPriceStream) SendHeader(metadata.MD) error {
+	return nil
+}
+
+func (s fakeCurrentPriceStream) SetTrailer(metadata.MD) {}
+
+func TestMarketDataService_StreamCurrentPrice(t *testing.T) {
+	cfg := &config.Config{
+		LogLevel:    "error",
+		Timezone:    time.UTC,
+		SandboxMode: true,
+	}
+
+	svc := NewMarketDataService(cfg, newTestLogger(), nil)
+	stream := fakeCurrentPriceStream{ctx: context.Background()}
+
+	tests := []struct {
+		name     string
+		req      *cegwv1.GetCurrentPriceRequest
+		wantCode codes.Code
+	}{
+		{
+			name: "invalid exchange",
+			req: &cegwv1.GetCurrentPriceRequest{
+				Exchange: cegwv1.Exchange_EXCHANGE_UNSPECIFIED,
+				Symbol:   "BTC/USDT",
+			},
+			wantCode: codes.InvalidArgument,
+		},
+		{
+			name: "empty symbol",
+			req: &cegwv1.GetCurrentPriceRequest{
+				Exchange: cegwv1.Exchange_EXCHANGE_TOKOCRYPTO,
+				Symbol:   "",
+			},
+			wantCode: codes.InvalidArgument,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := svc.StreamCurrentPrice(tt.req, stream)
+			if err == nil {
+				t.Fatal("Expected error but got nil")
+			}
+
+			st, ok := status.FromError(err)
+			if !ok {
+				t.Fatal("Error is not a status error")
+			}
+
+			if st.Code() != tt.wantCode {
+				t.Errorf("Expected code %v, got %v", tt.wantCode, st.Code())
 			}
 		})
 	}

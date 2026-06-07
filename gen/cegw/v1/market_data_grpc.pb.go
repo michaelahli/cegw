@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MarketDataService_GetQuotes_FullMethodName       = "/cegw.v1.MarketDataService/GetQuotes"
-	MarketDataService_GetCurrentPrice_FullMethodName = "/cegw.v1.MarketDataService/GetCurrentPrice"
-	MarketDataService_SearchTicker_FullMethodName    = "/cegw.v1.MarketDataService/SearchTicker"
-	MarketDataService_ListMarkets_FullMethodName     = "/cegw.v1.MarketDataService/ListMarkets"
+	MarketDataService_GetQuotes_FullMethodName          = "/cegw.v1.MarketDataService/GetQuotes"
+	MarketDataService_GetCurrentPrice_FullMethodName    = "/cegw.v1.MarketDataService/GetCurrentPrice"
+	MarketDataService_StreamCurrentPrice_FullMethodName = "/cegw.v1.MarketDataService/StreamCurrentPrice"
+	MarketDataService_SearchTicker_FullMethodName       = "/cegw.v1.MarketDataService/SearchTicker"
+	MarketDataService_ListMarkets_FullMethodName        = "/cegw.v1.MarketDataService/ListMarkets"
 )
 
 // MarketDataServiceClient is the client API for MarketDataService service.
@@ -31,6 +32,7 @@ const (
 type MarketDataServiceClient interface {
 	GetQuotes(ctx context.Context, in *GetQuotesRequest, opts ...grpc.CallOption) (*GetQuotesResponse, error)
 	GetCurrentPrice(ctx context.Context, in *GetCurrentPriceRequest, opts ...grpc.CallOption) (*GetCurrentPriceResponse, error)
+	StreamCurrentPrice(ctx context.Context, in *GetCurrentPriceRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[GetCurrentPriceResponse], error)
 	SearchTicker(ctx context.Context, in *SearchTickerRequest, opts ...grpc.CallOption) (*SearchTickerResponse, error)
 	ListMarkets(ctx context.Context, in *ListMarketsRequest, opts ...grpc.CallOption) (*ListMarketsResponse, error)
 }
@@ -63,6 +65,25 @@ func (c *marketDataServiceClient) GetCurrentPrice(ctx context.Context, in *GetCu
 	return out, nil
 }
 
+func (c *marketDataServiceClient) StreamCurrentPrice(ctx context.Context, in *GetCurrentPriceRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[GetCurrentPriceResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &MarketDataService_ServiceDesc.Streams[0], MarketDataService_StreamCurrentPrice_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[GetCurrentPriceRequest, GetCurrentPriceResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type MarketDataService_StreamCurrentPriceClient = grpc.ServerStreamingClient[GetCurrentPriceResponse]
+
 func (c *marketDataServiceClient) SearchTicker(ctx context.Context, in *SearchTickerRequest, opts ...grpc.CallOption) (*SearchTickerResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SearchTickerResponse)
@@ -89,6 +110,7 @@ func (c *marketDataServiceClient) ListMarkets(ctx context.Context, in *ListMarke
 type MarketDataServiceServer interface {
 	GetQuotes(context.Context, *GetQuotesRequest) (*GetQuotesResponse, error)
 	GetCurrentPrice(context.Context, *GetCurrentPriceRequest) (*GetCurrentPriceResponse, error)
+	StreamCurrentPrice(*GetCurrentPriceRequest, grpc.ServerStreamingServer[GetCurrentPriceResponse]) error
 	SearchTicker(context.Context, *SearchTickerRequest) (*SearchTickerResponse, error)
 	ListMarkets(context.Context, *ListMarketsRequest) (*ListMarketsResponse, error)
 	mustEmbedUnimplementedMarketDataServiceServer()
@@ -106,6 +128,9 @@ func (UnimplementedMarketDataServiceServer) GetQuotes(context.Context, *GetQuote
 }
 func (UnimplementedMarketDataServiceServer) GetCurrentPrice(context.Context, *GetCurrentPriceRequest) (*GetCurrentPriceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCurrentPrice not implemented")
+}
+func (UnimplementedMarketDataServiceServer) StreamCurrentPrice(*GetCurrentPriceRequest, grpc.ServerStreamingServer[GetCurrentPriceResponse]) error {
+	return status.Error(codes.Unimplemented, "method StreamCurrentPrice not implemented")
 }
 func (UnimplementedMarketDataServiceServer) SearchTicker(context.Context, *SearchTickerRequest) (*SearchTickerResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SearchTicker not implemented")
@@ -170,6 +195,17 @@ func _MarketDataService_GetCurrentPrice_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MarketDataService_StreamCurrentPrice_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetCurrentPriceRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(MarketDataServiceServer).StreamCurrentPrice(m, &grpc.GenericServerStream[GetCurrentPriceRequest, GetCurrentPriceResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type MarketDataService_StreamCurrentPriceServer = grpc.ServerStreamingServer[GetCurrentPriceResponse]
+
 func _MarketDataService_SearchTicker_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SearchTickerRequest)
 	if err := dec(in); err != nil {
@@ -230,6 +266,12 @@ var MarketDataService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MarketDataService_ListMarkets_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StreamCurrentPrice",
+			Handler:       _MarketDataService_StreamCurrentPrice_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "cegw/v1/market_data.proto",
 }

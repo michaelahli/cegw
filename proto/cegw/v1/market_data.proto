@@ -33,6 +33,14 @@ service MarketDataService {
     };
   }
 
+  rpc StreamCurrentPrice(GetCurrentPriceRequest) returns (stream GetCurrentPriceResponse) {
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Stream Current Price"
+      description: "Streams the latest ticker price for a trading pair using the exchange WebSocket feed when supported by CCXT. This endpoint is available over gRPC."
+      tags: "Market Data"
+    };
+  }
+
   rpc SearchTicker(SearchTickerRequest) returns (SearchTickerResponse) {
     option (google.api.http) = {
       get: "/v1/market/search"
