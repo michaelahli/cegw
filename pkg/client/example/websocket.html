@@ -20,7 +20,7 @@
     }
 
     main {
-      width: min(680px, calc(100vw - 32px));
+      width: min(720px, calc(100vw - 32px));
       border: 1px solid #d8dde6;
       border-radius: 8px;
       background: #fff;
@@ -38,6 +38,43 @@
       margin: 0 0 20px;
       color: #596273;
       font-size: 14px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+      gap: 12px;
+      align-items: end;
+      margin: 20px 0;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: #596273;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    select,
+    button {
+      min-height: 40px;
+      border: 1px solid #c8d0dc;
+      border-radius: 8px;
+      background: #fff;
+      color: #16181d;
+      font: inherit;
+    }
+
+    select {
+      width: 100%;
+      padding: 0 10px;
+    }
+
+    button {
+      padding: 0 16px;
+      cursor: pointer;
+      font-weight: 650;
     }
 
     .price {
@@ -94,23 +131,41 @@
       font-size: 13px;
       min-height: 72px;
     }
+
+    @media (max-width: 620px) {
+      .controls {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
   <main>
-    <h1>Tokocrypto BTC/USDT</h1>
+    <h1 id="title">Binance BTC/USDT</h1>
     <p class="meta">CEGW WebSocket latest price stream</p>
+
+    <div class="controls">
+      <label>
+        Exchange
+        <select id="exchangeSelect"></select>
+      </label>
+      <label>
+        Symbol
+        <select id="symbolSelect"></select>
+      </label>
+      <button id="connectButton" type="button">Connect</button>
+    </div>
 
     <div class="status">
       <span id="statusDot" class="dot"></span>
-      <span id="statusText">Connecting...</span>
+      <span id="statusText">Not connected</span>
     </div>
 
     <div id="price" class="price">-</div>
 
     <div class="row">
-      <div class="pill">Exchange: Tokocrypto (1)</div>
-      <div class="pill">Symbol: BTC/USDT</div>
+      <div id="exchangePill" class="pill">Exchange: Binance (2)</div>
+      <div id="symbolPill" class="pill">Symbol: BTC/USDT</div>
       <div id="timestamp" class="pill">Waiting for update</div>
     </div>
 
@@ -118,15 +173,32 @@
   </main>
 
   <script>
-    const exchange = "1";
-    const symbol = "BTC/USDT";
-    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsHost = window.location.host || "localhost:8080";
-    const wsUrl = `${wsProtocol}//${wsHost}/v1/ws/market/price?exchange=${exchange}&symbol=${encodeURIComponent(symbol)}`;
+    const exchanges = [
+      { id: "2", name: "Binance", symbols: ["BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT"] },
+      { id: "6", name: "OKX", symbols: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "DOGE/USDT"] },
+      { id: "7", name: "KuCoin", symbols: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "KCS/USDT"] },
+      { id: "9", name: "Bybit", symbols: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "DOGE/USDT"] },
+      { id: "10", name: "Bitget", symbols: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "BGB/USDT"] },
+      { id: "11", name: "Coinex", symbols: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "CET/USDT"] },
+      { id: "1", name: "Tokocrypto", symbols: ["BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT"] },
+      { id: "3", name: "Coinbase", symbols: ["BTC/USD", "ETH/USD", "SOL/USD", "XRP/USD", "DOGE/USD"] },
+      { id: "4", name: "CEX.IO", symbols: ["BTC/USD", "ETH/USD", "BTC/USDT", "ETH/USDT"] },
+      { id: "5", name: "Indodax", symbols: ["BTC/IDR", "ETH/IDR", "USDT/IDR", "BNB/IDR", "SOL/IDR"] },
+      { id: "8", name: "Crypto.com", symbols: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "DOGE/USDT"] },
+      { id: "12", name: "Hashkey", symbols: ["BTC/USD", "ETH/USD", "BTC/USDT", "ETH/USDT"] },
+    ];
 
+    let ws;
+
+    const titleEl = document.getElementById("title");
+    const exchangeSelect = document.getElementById("exchangeSelect");
+    const symbolSelect = document.getElementById("symbolSelect");
+    const connectButton = document.getElementById("connectButton");
     const statusDot = document.getElementById("statusDot");
     const statusText = document.getElementById("statusText");
     const priceEl = document.getElementById("price");
+    const exchangePill = document.getElementById("exchangePill");
+    const symbolPill = document.getElementById("symbolPill");
     const timestampEl = document.getElementById("timestamp");
     const payloadEl = document.getElementById("payload");
 
@@ -135,35 +207,72 @@
       statusDot.className = `dot ${className}`.trim();
     };
 
-    const ws = new WebSocket(wsUrl);
+    const selectedExchange = () => exchanges.find((exchange) => exchange.id === exchangeSelect.value);
 
-    ws.addEventListener("open", () => {
-      setStatus(`Connected to ${wsUrl}`, "connected");
-    });
+    const populateSymbols = () => {
+      const exchange = selectedExchange();
+      symbolSelect.replaceChildren(
+        ...exchange.symbols.map((symbol) => new Option(symbol, symbol)),
+      );
+    };
 
-    ws.addEventListener("message", (event) => {
-      const data = JSON.parse(event.data);
-      payloadEl.textContent = JSON.stringify(data, null, 2);
-
-      if (data.error) {
-        setStatus(data.error, "error");
-        return;
+    const connect = () => {
+      if (ws) {
+        ws.close();
       }
 
-      priceEl.textContent = Number(data.price).toLocaleString("en-US", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 8,
+      const exchange = selectedExchange();
+      const symbol = symbolSelect.value;
+      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const wsHost = window.location.host || "localhost:8080";
+      const wsUrl = `${wsProtocol}//${wsHost}/v1/ws/market/price?exchange=${exchange.id}&symbol=${encodeURIComponent(symbol)}`;
+
+      titleEl.textContent = `${exchange.name} ${symbol}`;
+      exchangePill.textContent = `Exchange: ${exchange.name} (${exchange.id})`;
+      symbolPill.textContent = `Symbol: ${symbol}`;
+      priceEl.textContent = "-";
+      timestampEl.textContent = "Waiting for update";
+      payloadEl.textContent = "{}";
+      setStatus(`Connecting to ${wsUrl}`);
+
+      ws = new WebSocket(wsUrl);
+
+      ws.addEventListener("open", () => {
+        setStatus(`Connected to ${wsUrl}`, "connected");
       });
-      timestampEl.textContent = new Date(data.timestamp).toLocaleString();
-    });
 
-    ws.addEventListener("close", () => {
-      setStatus("Disconnected", "error");
-    });
+      ws.addEventListener("message", (event) => {
+        const data = JSON.parse(event.data);
+        payloadEl.textContent = JSON.stringify(data, null, 2);
 
-    ws.addEventListener("error", () => {
-      setStatus("WebSocket error", "error");
-    });
+        if (data.error) {
+          setStatus(data.error, "error");
+          return;
+        }
+
+        priceEl.textContent = Number(data.price).toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 8,
+        });
+        timestampEl.textContent = new Date(data.timestamp).toLocaleString();
+      });
+
+      ws.addEventListener("close", () => {
+        setStatus("Disconnected", "error");
+      });
+
+      ws.addEventListener("error", () => {
+        setStatus("WebSocket error", "error");
+      });
+    };
+
+    exchangeSelect.replaceChildren(
+      ...exchanges.map((exchange) => new Option(exchange.name, exchange.id)),
+    );
+    exchangeSelect.value = "2";
+    populateSymbols();
+    connectButton.addEventListener("click", connect);
+    exchangeSelect.addEventListener("change", populateSymbols);
   </script>
 </body>
 </html>
