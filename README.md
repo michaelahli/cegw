@@ -8,7 +8,7 @@ It provides a simple HTTP/JSON API and gRPC endpoint so your apps can access mar
 - Fetch market data for supported exchanges
 - Return current prices, market lists, and trading pairs
 - Place market buy/sell orders
-- Support both HTTP/JSON and gRPC clients
+- Support HTTP/JSON, gRPC, and native WebSocket clients
 - Run in Docker for easy local or cloud deployment
 
 ## Run with Docker
@@ -56,6 +56,52 @@ curl http://localhost:8080/v1/market/price/1/BTC/USDT
 curl http://localhost:8080/v1/market/list?exchange=1
 ```
 
+### Stream latest prices over WebSocket
+
+Use the native WebSocket endpoint when you want JSON updates from a browser or a standard WebSocket client.
+
+```javascript
+const ws = new WebSocket(
+  "ws://localhost:8080/v1/ws/market/price?exchange=2&symbol=BTC/USDT",
+);
+
+ws.onmessage = (event) => {
+  console.log(JSON.parse(event.data));
+};
+```
+
+Messages are sent as JSON:
+
+```json
+{
+  "symbol": "BTC/USDT",
+  "price": 68420.12,
+  "timestamp": "2026-06-07T10:15:30Z"
+}
+```
+
+### Stream latest prices over gRPC
+
+Use `MarketDataService.StreamCurrentPrice` for server-streaming gRPC clients. It returns a stream of `GetCurrentPriceResponse` messages and uses exchange WebSocket feeds through CCXT.
+
+```go
+stream, err := c.MarketDataService.StreamCurrentPrice(ctx, &cegwv1.GetCurrentPriceRequest{
+    Exchange: cegwv1.Exchange_EXCHANGE_BINANCE,
+    Symbol:   "BTC/USDT",
+})
+if err != nil {
+    log.Fatal(err)
+}
+
+for {
+    price, err := stream.Recv()
+    if err != nil {
+        log.Fatal(err)
+    }
+    log.Printf("%s price: %.8f", price.Symbol, price.Price)
+}
+```
+
 ### Create a market order
 
 ```bash
@@ -73,6 +119,17 @@ curl -X POST http://localhost:8080/v1/trading/order \
     }
   }'
 ```
+
+## Streaming Market Data
+
+CEGW supports two streaming paths for latest price updates:
+
+- gRPC server streaming: `MarketDataService.StreamCurrentPrice`
+- Native WebSocket JSON: `GET /v1/ws/market/price?exchange={id}&symbol={symbol}`
+
+The WebSocket endpoint is included in `docs/openapi.json` through a manual OpenAPI fragment because it uses an HTTP upgrade instead of a protobuf HTTP annotation.
+
+When authentication is enabled, WebSocket clients must send credentials during the upgrade request. Basic auth clients can use a URL or an `Authorization` header depending on the client library. OAuth2 clients should send `Authorization: Bearer <token>`.
 
 ## Ports
 

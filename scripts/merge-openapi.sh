@@ -3,6 +3,7 @@
 set -e
 
 SWAGGER_DIR="gen/openapiv2/cegw/v1"
+FRAGMENT_DIR="docs/openapi-fragments"
 OUTPUT_FILE="docs/openapi.json"
 
 echo "Merging OpenAPI specifications..."
@@ -41,19 +42,31 @@ EOF
 # Merge all swagger files
 TEMP_FILE=$(mktemp)
 
+merge_openapi_file() {
+    local file="$1"
+
+    # Merge paths
+    jq -s '.[0].paths as $base | (.[1].paths // {}) as $new | .[0] | .paths = ($base + $new)' \
+        ${OUTPUT_FILE} "$file" > ${TEMP_FILE}
+    mv ${TEMP_FILE} ${OUTPUT_FILE}
+
+    # Merge definitions
+    jq -s '.[0].definitions as $base | (.[1].definitions // {}) as $new | .[0] | .definitions = ($base + $new)' \
+        ${OUTPUT_FILE} "$file" > ${TEMP_FILE}
+    mv ${TEMP_FILE} ${OUTPUT_FILE}
+}
+
 for file in ${SWAGGER_DIR}/*.swagger.json; do
     if [ -f "$file" ]; then
         echo "Merging $(basename $file)..."
-        
-        # Merge paths
-        jq -s '.[0].paths as $base | .[1].paths as $new | .[0] | .paths = ($base + $new)' \
-            ${OUTPUT_FILE} "$file" > ${TEMP_FILE}
-        mv ${TEMP_FILE} ${OUTPUT_FILE}
-        
-        # Merge definitions
-        jq -s '.[0].definitions as $base | .[1].definitions as $new | .[0] | .definitions = ($base + $new)' \
-            ${OUTPUT_FILE} "$file" > ${TEMP_FILE}
-        mv ${TEMP_FILE} ${OUTPUT_FILE}
+        merge_openapi_file "$file"
+    fi
+done
+
+for file in ${FRAGMENT_DIR}/*.json; do
+    if [ -f "$file" ]; then
+        echo "Merging manual fragment $(basename $file)..."
+        merge_openapi_file "$file"
     fi
 done
 

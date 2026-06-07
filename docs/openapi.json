@@ -317,6 +317,53 @@
           "Trading"
         ]
       }
+    },
+    "/v1/ws/market/price": {
+      "get": {
+        "tags": [
+          "Market Data"
+        ],
+        "summary": "Stream Current Price Over WebSocket",
+        "description": "Upgrades the HTTP connection to a WebSocket and streams latest ticker price updates as JSON messages. This endpoint is documented manually because WebSocket upgrade routes are not generated from protobuf HTTP annotations.",
+        "operationId": "MarketData_WebSocketCurrentPrice",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "exchange",
+            "in": "query",
+            "description": "Numeric exchange identifier from the Exchange enum, for example 1 for Tokocrypto or 2 for Binance.",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "symbol",
+            "in": "query",
+            "description": "Trading pair symbol, for example BTC/USDT.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "101": {
+            "description": "Switching Protocols. After upgrade, the server sends PriceStreamMessage JSON text frames."
+          },
+          "400": {
+            "description": "Invalid request parameters."
+          },
+          "401": {
+            "description": "Unauthorized when authentication is enabled."
+          },
+          "500": {
+            "description": "WebSocket upgrade or exchange streaming error."
+          }
+        },
+        "x-websocket-message": {
+          "$ref": "#/definitions/PriceStreamMessage"
+        }
+      }
     }
   },
   "definitions": {
@@ -723,6 +770,36 @@
         },
         "message": {
           "type": "string"
+        }
+      }
+    },
+    "PriceStreamMessage": {
+      "type": "object",
+      "description": "JSON message sent on the WebSocket stream for each latest ticker price update.",
+      "properties": {
+        "symbol": {
+          "type": "string",
+          "example": "BTC/USDT"
+        },
+        "price": {
+          "type": "number",
+          "format": "double",
+          "example": 68420.12
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-06-07T10:15:30Z"
+        }
+      }
+    },
+    "WebSocketErrorMessage": {
+      "type": "object",
+      "description": "JSON error message sent before the WebSocket connection is closed when streaming cannot continue.",
+      "properties": {
+        "error": {
+          "type": "string",
+          "example": "failed to watch ticker"
         }
       }
     }

@@ -43,14 +43,40 @@ func main() {
     }
     
     log.Printf("Price: $%.2f", resp.Price)
+
+    // Stream current price updates
+    stream, err := c.MarketDataService.StreamCurrentPrice(ctx, &cegwv1.GetCurrentPriceRequest{
+        Exchange: cegwv1.Exchange_EXCHANGE_TOKOCRYPTO,
+        Symbol:   "BTC/USDT",
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    for {
+        update, err := stream.Recv()
+        if err != nil {
+            log.Fatal(err)
+        }
+        log.Printf("Price update: $%.2f", update.Price)
+    }
 }
 ```
 
 ## Services Available
 
-- **MarketDataService**: GetCurrentPrice, GetQuotes, ListMarkets, SearchTicker
+- **MarketDataService**: GetCurrentPrice, StreamCurrentPrice, GetQuotes, ListMarkets, SearchTicker
 - **TradingService**: CreateMarketOrder, TestCredentials
 - **MonitoringService**: CheckPriceAlerts
+
+## WebSocket Clients
+
+Standard WebSocket clients can consume latest price updates from the HTTP server without using this Go client package:
+
+```javascript
+const ws = new WebSocket("ws://localhost:8080/v1/ws/market/price?exchange=1&symbol=BTC/USDT");
+ws.onmessage = (event) => console.log(JSON.parse(event.data));
+```
 
 ## Examples
 
