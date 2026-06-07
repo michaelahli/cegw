@@ -262,8 +262,10 @@ func (s *MarketDataService) StreamCurrentPrice(req *cegwv1.GetCurrentPriceReques
 
 	exchange := ccxt.AsStreamingExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange streaming not supported")
-		return status.Error(codes.Unimplemented, "exchange streaming not supported")
+		log.Warnf("exchange streaming not supported, falling back to ticker polling")
+		return s.pollCurrentPrice(ctx, client, req.Symbol, func(resp *cegwv1.GetCurrentPriceResponse) error {
+			return stream.Send(resp)
+		})
 	}
 
 	for {
@@ -280,27 +282,67 @@ func (s *MarketDataService) StreamCurrentPrice(req *cegwv1.GetCurrentPriceReques
 				log.Debugf("current price stream closed during ticker watch")
 				return nil
 			}
+			if ccxt.IsWatchTickerUnsupported(err) {
+				log.WithError(err).Warnf("watch ticker unsupported, falling back to ticker polling")
+				return s.pollCurrentPrice(ctx, client, req.Symbol, func(resp *cegwv1.GetCurrentPriceResponse) error {
+					return stream.Send(resp)
+				})
+			}
 			log.WithError(err).Errorf("failed to watch ticker")
 			return ccxt.MapError(err)
 		}
 
-		price := ccxt.Float64P(ticker.Close)
-		if price == 0 {
-			price = ccxt.Float64P(ticker.Last)
-		}
-
-		resp := &cegwv1.GetCurrentPriceResponse{
-			Symbol:    req.Symbol,
-			Price:     price,
-			Timestamp: timestamppb.Now(),
-		}
+		resp := tickerToCurrentPriceResponse(req.Symbol, ticker)
 
 		if err := stream.Send(resp); err != nil {
 			log.WithError(err).Debugf("failed to send current price update")
 			return err
 		}
 
-		log.WithField("price", price).Debugf("current price update streamed")
+		log.WithField("price", resp.Price).Debugf("current price update streamed")
+	}
+}
+
+func (s *MarketDataService) pollCurrentPrice(ctx context.Context, client interface{}, symbol string, send func(*cegwv1.GetCurrentPriceResponse) error) error {
+	exchange := ccxt.AsExchange(client)
+	if exchange == nil {
+		return status.Error(codes.Unimplemented, "exchange not supported")
+	}
+
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		latest, err := exchange.FetchTicker(symbol)
+		if err != nil {
+			if ctx.Err() != nil {
+				return nil
+			}
+			return ccxt.MapError(err)
+		}
+
+		if err := send(tickerToCurrentPriceResponse(symbol, latest)); err != nil {
+			return err
+		}
+
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+		}
+	}
+}
+
+func tickerToCurrentPriceResponse(symbol string, ticker ccxtlib.Ticker) *cegwv1.GetCurrentPriceResponse {
+	price := ccxt.Float64P(ticker.Close)
+	if price == 0 {
+		price = ccxt.Float64P(ticker.Last)
+	}
+
+	return &cegwv1.GetCurrentPriceResponse{
+		Symbol:    symbol,
+		Price:     price,
+		Timestamp: timestamppb.Now(),
 	}
 }
 

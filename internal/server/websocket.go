@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	ccxtlib "github.com/ccxt/ccxt/go/v4"
 	"github.com/gorilla/websocket"
 	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
 	"github.com/michaelahli/cegw/internal/ccxt"
@@ -129,8 +130,8 @@ func streamPriceToWebsocket(ctx context.Context, conn *websocket.Conn, log *logg
 
 	exchange := ccxt.AsStreamingExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange streaming not supported")
-		writeWebsocketError(conn, "exchange streaming not supported")
+		log.Warnf("exchange streaming not supported, falling back to ticker polling")
+		pollPriceToWebsocket(ctx, conn, client, log, symbol)
 		return
 	}
 
@@ -148,26 +149,72 @@ func streamPriceToWebsocket(ctx context.Context, conn *websocket.Conn, log *logg
 				log.Debugf("websocket price stream closed during ticker watch")
 				return
 			}
+			if ccxt.IsWatchTickerUnsupported(err) {
+				log.WithError(err).Warnf("watch ticker unsupported, falling back to ticker polling")
+				pollPriceToWebsocket(ctx, conn, client, log, symbol)
+				return
+			}
 			log.WithError(err).Errorf("failed to watch ticker")
 			writeWebsocketError(conn, "failed to watch ticker")
 			return
 		}
 
-		price := ccxt.Float64P(ticker.Close)
-		if price == 0 {
-			price = ccxt.Float64P(ticker.Last)
-		}
-
-		message := priceStreamMessage{
-			Symbol:    symbol,
-			Price:     price,
-			Timestamp: time.Now().UTC(),
-		}
-		if err := conn.WriteJSON(message); err != nil {
-			log.WithError(err).Debugf("failed to write websocket price update")
+		if !writeTickerToWebsocket(conn, symbol, ticker) {
+			log.Debugf("failed to write websocket price update")
 			return
 		}
 	}
+}
+
+func pollPriceToWebsocket(ctx context.Context, conn *websocket.Conn, client interface{}, log *logger.Logger, symbol string) {
+	exchange := ccxt.AsExchange(client)
+	if exchange == nil {
+		log.Warnf("exchange polling not supported")
+		writeWebsocketError(conn, "exchange not supported")
+		return
+	}
+
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		latest, err := exchange.FetchTicker(symbol)
+		if err != nil {
+			if ctx.Err() != nil {
+				log.Debugf("websocket polling stream closed during ticker fetch")
+				return
+			}
+			log.WithError(err).Errorf("failed to fetch ticker")
+			writeWebsocketError(conn, "failed to fetch ticker")
+			return
+		}
+
+		if !writeTickerToWebsocket(conn, symbol, latest) {
+			log.Debugf("failed to write websocket polling update")
+			return
+		}
+
+		select {
+		case <-ctx.Done():
+			log.Debugf("websocket polling stream closed")
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+func writeTickerToWebsocket(conn *websocket.Conn, symbol string, ticker ccxtlib.Ticker) bool {
+	price := ccxt.Float64P(ticker.Close)
+	if price == 0 {
+		price = ccxt.Float64P(ticker.Last)
+	}
+
+	message := priceStreamMessage{
+		Symbol:    symbol,
+		Price:     price,
+		Timestamp: time.Now().UTC(),
+	}
+	return conn.WriteJSON(message) == nil
 }
 
 func writeWebsocketError(conn *websocket.Conn, message string) {

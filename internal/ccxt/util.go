@@ -2,6 +2,7 @@ package ccxt
 
 import (
 	"context"
+	"strings"
 
 	ccxt "github.com/ccxt/ccxt/go/v4"
 	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
@@ -82,6 +83,14 @@ func NewClientForExchange(ctx context.Context, exchange cegwv1.Exchange, creds *
 			Warnf("unsupported exchange")
 		return nil, nil
 	}
+}
+
+func IsWatchTickerUnsupported(err error) bool {
+	if err == nil {
+		return false
+	}
+	message := strings.ToLower(err.Error())
+	return strings.Contains(message, "watchticker") && strings.Contains(message, "not supported")
 }
 
 func Float64P(v *float64) float64 {
