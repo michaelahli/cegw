@@ -17,6 +17,10 @@
     {
       "name": "Monitoring",
       "description": "Monitoring and alerts"
+    },
+    {
+      "name": "Examples",
+      "description": "Browser examples and interactive demos"
     }
   ],
   "consumes": ["application/json"],
@@ -304,7 +308,7 @@
       "get": {
         "tags": ["Market Data"],
         "summary": "Stream Current Price Over WebSocket",
-        "description": "Upgrades the HTTP connection to a WebSocket and streams latest ticker price updates as JSON messages. This endpoint is documented manually because WebSocket upgrade routes are not generated from protobuf HTTP annotations.",
+        "description": "Upgrades the HTTP connection to a WebSocket and streams latest ticker price updates as JSON text frames. This endpoint is documented manually because WebSocket upgrade routes are not generated from protobuf HTTP annotations. After the 101 Switching Protocols response, each successful message matches PriceStreamMessage. If streaming cannot continue after upgrade, the server may send WebSocketErrorMessage before closing the connection.",
         "operationId": "MarketData_WebSocketCurrentPrice",
         "produces": ["application/json"],
         "parameters": [
@@ -326,10 +330,34 @@
         ],
         "responses": {
           "101": {
-            "description": "Switching Protocols. After upgrade, the server sends PriceStreamMessage JSON text frames."
+            "description": "Switching Protocols. The HTTP response has no JSON body; after upgrade, the WebSocket sends PriceStreamMessage JSON text frames.",
+            "headers": {
+              "Upgrade": {
+                "type": "string",
+                "description": "websocket"
+              },
+              "Connection": {
+                "type": "string",
+                "description": "Upgrade"
+              }
+            },
+            "x-websocket-message-schema": {
+              "$ref": "#/definitions/PriceStreamMessage"
+            },
+            "x-websocket-message-example": {
+              "symbol": "BTC/USDT",
+              "price": 68420.12,
+              "timestamp": "2026-06-07T10:15:30Z"
+            },
+            "x-websocket-error-schema": {
+              "$ref": "#/definitions/WebSocketErrorMessage"
+            },
+            "x-websocket-error-example": {
+              "error": "failed to watch ticker"
+            }
           },
           "400": {
-            "description": "Invalid request parameters."
+            "description": "Invalid request parameters before upgrade, such as missing exchange or symbol. Returned as a plain HTTP error response."
           },
           "401": {
             "description": "Unauthorized when authentication is enabled."
@@ -340,6 +368,23 @@
         },
         "x-websocket-message": {
           "$ref": "#/definitions/PriceStreamMessage"
+        }
+      }
+    },
+    "/examples/websocket": {
+      "get": {
+        "tags": ["Examples"],
+        "summary": "Open WebSocket Candlestick Example",
+        "description": "Serves the browser example used to load historical OHLCV candles and connect to the WebSocket latest price stream from the same HTTP origin. Open this route instead of the local file path to avoid browser CORS restrictions.",
+        "operationId": "Examples_WebSocketCandlestick",
+        "produces": ["text/html"],
+        "responses": {
+          "200": {
+            "description": "HTML page for the WebSocket candlestick example.",
+            "schema": {
+              "type": "string"
+            }
+          }
         }
       }
     }
@@ -750,6 +795,7 @@
     "PriceStreamMessage": {
       "type": "object",
       "description": "JSON message sent on the WebSocket stream for each latest ticker price update.",
+      "required": ["symbol", "price", "timestamp"],
       "properties": {
         "symbol": {
           "type": "string",
@@ -769,7 +815,8 @@
     },
     "WebSocketErrorMessage": {
       "type": "object",
-      "description": "JSON error message sent before the WebSocket connection is closed when streaming cannot continue.",
+      "description": "JSON error message sent before the WebSocket connection is closed when streaming cannot continue after upgrade.",
+      "required": ["error"],
       "properties": {
         "error": {
           "type": "string",
