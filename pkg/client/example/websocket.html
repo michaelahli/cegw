@@ -20,7 +20,7 @@
     }
 
     main {
-      width: min(720px, calc(100vw - 32px));
+      width: min(920px, calc(100vw - 32px));
       border: 1px solid #d8dde6;
       border-radius: 8px;
       background: #fff;
@@ -42,7 +42,7 @@
 
     .controls {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
       gap: 12px;
       align-items: end;
       margin: 20px 0;
@@ -121,6 +121,45 @@
       background: #d13b3b;
     }
 
+    .chartHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .chartTitle {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 650;
+    }
+
+    .chartWrap {
+      position: relative;
+      margin-top: 10px;
+      border: 1px solid #d8dde6;
+      border-radius: 8px;
+      background: #fbfcfe;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 320px;
+    }
+
+    .emptyChart {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #7b8494;
+      font-size: 14px;
+      pointer-events: none;
+    }
+
     pre {
       overflow: auto;
       margin: 20px 0 0;
@@ -132,9 +171,13 @@
       min-height: 72px;
     }
 
-    @media (max-width: 620px) {
+    @media (max-width: 720px) {
       .controls {
         grid-template-columns: 1fr;
+      }
+
+      canvas {
+        height: 260px;
       }
     }
   </style>
@@ -153,6 +196,14 @@
         Symbol
         <select id="symbolSelect"></select>
       </label>
+      <label>
+        Candle
+        <select id="candleSelect">
+          <option value="10000">10 seconds</option>
+          <option value="30000">30 seconds</option>
+          <option value="60000">1 minute</option>
+        </select>
+      </label>
       <button id="connectButton" type="button">Connect</button>
     </div>
 
@@ -166,7 +217,17 @@
     <div class="row">
       <div id="exchangePill" class="pill">Exchange: Binance (2)</div>
       <div id="symbolPill" class="pill">Symbol: BTC/USDT</div>
+      <div id="candlePill" class="pill">Candle: 10 seconds</div>
       <div id="timestamp" class="pill">Waiting for update</div>
+    </div>
+
+    <div class="chartHeader">
+      <p class="chartTitle">Candlestick</p>
+      <div id="ohlcPill" class="pill">OHLC: -</div>
+    </div>
+    <div class="chartWrap">
+      <canvas id="candlestickChart"></canvas>
+      <div id="emptyChart" class="emptyChart">Connect to start building candles</div>
     </div>
 
     <pre id="payload">{}</pre>
@@ -188,19 +249,27 @@
       { id: "12", name: "Hashkey", symbols: ["BTC/USD", "ETH/USD", "BTC/USDT", "ETH/USDT"] },
     ];
 
+    const maxCandles = 48;
     let ws;
+    let candles = [];
 
     const titleEl = document.getElementById("title");
     const exchangeSelect = document.getElementById("exchangeSelect");
     const symbolSelect = document.getElementById("symbolSelect");
+    const candleSelect = document.getElementById("candleSelect");
     const connectButton = document.getElementById("connectButton");
     const statusDot = document.getElementById("statusDot");
     const statusText = document.getElementById("statusText");
     const priceEl = document.getElementById("price");
     const exchangePill = document.getElementById("exchangePill");
     const symbolPill = document.getElementById("symbolPill");
+    const candlePill = document.getElementById("candlePill");
+    const ohlcPill = document.getElementById("ohlcPill");
     const timestampEl = document.getElementById("timestamp");
     const payloadEl = document.getElementById("payload");
+    const chartCanvas = document.getElementById("candlestickChart");
+    const emptyChart = document.getElementById("emptyChart");
+    const chartCtx = chartCanvas.getContext("2d");
 
     const setStatus = (text, className = "") => {
       statusText.textContent = text;
@@ -209,11 +278,132 @@
 
     const selectedExchange = () => exchanges.find((exchange) => exchange.id === exchangeSelect.value);
 
+    const selectedCandleLabel = () => candleSelect.options[candleSelect.selectedIndex].textContent;
+
+    const formatPrice = (price) => Number(price).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 8,
+    });
+
     const populateSymbols = () => {
       const exchange = selectedExchange();
       symbolSelect.replaceChildren(
         ...exchange.symbols.map((symbol) => new Option(symbol, symbol)),
       );
+    };
+
+    const resetCandles = () => {
+      candles = [];
+      ohlcPill.textContent = "OHLC: -";
+      emptyChart.textContent = "Waiting for price ticks";
+      emptyChart.style.display = "grid";
+      drawCandles();
+    };
+
+    const updateCandles = (price, timestamp) => {
+      const interval = Number(candleSelect.value);
+      const time = new Date(timestamp).getTime();
+      const bucket = Math.floor(time / interval) * interval;
+      const last = candles[candles.length - 1];
+
+      if (!last || last.time !== bucket) {
+        candles.push({
+          time: bucket,
+          open: price,
+          high: price,
+          low: price,
+          close: price,
+        });
+        if (candles.length > maxCandles) {
+          candles.shift();
+        }
+      } else {
+        last.high = Math.max(last.high, price);
+        last.low = Math.min(last.low, price);
+        last.close = price;
+      }
+
+      const current = candles[candles.length - 1];
+      ohlcPill.textContent = `OHLC: ${formatPrice(current.open)} / ${formatPrice(current.high)} / ${formatPrice(current.low)} / ${formatPrice(current.close)}`;
+      emptyChart.style.display = "none";
+      drawCandles();
+    };
+
+    const resizeCanvas = () => {
+      const rect = chartCanvas.getBoundingClientRect();
+      const scale = window.devicePixelRatio || 1;
+      chartCanvas.width = Math.max(1, Math.floor(rect.width * scale));
+      chartCanvas.height = Math.max(1, Math.floor(rect.height * scale));
+      chartCtx.setTransform(scale, 0, 0, scale, 0, 0);
+      drawCandles();
+    };
+
+    const drawCandles = () => {
+      const width = chartCanvas.clientWidth;
+      const height = chartCanvas.clientHeight;
+      chartCtx.clearRect(0, 0, width, height);
+
+      const padding = { top: 22, right: 72, bottom: 28, left: 14 };
+      const chartWidth = width - padding.left - padding.right;
+      const chartHeight = height - padding.top - padding.bottom;
+
+      chartCtx.fillStyle = "#fbfcfe";
+      chartCtx.fillRect(0, 0, width, height);
+
+      chartCtx.strokeStyle = "#e3e7ee";
+      chartCtx.lineWidth = 1;
+      for (let i = 0; i <= 4; i += 1) {
+        const y = padding.top + (chartHeight / 4) * i;
+        chartCtx.beginPath();
+        chartCtx.moveTo(padding.left, y);
+        chartCtx.lineTo(width - padding.right + 8, y);
+        chartCtx.stroke();
+      }
+
+      if (candles.length === 0) {
+        return;
+      }
+
+      const low = Math.min(...candles.map((candle) => candle.low));
+      const high = Math.max(...candles.map((candle) => candle.high));
+      const range = high - low || Math.max(high * 0.001, 1);
+      const min = low - range * 0.08;
+      const max = high + range * 0.08;
+      const priceToY = (price) => padding.top + ((max - price) / (max - min)) * chartHeight;
+      const candleWidth = Math.max(4, chartWidth / maxCandles * 0.58);
+      const step = chartWidth / Math.max(maxCandles - 1, 1);
+      const startX = padding.left + chartWidth - step * (candles.length - 1);
+
+      chartCtx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+      chartCtx.fillStyle = "#596273";
+      chartCtx.textAlign = "left";
+      chartCtx.textBaseline = "middle";
+      for (let i = 0; i <= 4; i += 1) {
+        const value = max - ((max - min) / 4) * i;
+        const y = padding.top + (chartHeight / 4) * i;
+        chartCtx.fillText(formatPrice(value), width - padding.right + 14, y);
+      }
+
+      candles.forEach((candle, index) => {
+        const x = startX + step * index;
+        const openY = priceToY(candle.open);
+        const closeY = priceToY(candle.close);
+        const highY = priceToY(candle.high);
+        const lowY = priceToY(candle.low);
+        const rising = candle.close >= candle.open;
+        const color = rising ? "#169b62" : "#d13b3b";
+        const bodyTop = Math.min(openY, closeY);
+        const bodyHeight = Math.max(2, Math.abs(closeY - openY));
+
+        chartCtx.strokeStyle = color;
+        chartCtx.fillStyle = color;
+        chartCtx.lineWidth = 1.5;
+        chartCtx.beginPath();
+        chartCtx.moveTo(x, highY);
+        chartCtx.lineTo(x, lowY);
+        chartCtx.stroke();
+        chartCtx.fillRect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight);
+      });
     };
 
     const connect = () => {
@@ -230,9 +420,11 @@
       titleEl.textContent = `${exchange.name} ${symbol}`;
       exchangePill.textContent = `Exchange: ${exchange.name} (${exchange.id})`;
       symbolPill.textContent = `Symbol: ${symbol}`;
+      candlePill.textContent = `Candle: ${selectedCandleLabel()}`;
       priceEl.textContent = "-";
       timestampEl.textContent = "Waiting for update";
       payloadEl.textContent = "{}";
+      resetCandles();
       setStatus(`Connecting to ${wsUrl}`);
 
       ws = new WebSocket(wsUrl);
@@ -250,11 +442,10 @@
           return;
         }
 
-        priceEl.textContent = Number(data.price).toLocaleString("en-US", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 8,
-        });
+        const price = Number(data.price);
+        priceEl.textContent = formatPrice(price);
         timestampEl.textContent = new Date(data.timestamp).toLocaleString();
+        updateCandles(price, data.timestamp);
       });
 
       ws.addEventListener("close", () => {
@@ -271,8 +462,15 @@
     );
     exchangeSelect.value = "2";
     populateSymbols();
+    resizeCanvas();
+
     connectButton.addEventListener("click", connect);
     exchangeSelect.addEventListener("change", populateSymbols);
+    candleSelect.addEventListener("change", () => {
+      candlePill.textContent = `Candle: ${selectedCandleLabel()}`;
+      resetCandles();
+    });
+    window.addEventListener("resize", resizeCanvas);
   </script>
 </body>
 </html>
