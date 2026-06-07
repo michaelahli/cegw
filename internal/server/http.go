@@ -115,6 +115,11 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 		_, _ = w.Write([]byte("ready"))
 	})
 
+	// WebSocket market data streams
+	wsHandler := middleware.AuthMiddleware(s.cfg, s.log)(handlePriceWebsocket(s.log))
+	wsHandler = middleware.HTTPLoggingMiddleware(s.log)(wsHandler)
+	mainMux.Handle("/v1/ws/market/price", wsHandler)
+
 	// Mount gRPC gateway under root path with auth and logging middleware
 	handler := middleware.AuthMiddleware(s.cfg, s.log)(mux)
 	handler = middleware.HTTPLoggingMiddleware(s.log)(handler)
