@@ -66,6 +66,11 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 		http.ServeFile(w, r, "docs/openapi.json")
 	})
 
+	// Serve browser examples
+	mainMux.HandleFunc("/examples/websocket", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "pkg/client/example/websocket.html")
+	})
+
 	// Health check endpoints for Kubernetes
 	grpcEndpointHealth := fmt.Sprintf("localhost:%s", s.cfg.GRPCPort)
 	mainMux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {

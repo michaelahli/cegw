@@ -185,7 +185,7 @@
 <body>
   <main>
     <h1 id="title">Binance BTC/USDT</h1>
-    <p class="meta">CEGW WebSocket latest price stream</p>
+    <p class="meta">CEGW OHLCV history + WebSocket live price stream</p>
 
     <div class="controls">
       <label>
@@ -197,14 +197,18 @@
         <select id="symbolSelect"></select>
       </label>
       <label>
-        Candle
-        <select id="candleSelect">
-          <option value="10000">10 seconds</option>
-          <option value="30000">30 seconds</option>
-          <option value="60000">1 minute</option>
+        Timeframe
+        <select id="timeframeSelect">
+          <option value="1">1m</option>
+          <option value="2">5m</option>
+          <option value="3">30m</option>
+          <option value="5" selected>1h</option>
+          <option value="8">1d</option>
+          <option value="9">1w</option>
+          <option value="10">1M</option>
         </select>
       </label>
-      <button id="connectButton" type="button">Connect</button>
+      <button id="connectButton" type="button">Load & Connect</button>
     </div>
 
     <div class="status">
@@ -217,7 +221,7 @@
     <div class="row">
       <div id="exchangePill" class="pill">Exchange: Binance (2)</div>
       <div id="symbolPill" class="pill">Symbol: BTC/USDT</div>
-      <div id="candlePill" class="pill">Candle: 10 seconds</div>
+      <div id="timeframePill" class="pill">Timeframe: 1h</div>
       <div id="timestamp" class="pill">Waiting for update</div>
     </div>
 
@@ -227,7 +231,7 @@
     </div>
     <div class="chartWrap">
       <canvas id="candlestickChart"></canvas>
-      <div id="emptyChart" class="emptyChart">Connect to start building candles</div>
+      <div id="emptyChart" class="emptyChart">Load history to draw candles</div>
     </div>
 
     <pre id="payload">{}</pre>
@@ -249,21 +253,31 @@
       { id: "12", name: "Hashkey", symbols: ["BTC/USD", "ETH/USD", "BTC/USDT", "ETH/USDT"] },
     ];
 
-    const maxCandles = 48;
+    const intervals = {
+      "1": { label: "1m", ms: 60 * 1000 },
+      "2": { label: "5m", ms: 5 * 60 * 1000 },
+      "3": { label: "30m", ms: 30 * 60 * 1000 },
+      "5": { label: "1h", ms: 60 * 60 * 1000 },
+      "8": { label: "1d", ms: 24 * 60 * 60 * 1000 },
+      "9": { label: "1w", ms: 7 * 24 * 60 * 60 * 1000 },
+      "10": { label: "1M", ms: 30 * 24 * 60 * 60 * 1000 },
+    };
+
+    const historyLimit = 48;
     let ws;
     let candles = [];
 
     const titleEl = document.getElementById("title");
     const exchangeSelect = document.getElementById("exchangeSelect");
     const symbolSelect = document.getElementById("symbolSelect");
-    const candleSelect = document.getElementById("candleSelect");
+    const timeframeSelect = document.getElementById("timeframeSelect");
     const connectButton = document.getElementById("connectButton");
     const statusDot = document.getElementById("statusDot");
     const statusText = document.getElementById("statusText");
     const priceEl = document.getElementById("price");
     const exchangePill = document.getElementById("exchangePill");
     const symbolPill = document.getElementById("symbolPill");
-    const candlePill = document.getElementById("candlePill");
+    const timeframePill = document.getElementById("timeframePill");
     const ohlcPill = document.getElementById("ohlcPill");
     const timestampEl = document.getElementById("timestamp");
     const payloadEl = document.getElementById("payload");
@@ -278,7 +292,24 @@
 
     const selectedExchange = () => exchanges.find((exchange) => exchange.id === exchangeSelect.value);
 
-    const selectedCandleLabel = () => candleSelect.options[candleSelect.selectedIndex].textContent;
+    const selectedInterval = () => intervals[timeframeSelect.value];
+
+    const apiHttpBaseUrl = () => {
+      if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+        return `${window.location.protocol}//${window.location.host}`;
+      }
+      return "http://localhost:8080";
+    };
+
+    const apiWebSocketBaseUrl = () => {
+      if (window.location.protocol === "https:") {
+        return `wss://${window.location.host}`;
+      }
+      if (window.location.protocol === "http:") {
+        return `ws://${window.location.host}`;
+      }
+      return "ws://localhost:8080";
+    };
 
     const formatPrice = (price) => Number(price).toLocaleString("en-US", {
       minimumFractionDigits: 2,
@@ -292,29 +323,54 @@
       );
     };
 
-    const resetCandles = () => {
+    const resetCandles = (message = "Load history to draw candles") => {
       candles = [];
       ohlcPill.textContent = "OHLC: -";
-      emptyChart.textContent = "Waiting for price ticks";
+      emptyChart.textContent = message;
       emptyChart.style.display = "grid";
       drawCandles();
     };
 
-    const updateCandles = (price, timestamp) => {
-      const interval = Number(candleSelect.value);
+    const setCurrentOHLC = () => {
+      const current = candles[candles.length - 1];
+      if (!current) {
+        ohlcPill.textContent = "OHLC: -";
+        return;
+      }
+      ohlcPill.textContent = `OHLC: ${formatPrice(current.open)} / ${formatPrice(current.high)} / ${formatPrice(current.low)} / ${formatPrice(current.close)}`;
+    };
+
+    const seedHistory = (quotes) => {
+      candles = quotes.slice(-historyLimit).map((quote) => ({
+        time: new Date(quote.timestamp).getTime(),
+        open: quote.ohlcv.open,
+        high: quote.ohlcv.high,
+        low: quote.ohlcv.low,
+        close: quote.ohlcv.close,
+      }));
+
+      emptyChart.style.display = candles.length === 0 ? "grid" : "none";
+      emptyChart.textContent = candles.length === 0 ? "No OHLCV history returned" : "";
+      setCurrentOHLC();
+      drawCandles();
+    };
+
+    const updateLiveCandle = (price, timestamp) => {
+      const interval = selectedInterval().ms;
       const time = new Date(timestamp).getTime();
       const bucket = Math.floor(time / interval) * interval;
       const last = candles[candles.length - 1];
 
-      if (!last || last.time !== bucket) {
+      if (!last || last.time < bucket) {
+        const open = last ? last.close : price;
         candles.push({
           time: bucket,
-          open: price,
-          high: price,
-          low: price,
+          open,
+          high: Math.max(open, price),
+          low: Math.min(open, price),
           close: price,
         });
-        if (candles.length > maxCandles) {
+        if (candles.length > historyLimit) {
           candles.shift();
         }
       } else {
@@ -323,9 +379,8 @@
         last.close = price;
       }
 
-      const current = candles[candles.length - 1];
-      ohlcPill.textContent = `OHLC: ${formatPrice(current.open)} / ${formatPrice(current.high)} / ${formatPrice(current.low)} / ${formatPrice(current.close)}`;
-      emptyChart.style.display = "none";
+      emptyChart.style.display = candles.length === 0 ? "grid" : "none";
+      setCurrentOHLC();
       drawCandles();
     };
 
@@ -370,8 +425,8 @@
       const min = low - range * 0.08;
       const max = high + range * 0.08;
       const priceToY = (price) => padding.top + ((max - price) / (max - min)) * chartHeight;
-      const candleWidth = Math.max(4, chartWidth / maxCandles * 0.58);
-      const step = chartWidth / Math.max(maxCandles - 1, 1);
+      const candleWidth = Math.max(4, chartWidth / historyLimit * 0.58);
+      const step = chartWidth / Math.max(historyLimit - 1, 1);
       const startX = padding.left + chartWidth - step * (candles.length - 1);
 
       chartCtx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
@@ -406,31 +461,68 @@
       });
     };
 
-    const connect = () => {
+    const loadHistory = async (exchange, symbol, interval) => {
+      const end = new Date();
+      const start = new Date(end.getTime() - interval.ms * historyLimit);
+      const baseUrl = apiHttpBaseUrl();
+
+      const response = await fetch(`${baseUrl}/v1/market/quotes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          exchange: Number(exchange.id),
+          symbol,
+          interval: Number(timeframeSelect.value),
+          start: start.toISOString(),
+          end: end.toISOString(),
+          limit: historyLimit,
+        }),
+      });
+
+      const data = await response.json();
+      payloadEl.textContent = JSON.stringify(data, null, 2);
+
+      if (!response.ok) {
+        throw new Error(data.message || data.error || "failed to load quotes");
+      }
+
+      return data.quotes || [];
+    };
+
+    const connect = async () => {
       if (ws) {
         ws.close();
       }
 
       const exchange = selectedExchange();
       const symbol = symbolSelect.value;
-      const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsHost = window.location.host || "localhost:8080";
-      const wsUrl = `${wsProtocol}//${wsHost}/v1/ws/market/price?exchange=${exchange.id}&symbol=${encodeURIComponent(symbol)}`;
+      const interval = selectedInterval();
+      const wsUrl = `${apiWebSocketBaseUrl()}/v1/ws/market/price?exchange=${exchange.id}&symbol=${encodeURIComponent(symbol)}`;
 
       titleEl.textContent = `${exchange.name} ${symbol}`;
       exchangePill.textContent = `Exchange: ${exchange.name} (${exchange.id})`;
       symbolPill.textContent = `Symbol: ${symbol}`;
-      candlePill.textContent = `Candle: ${selectedCandleLabel()}`;
+      timeframePill.textContent = `Timeframe: ${interval.label}`;
       priceEl.textContent = "-";
-      timestampEl.textContent = "Waiting for update";
-      payloadEl.textContent = "{}";
-      resetCandles();
-      setStatus(`Connecting to ${wsUrl}`);
+      timestampEl.textContent = "Loading history";
+      resetCandles("Loading OHLCV history");
+      setStatus(`Loading ${interval.label} history`);
+
+      try {
+        const quotes = await loadHistory(exchange, symbol, interval);
+        seedHistory(quotes);
+        setStatus(`Connecting to ${wsUrl}`);
+      } catch (error) {
+        setStatus(error.message, "error");
+        emptyChart.textContent = error.message;
+        emptyChart.style.display = "grid";
+        return;
+      }
 
       ws = new WebSocket(wsUrl);
 
       ws.addEventListener("open", () => {
-        setStatus(`Connected to ${wsUrl}`, "connected");
+        setStatus("Connected: history + live ticks", "connected");
       });
 
       ws.addEventListener("message", (event) => {
@@ -445,7 +537,7 @@
         const price = Number(data.price);
         priceEl.textContent = formatPrice(price);
         timestampEl.textContent = new Date(data.timestamp).toLocaleString();
-        updateCandles(price, data.timestamp);
+        updateLiveCandle(price, data.timestamp);
       });
 
       ws.addEventListener("close", () => {
@@ -464,11 +556,13 @@
     populateSymbols();
     resizeCanvas();
 
-    connectButton.addEventListener("click", connect);
+    connectButton.addEventListener("click", () => {
+      void connect();
+    });
     exchangeSelect.addEventListener("change", populateSymbols);
-    candleSelect.addEventListener("change", () => {
-      candlePill.textContent = `Candle: ${selectedCandleLabel()}`;
-      resetCandles();
+    timeframeSelect.addEventListener("change", () => {
+      timeframePill.textContent = `Timeframe: ${selectedInterval().label}`;
+      resetCandles("Load history to draw candles");
     });
     window.addEventListener("resize", resizeCanvas);
   </script>
