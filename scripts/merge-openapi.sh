@@ -30,7 +30,8 @@ cat > ${OUTPUT_FILE} << 'EOF'
   "tags": [
     {"name": "Market Data", "description": "Market data operations"},
     {"name": "Trading", "description": "Trading operations"},
-    {"name": "Monitoring", "description": "Monitoring and alerts"}
+    {"name": "Monitoring", "description": "Monitoring and alerts"},
+    {"name": "Examples", "description": "Browser examples and interactive demos"}
   ],
   "consumes": ["application/json"],
   "produces": ["application/json"],
