@@ -3,8 +3,8 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -69,15 +69,9 @@ func parsePriceWebsocketRequest(w http.ResponseWriter, r *http.Request) (cegwv1.
 		return cegwv1.Exchange_EXCHANGE_UNSPECIFIED, "", false
 	}
 
-	exchangeID, err := strconv.Atoi(exchangeRaw)
+	exchange, err := parseExchangeQuery(exchangeRaw)
 	if err != nil {
-		http.Error(w, "exchange must be numeric", http.StatusBadRequest)
-		return cegwv1.Exchange_EXCHANGE_UNSPECIFIED, "", false
-	}
-
-	exchange := cegwv1.Exchange(exchangeID)
-	if exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		http.Error(w, "exchange is required", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return cegwv1.Exchange_EXCHANGE_UNSPECIFIED, "", false
 	}
 
@@ -87,6 +81,37 @@ func parsePriceWebsocketRequest(w http.ResponseWriter, r *http.Request) (cegwv1.
 	}
 
 	return exchange, symbol, true
+}
+
+func parseExchangeQuery(exchangeRaw string) (cegwv1.Exchange, error) {
+	switch exchangeRaw {
+	case "1":
+		return cegwv1.Exchange_EXCHANGE_TOKOCRYPTO, nil
+	case "2":
+		return cegwv1.Exchange_EXCHANGE_BINANCE, nil
+	case "3":
+		return cegwv1.Exchange_EXCHANGE_COINBASE, nil
+	case "4":
+		return cegwv1.Exchange_EXCHANGE_CEXIO, nil
+	case "5":
+		return cegwv1.Exchange_EXCHANGE_INDODAX, nil
+	case "6":
+		return cegwv1.Exchange_EXCHANGE_OKX, nil
+	case "7":
+		return cegwv1.Exchange_EXCHANGE_KUCOIN, nil
+	case "8":
+		return cegwv1.Exchange_EXCHANGE_CRYPTOCOM, nil
+	case "9":
+		return cegwv1.Exchange_EXCHANGE_BYBIT, nil
+	case "10":
+		return cegwv1.Exchange_EXCHANGE_BITGET, nil
+	case "11":
+		return cegwv1.Exchange_EXCHANGE_COINEX, nil
+	case "12":
+		return cegwv1.Exchange_EXCHANGE_HASHKEY, nil
+	default:
+		return cegwv1.Exchange_EXCHANGE_UNSPECIFIED, fmt.Errorf("exchange is not supported")
+	}
 }
 
 func streamPriceToWebsocket(ctx context.Context, conn *websocket.Conn, log *logger.Logger, exchangeID cegwv1.Exchange, symbol string) {
