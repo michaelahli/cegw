@@ -4,7 +4,7 @@
       "get": {
         "tags": ["Market Data"],
         "summary": "Stream Current Price Over WebSocket",
-        "description": "Upgrades the HTTP connection to a WebSocket and streams latest ticker price updates as JSON text frames. This endpoint is documented manually because WebSocket upgrade routes are not generated from protobuf HTTP annotations. After the 101 Switching Protocols response, each successful message matches PriceStreamMessage. If streaming cannot continue after upgrade, the server may send WebSocketErrorMessage before closing the connection.",
+        "description": "Upgrades the HTTP connection to a WebSocket and streams latest ticker price updates as JSON text frames. This endpoint is documented manually because WebSocket upgrade routes are not generated from protobuf HTTP annotations.\n\nConnect to `ws://{host}/v1/ws/market/price?exchange=2&symbol=BTC%2FUSDT` or `wss://{host}/v1/ws/market/price?exchange=2&symbol=BTC%2FUSDT`.\n\nAfter the `101 Switching Protocols` response, there is no HTTP response body. The client receives WebSocket text frames shaped as:\n\n```json\n{\n  \"symbol\": \"BTC/USDT\",\n  \"price\": 68420.12,\n  \"timestamp\": \"2026-06-07T10:15:30Z\"\n}\n```\n\nIf streaming cannot continue after upgrade, the server may send an error frame before closing the connection:\n\n```json\n{\n  \"error\": \"failed to watch ticker\"\n}\n```",
         "operationId": "MarketData_WebSocketCurrentPrice",
         "produces": ["application/json"],
         "parameters": [
