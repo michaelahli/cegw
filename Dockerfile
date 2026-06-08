@@ -18,6 +18,7 @@ COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /build/cegw /cegw
 COPY --from=builder /build/docs /docs
+COPY --from=builder /build/pkg/client/example /pkg/client/example
 
 RUN mkdir /tmp
 

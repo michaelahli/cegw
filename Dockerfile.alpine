@@ -20,6 +20,7 @@ WORKDIR /app
 
 COPY --from=builder /build/cegw .
 COPY --from=builder /build/docs ./docs
+COPY --from=builder /build/pkg/client/example ./pkg/client/example
 
 RUN mkdir -p /tmp
 

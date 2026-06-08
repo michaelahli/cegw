@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -28,6 +30,16 @@ func NewHTTPServer(cfg *config.Config, log *logger.Logger) *HTTPServer {
 		cfg: cfg,
 		log: log,
 	}
+}
+
+func assetPath(relativePath string) string {
+	execPath, err := os.Executable()
+	if err != nil {
+		return relativePath
+	}
+
+	execDir := filepath.Dir(execPath)
+	return filepath.Join(execDir, relativePath)
 }
 
 func (s *HTTPServer) Start(ctx context.Context) error {
@@ -60,15 +72,15 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 
 	// Serve OpenAPI documentation
 	mainMux.HandleFunc("/docs", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "docs/index.html")
+		http.ServeFile(w, r, assetPath("docs/index.html"))
 	})
 	mainMux.HandleFunc("/docs/openapi.json", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "docs/openapi.json")
+		http.ServeFile(w, r, assetPath("docs/openapi.json"))
 	})
 
 	// Serve browser examples
 	mainMux.HandleFunc("/examples/websocket", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "pkg/client/example/websocket.html")
+		http.ServeFile(w, r, assetPath("pkg/client/example/websocket.html"))
 	})
 
 	// Health check endpoints for Kubernetes
