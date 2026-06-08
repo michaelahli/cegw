@@ -34,12 +34,20 @@ func NewHTTPServer(cfg *config.Config, log *logger.Logger) *HTTPServer {
 
 func assetPath(relativePath string) string {
 	execPath, err := os.Executable()
-	if err != nil {
-		return relativePath
+	if err == nil {
+		execDir := filepath.Dir(execPath)
+		execResolved := filepath.Join(execDir, relativePath)
+		if _, statErr := os.Stat(execResolved); statErr == nil {
+			return execResolved
+		}
 	}
 
-	execDir := filepath.Dir(execPath)
-	return filepath.Join(execDir, relativePath)
+	cwdResolved := filepath.Join(relativePath)
+	if _, statErr := os.Stat(cwdResolved); statErr == nil {
+		return cwdResolved
+	}
+
+	return relativePath
 }
 
 func (s *HTTPServer) Start(ctx context.Context) error {
