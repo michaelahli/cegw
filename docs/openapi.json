@@ -23,8 +23,12 @@
       "description": "Browser examples and interactive demos"
     }
   ],
-  "consumes": ["application/json"],
-  "produces": ["application/json"],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
   "paths": {
     "/v1/market/list": {
       "get": {
@@ -69,7 +73,70 @@
             "default": "EXCHANGE_UNSPECIFIED"
           }
         ],
-        "tags": ["Market Data"]
+        "tags": [
+          "Market Data"
+        ]
+      }
+    },
+    "/v1/market/orderbook": {
+      "get": {
+        "summary": "Get Order Book",
+        "description": "Retrieves the latest order book depth for a trading pair.",
+        "operationId": "MarketDataService_GetOrderBook",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetOrderBookResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "exchange",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "EXCHANGE_UNSPECIFIED",
+              "EXCHANGE_TOKOCRYPTO",
+              "EXCHANGE_BINANCE",
+              "EXCHANGE_COINBASE",
+              "EXCHANGE_CEXIO",
+              "EXCHANGE_INDODAX",
+              "EXCHANGE_OKX",
+              "EXCHANGE_KUCOIN",
+              "EXCHANGE_CRYPTOCOM",
+              "EXCHANGE_BYBIT",
+              "EXCHANGE_BITGET",
+              "EXCHANGE_COINEX",
+              "EXCHANGE_HASHKEY"
+            ],
+            "default": "EXCHANGE_UNSPECIFIED"
+          },
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Market Data"
+        ]
       }
     },
     "/v1/market/price/{exchange}/{symbol}": {
@@ -121,7 +188,9 @@
             "pattern": ".+"
           }
         ],
-        "tags": ["Market Data"]
+        "tags": [
+          "Market Data"
+        ]
       }
     },
     "/v1/market/quotes": {
@@ -153,7 +222,9 @@
             }
           }
         ],
-        "tags": ["Market Data"]
+        "tags": [
+          "Market Data"
+        ]
       }
     },
     "/v1/market/search": {
@@ -205,7 +276,9 @@
             "type": "string"
           }
         ],
-        "tags": ["Market Data"]
+        "tags": [
+          "Market Data"
+        ]
       }
     },
     "/v1/monitoring/alerts": {
@@ -237,7 +310,9 @@
             }
           }
         ],
-        "tags": ["Monitoring"]
+        "tags": [
+          "Monitoring"
+        ]
       }
     },
     "/v1/trading/credentials/test": {
@@ -269,7 +344,9 @@
             }
           }
         ],
-        "tags": ["Trading"]
+        "tags": [
+          "Trading"
+        ]
       }
     },
     "/v1/trading/order": {
@@ -301,16 +378,22 @@
             }
           }
         ],
-        "tags": ["Trading"]
+        "tags": [
+          "Trading"
+        ]
       }
     },
     "/v1/ws/market/price": {
       "get": {
-        "tags": ["Market Data"],
+        "tags": [
+          "Market Data"
+        ],
         "summary": "Stream Current Price Over WebSocket",
         "description": "Upgrades the HTTP connection to a WebSocket and streams latest ticker price updates as JSON text frames. This endpoint is documented manually because WebSocket upgrade routes are not generated from protobuf HTTP annotations.\n\nConnect to `ws://{host}/v1/ws/market/price?exchange=2&symbol=BTC%2FUSDT` or `wss://{host}/v1/ws/market/price?exchange=2&symbol=BTC%2FUSDT`.\n\nAfter the `101 Switching Protocols` response, there is no HTTP response body. The client receives WebSocket text frames shaped as:\n\n```json\n{\n  \"symbol\": \"BTC/USDT\",\n  \"price\": 68420.12,\n  \"timestamp\": \"2026-06-07T10:15:30Z\"\n}\n```\n\nIf streaming cannot continue after upgrade, the server may send an error frame before closing the connection:\n\n```json\n{\n  \"error\": \"failed to watch ticker\"\n}\n```",
         "operationId": "MarketData_WebSocketCurrentPrice",
-        "produces": ["application/json"],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "exchange",
@@ -373,11 +456,15 @@
     },
     "/v1/ws/market/orderbook": {
       "get": {
-        "tags": ["Market Data"],
+        "tags": [
+          "Market Data"
+        ],
         "summary": "Stream Order Book Over WebSocket",
         "description": "Upgrades the HTTP connection to a WebSocket and streams real-time order book (bids and asks) updates as JSON text frames.\n\nConnect to `ws://{host}/v1/ws/market/orderbook?exchange=2&symbol=BTC%2FUSDT&limit=20`.\n\nSupported exchanges stream via CCXT `watchOrderBook`; unsupported exchanges fall back to REST polling every 1 second. After the `101 Switching Protocols` response, the client receives WebSocket text frames shaped as:\n\n```json\n{\n  \"symbol\": \"BTC/USDT\",\n  \"bids\": [[68000.5, 1.2], [67999.0, 0.5]],\n  \"asks\": [[68001.0, 0.8], [68002.5, 1.0]],\n  \"timestamp\": \"2026-06-08T12:55:50Z\"\n}\n```",
         "operationId": "MarketData_WebSocketOrderBook",
-        "produces": ["application/json"],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "exchange",
@@ -413,12 +500,24 @@
             "x-websocket-message-example": {
               "symbol": "BTC/USDT",
               "bids": [
-                [68000.5, 1.2],
-                [67999.0, 0.5]
+                [
+                  68000.5,
+                  1.2
+                ],
+                [
+                  67999.0,
+                  0.5
+                ]
               ],
               "asks": [
-                [68001.0, 0.8],
-                [68002.5, 1.0]
+                [
+                  68001.0,
+                  0.8
+                ],
+                [
+                  68002.5,
+                  1.0
+                ]
               ],
               "timestamp": "2026-06-08T12:55:50Z"
             },
@@ -440,11 +539,15 @@
     },
     "/examples/websocket": {
       "get": {
-        "tags": ["Examples"],
+        "tags": [
+          "Examples"
+        ],
         "summary": "Open WebSocket Candlestick Example",
         "description": "Serves the browser example used to load historical OHLCV candles and connect to the WebSocket latest price stream from the same HTTP origin. Open this route instead of the local file path to avoid browser CORS restrictions.",
         "operationId": "Examples_WebSocketCandlestick",
-        "produces": ["text/html"],
+        "produces": [
+          "text/html"
+        ],
         "responses": {
           "200": {
             "description": "HTML page for the WebSocket candlestick example.",
@@ -513,6 +616,32 @@
         "price": {
           "type": "number",
           "format": "double"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "v1GetOrderBookResponse": {
+      "type": "object",
+      "properties": {
+        "symbol": {
+          "type": "string"
+        },
+        "bids": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1OrderBookLevel"
+          }
+        },
+        "asks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1OrderBookLevel"
+          }
         },
         "timestamp": {
           "type": "string",
@@ -632,6 +761,19 @@
           "format": "double"
         },
         "volume": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "v1OrderBookLevel": {
+      "type": "object",
+      "properties": {
+        "price": {
+          "type": "number",
+          "format": "double"
+        },
+        "amount": {
           "type": "number",
           "format": "double"
         }
@@ -822,7 +964,11 @@
     },
     "v1OrderSide": {
       "type": "string",
-      "enum": ["ORDER_SIDE_UNSPECIFIED", "ORDER_SIDE_BUY", "ORDER_SIDE_SELL"],
+      "enum": [
+        "ORDER_SIDE_UNSPECIFIED",
+        "ORDER_SIDE_BUY",
+        "ORDER_SIDE_SELL"
+      ],
       "default": "ORDER_SIDE_UNSPECIFIED"
     },
     "v1OrderStatus": {
@@ -862,7 +1008,11 @@
     "PriceStreamMessage": {
       "type": "object",
       "description": "JSON message sent on the WebSocket stream for each latest ticker price update.",
-      "required": ["symbol", "price", "timestamp"],
+      "required": [
+        "symbol",
+        "price",
+        "timestamp"
+      ],
       "properties": {
         "symbol": {
           "type": "string",
@@ -883,7 +1033,12 @@
     "OrderBookStreamMessage": {
       "type": "object",
       "description": "JSON message sent on the WebSocket stream for each order book update.",
-      "required": ["symbol", "bids", "asks", "timestamp"],
+      "required": [
+        "symbol",
+        "bids",
+        "asks",
+        "timestamp"
+      ],
       "properties": {
         "symbol": {
           "type": "string",
@@ -900,8 +1055,14 @@
             }
           },
           "example": [
-            [68000.5, 1.2],
-            [67999.0, 0.5]
+            [
+              68000.5,
+              1.2
+            ],
+            [
+              67999.0,
+              0.5
+            ]
           ]
         },
         "asks": {
@@ -915,8 +1076,14 @@
             }
           },
           "example": [
-            [68001.0, 0.8],
-            [68002.5, 1.0]
+            [
+              68001.0,
+              0.8
+            ],
+            [
+              68002.5,
+              1.0
+            ]
           ]
         },
         "timestamp": {
@@ -929,7 +1096,9 @@
     "WebSocketErrorMessage": {
       "type": "object",
       "description": "JSON error message sent before the WebSocket connection is closed when streaming cannot continue after upgrade.",
-      "required": ["error"],
+      "required": [
+        "error"
+      ],
       "properties": {
         "error": {
           "type": "string",
