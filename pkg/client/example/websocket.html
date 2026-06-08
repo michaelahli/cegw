@@ -1,648 +1,715 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CEGW WebSocket - Price & Order Book</title>
-  <style>
-    :root {
-      color-scheme: light dark;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CEGW WebSocket - Price & Order Book</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
 
-    * {
-      box-sizing: border-box;
-    }
+      * {
+        box-sizing: border-box;
+      }
 
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: #0b0e11;
-      color: #eaecef;
-      padding: 16px;
-    }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #0b0e11;
+        color: #eaecef;
+        padding: 16px;
+      }
 
-    .container {
-      max-width: 1600px;
-      margin: 0 auto;
-    }
+      .container {
+        max-width: 1600px;
+        margin: 0 auto;
+      }
 
-    header {
-      margin-bottom: 16px;
-    }
+      header {
+        margin-bottom: 16px;
+      }
 
-    h1 {
-      margin: 0 0 8px;
-      font-size: 20px;
-      font-weight: 600;
-      color: #f0b90b;
-    }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 20px;
+        font-weight: 600;
+        color: #f0b90b;
+      }
 
-    .controls {
-      display: flex;
-      gap: 12px;
-      align-items: end;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-    }
+      .controls {
+        display: flex;
+        gap: 12px;
+        align-items: end;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
 
-    label {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      color: #848e9c;
-      font-size: 12px;
-      font-weight: 500;
-    }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        color: #848e9c;
+        font-size: 12px;
+        font-weight: 500;
+      }
 
-    select,
-    button {
-      height: 36px;
-      border: 1px solid #2b3139;
-      border-radius: 4px;
-      background: #1e2329;
-      color: #eaecef;
-      font: inherit;
-      font-size: 13px;
-    }
+      select,
+      button {
+        height: 36px;
+        border: 1px solid #2b3139;
+        border-radius: 4px;
+        background: #1e2329;
+        color: #eaecef;
+        font: inherit;
+        font-size: 13px;
+      }
 
-    select {
-      min-width: 140px;
-      padding: 0 10px;
-    }
+      select {
+        min-width: 140px;
+        padding: 0 10px;
+      }
 
-    button {
-      padding: 0 20px;
-      cursor: pointer;
-      font-weight: 600;
-      background: #f0b90b;
-      color: #0b0e11;
-      border: none;
-    }
+      button {
+        padding: 0 20px;
+        cursor: pointer;
+        font-weight: 600;
+        background: #f0b90b;
+        color: #0b0e11;
+        border: none;
+      }
 
-    button:hover {
-      background: #fcd535;
-    }
+      button:hover {
+        background: #fcd535;
+      }
 
-    .status {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 12px;
-      color: #848e9c;
-    }
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #848e9c;
+      }
 
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: #474d57;
-    }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #474d57;
+      }
 
-    .dot.connected {
-      background: #0ecb81;
-    }
+      .dot.connected {
+        background: #0ecb81;
+      }
 
-    .dot.error {
-      background: #f6465d;
-    }
+      .dot.error {
+        background: #f6465d;
+      }
 
-    .layout {
-      display: grid;
-      grid-template-columns: 1fr 360px;
-      gap: 16px;
-      margin-top: 16px;
-    }
-
-    .panel {
-      background: #1e2329;
-      border: 1px solid #2b3139;
-      border-radius: 4px;
-      padding: 16px;
-      overflow: hidden;
-    }
-
-    .panel-title {
-      margin: 0 0 12px;
-      font-size: 14px;
-      font-weight: 600;
-      color: #eaecef;
-    }
-
-    .price-header {
-      display: flex;
-      align-items: baseline;
-      gap: 12px;
-      margin-bottom: 8px;
-    }
-
-    .price {
-      font-size: 24px;
-      font-weight: 600;
-      font-variant-numeric: tabular-nums;
-      color: #eaecef;
-    }
-
-    .price-change {
-      font-size: 14px;
-      color: #848e9c;
-    }
-
-    .chart-info {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 12px;
-      font-size: 12px;
-      color: #848e9c;
-    }
-
-    .chart-info span {
-      font-variant-numeric: tabular-nums;
-    }
-
-    .chartWrap {
-      position: relative;
-      margin-top: 12px;
-      background: #0b0e11;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-
-    canvas {
-      display: block;
-      width: 100%;
-      height: 360px;
-    }
-
-    .emptyChart {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      color: #474d57;
-      font-size: 13px;
-      pointer-events: none;
-    }
-
-    .orderbook-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #2b3139;
-    }
-
-    .orderbook-tabs {
-      display: flex;
-      gap: 8px;
-      font-size: 12px;
-      color: #848e9c;
-    }
-
-    .orderbook-tabs span {
-      cursor: pointer;
-      padding: 4px 8px;
-    }
-
-    .orderbook-tabs span.active {
-      color: #eaecef;
-      background: #2b3139;
-      border-radius: 4px;
-    }
-
-    .orderbook-table {
-      font-size: 12px;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .orderbook-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      padding: 3px 0;
-      position: relative;
-    }
-
-    .orderbook-row.header {
-      color: #848e9c;
-      font-weight: 500;
-      margin-bottom: 4px;
-    }
-
-    .orderbook-row.ask {
-      color: #f6465d;
-    }
-
-    .orderbook-row.bid {
-      color: #0ecb81;
-    }
-
-    .orderbook-row > div {
-      padding: 0 4px;
-      z-index: 2;
-    }
-
-    .orderbook-row.ask > div:first-child {
-      text-align: left;
-    }
-
-    .orderbook-row.bid > div:first-child {
-      text-align: left;
-    }
-
-    .orderbook-row > div:nth-child(2),
-    .orderbook-row > div:nth-child(3) {
-      text-align: right;
-    }
-
-    .orderbook-bg {
-      position: absolute;
-      top: 0;
-      right: 0;
-      height: 100%;
-      z-index: 1;
-      opacity: 0.15;
-    }
-
-    .orderbook-row.ask .orderbook-bg {
-      background: #f6465d;
-    }
-
-    .orderbook-row.bid .orderbook-bg {
-      background: #0ecb81;
-    }
-
-    .orderbook-spread {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 4px;
-      margin: 8px 0;
-      background: #0b0e11;
-      border-radius: 4px;
-      font-size: 13px;
-    }
-
-    .spread-price {
-      font-weight: 600;
-      color: #0ecb81;
-    }
-
-    .spread-diff {
-      font-size: 11px;
-      color: #848e9c;
-    }
-
-    @media (max-width: 1024px) {
       .layout {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .panel {
+        background: #1e2329;
+        border: 1px solid #2b3139;
+        border-radius: 4px;
+        padding: 16px;
+        overflow: hidden;
+      }
+
+      .panel-title {
+        margin: 0 0 12px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #eaecef;
+      }
+
+      .price-header {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      .price {
+        font-size: 24px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        color: #eaecef;
+      }
+
+      .price-change {
+        font-size: 14px;
+        color: #848e9c;
+      }
+
+      .chart-info {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 12px;
+        font-size: 12px;
+        color: #848e9c;
+      }
+
+      .chart-info span {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .chartWrap {
+        position: relative;
+        margin-top: 12px;
+        background: #0b0e11;
+        border-radius: 4px;
+        overflow: hidden;
       }
 
       canvas {
-        height: 280px;
+        display: block;
+        width: 100%;
+        height: 360px;
       }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <header>
-      <h1 id="title">Binance BTC/USDT</h1>
-      <div class="status">
-        <span id="statusDot" class="dot"></span>
-        <span id="statusText">Not connected</span>
-      </div>
-    </header>
 
-    <div class="controls">
-      <label>
-        Exchange
-        <select id="exchangeSelect"></select>
-      </label>
-      <label>
-        Symbol
-        <select id="symbolSelect"></select>
-      </label>
-      <label>
-        Timeframe
-        <select id="timeframeSelect">
-          <option value="1">1m</option>
-          <option value="2">5m</option>
-          <option value="3">30m</option>
-          <option value="5" selected>1h</option>
-          <option value="8">1d</option>
-          <option value="9">1w</option>
-          <option value="10">1M</option>
-        </select>
-      </label>
-      <label>
-        Order Book Depth
-        <select id="depthSelect">
-          <option value="10">10</option>
-          <option value="20" selected>20</option>
-          <option value="50">50</option>
-        </select>
-      </label>
-      <button id="connectButton" type="button">Connect</button>
-    </div>
-
-    <div class="layout">
-      <div class="panel">
-        <div class="price-header">
-          <div id="price" class="price">-</div>
-          <div id="priceChange" class="price-change">-</div>
-        </div>
-        <div class="chart-info">
-          <span>O: <span id="openPrice">-</span></span>
-          <span>H: <span id="highPrice">-</span></span>
-          <span>L: <span id="lowPrice">-</span></span>
-          <span>C: <span id="closePrice">-</span></span>
-        </div>
-        <div class="chartWrap">
-          <canvas id="candlestickChart"></canvas>
-          <div id="emptyChart" class="emptyChart">Connect to load chart</div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="orderbook-header">
-          <div class="panel-title">Order Book</div>
-        </div>
-        <div class="orderbook-table">
-          <div class="orderbook-row header">
-            <div>Price</div>
-            <div>Amount</div>
-            <div>Total</div>
-          </div>
-          <div id="asksContainer"></div>
-          <div class="orderbook-spread">
-            <span id="spreadPrice" class="spread-price">-</span>
-            <span id="spreadDiff" class="spread-diff">Spread: -</span>
-          </div>
-          <div id="bidsContainer"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const exchanges = [
-      { id: "2", name: "Binance", symbols: ["BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT"] },
-      { id: "6", name: "OKX", symbols: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "DOGE/USDT"] },
-      { id: "7", name: "KuCoin", symbols: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "KCS/USDT"] },
-      { id: "9", name: "Bybit", symbols: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "DOGE/USDT"] },
-      { id: "10", name: "Bitget", symbols: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "BGB/USDT"] },
-    ];
-
-    const intervals = {
-      "1": { label: "1m", ms: 60 * 1000 },
-      "2": { label: "5m", ms: 5 * 60 * 1000 },
-      "3": { label: "30m", ms: 30 * 60 * 1000 },
-      "5": { label: "1h", ms: 60 * 60 * 1000 },
-      "8": { label: "1d", ms: 24 * 60 * 60 * 1000 },
-      "9": { label: "1w", ms: 7 * 24 * 60 * 60 * 1000 },
-      "10": { label: "1M", ms: 30 * 24 * 60 * 60 * 1000 },
-    };
-
-    const historyLimit = 48;
-    let priceWs;
-    let orderBookWs;
-    let candles = [];
-    let currentPrice = null;
-    let orderBookData = { bids: [], asks: [] };
-
-    const titleEl = document.getElementById("title");
-    const exchangeSelect = document.getElementById("exchangeSelect");
-    const symbolSelect = document.getElementById("symbolSelect");
-    const timeframeSelect = document.getElementById("timeframeSelect");
-    const depthSelect = document.getElementById("depthSelect");
-    const connectButton = document.getElementById("connectButton");
-    const statusDot = document.getElementById("statusDot");
-    const statusText = document.getElementById("statusText");
-    const priceEl = document.getElementById("price");
-    const priceChangeEl = document.getElementById("priceChange");
-    const openPriceEl = document.getElementById("openPrice");
-    const highPriceEl = document.getElementById("highPrice");
-    const lowPriceEl = document.getElementById("lowPrice");
-    const closePriceEl = document.getElementById("closePrice");
-    const chartCanvas = document.getElementById("candlestickChart");
-    const emptyChart = document.getElementById("emptyChart");
-    const chartCtx = chartCanvas.getContext("2d");
-    const asksContainer = document.getElementById("asksContainer");
-    const bidsContainer = document.getElementById("bidsContainer");
-    const spreadPrice = document.getElementById("spreadPrice");
-    const spreadDiff = document.getElementById("spreadDiff");
-
-    const setStatus = (text, className = "") => {
-      statusText.textContent = text;
-      statusDot.className = `dot ${className}`.trim();
-    };
-
-    const selectedExchange = () => exchanges.find((ex) => ex.id === exchangeSelect.value);
-
-    const selectedInterval = () => intervals[timeframeSelect.value];
-
-    const apiHttpBaseUrl = () => {
-      if (window.location.protocol === "http:" || window.location.protocol === "https:") {
-        return `${window.location.protocol}//${window.location.host}`;
+      .emptyChart {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: #474d57;
+        font-size: 13px;
+        pointer-events: none;
       }
-      return "http://localhost:8080";
-    };
 
-    const apiWebSocketBaseUrl = () => {
-      if (window.location.protocol === "https:") {
-        return `wss://${window.location.host}`;
+      .orderbook-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #2b3139;
       }
-      if (window.location.protocol === "http:") {
-        return `ws://${window.location.host}`;
+
+      .orderbook-tabs {
+        display: flex;
+        gap: 8px;
+        font-size: 12px;
+        color: #848e9c;
       }
-      return "ws://localhost:8080";
-    };
 
-    const formatPrice = (price, decimals = 2) => {
-      if (price == null) return "-";
-      return Number(price).toLocaleString("en-US", {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: 8,
-      });
-    };
+      .orderbook-tabs span {
+        cursor: pointer;
+        padding: 4px 8px;
+      }
 
-    const formatAmount = (amount) => {
-      if (amount == null) return "-";
-      return Number(amount).toLocaleString("en-US", {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 6,
-      });
-    };
+      .orderbook-tabs span.active {
+        color: #eaecef;
+        background: #2b3139;
+        border-radius: 4px;
+      }
 
-    const populateSymbols = () => {
-      const exchange = selectedExchange();
-      symbolSelect.replaceChildren(
-        ...exchange.symbols.map((symbol) => new Option(symbol, symbol)),
-      );
-    };
+      .orderbook-table {
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+      }
 
-    const resetCandles = () => {
-      candles = [];
-      currentPrice = null;
-      openPriceEl.textContent = "-";
-      highPriceEl.textContent = "-";
-      lowPriceEl.textContent = "-";
-      closePriceEl.textContent = "-";
-      priceEl.textContent = "-";
-      priceChangeEl.textContent = "-";
-      emptyChart.style.display = "grid";
-      drawCandles();
-    };
+      .orderbook-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        padding: 3px 0;
+        position: relative;
+      }
 
-    const resetOrderBook = () => {
-      orderBookData = { bids: [], asks: [] };
-      spreadPrice.textContent = "-";
-      spreadDiff.textContent = "Spread: -";
-      asksContainer.innerHTML = "";
-      bidsContainer.innerHTML = "";
-    };
+      .orderbook-row.header {
+        color: #848e9c;
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
 
-    const setCurrentOHLC = () => {
-      const current = candles[candles.length - 1];
-      if (!current) return;
-      openPriceEl.textContent = formatPrice(current.open);
-      highPriceEl.textContent = formatPrice(current.high);
-      lowPriceEl.textContent = formatPrice(current.low);
-      closePriceEl.textContent = formatPrice(current.close);
-    };
+      .orderbook-row.ask {
+        color: #f6465d;
+      }
 
-    const seedHistory = (quotes) => {
-      candles = quotes.slice(-historyLimit).map((quote) => ({
-        time: new Date(quote.timestamp).getTime(),
-        open: quote.ohlcv.open,
-        high: quote.ohlcv.high,
-        low: quote.ohlcv.low,
-        close: quote.ohlcv.close,
-      }));
+      .orderbook-row.bid {
+        color: #0ecb81;
+      }
 
-      emptyChart.style.display = candles.length === 0 ? "grid" : "none";
-      setCurrentOHLC();
-      drawCandles();
-    };
+      .orderbook-row > div {
+        padding: 0 4px;
+        z-index: 2;
+      }
 
-    const updateLiveCandle = (price, timestamp) => {
-      const interval = selectedInterval().ms;
-      const time = new Date(timestamp).getTime();
-      const bucket = Math.floor(time / interval) * interval;
-      const last = candles[candles.length - 1];
+      .orderbook-row.ask > div:first-child {
+        text-align: left;
+      }
 
-      if (!last || last.time < bucket) {
-        const open = last ? last.close : price;
-        candles.push({
-          time: bucket,
-          open,
-          high: Math.max(open, price),
-          low: Math.min(open, price),
-          close: price,
-        });
-        if (candles.length > historyLimit) {
-          candles.shift();
+      .orderbook-row.bid > div:first-child {
+        text-align: left;
+      }
+
+      .orderbook-row > div:nth-child(2),
+      .orderbook-row > div:nth-child(3) {
+        text-align: right;
+      }
+
+      .orderbook-bg {
+        position: absolute;
+        top: 0;
+        right: 0;
+        height: 100%;
+        z-index: 1;
+        opacity: 0.15;
+      }
+
+      .orderbook-row.ask .orderbook-bg {
+        background: #f6465d;
+      }
+
+      .orderbook-row.bid .orderbook-bg {
+        background: #0ecb81;
+      }
+
+      .orderbook-spread {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 4px;
+        margin: 8px 0;
+        background: #0b0e11;
+        border-radius: 4px;
+        font-size: 13px;
+      }
+
+      .spread-price {
+        font-weight: 600;
+        color: #0ecb81;
+      }
+
+      .spread-diff {
+        font-size: 11px;
+        color: #848e9c;
+      }
+
+      @media (max-width: 1024px) {
+        .layout {
+          grid-template-columns: 1fr;
         }
-      } else {
-        last.high = Math.max(last.high, price);
-        last.low = Math.min(last.low, price);
-        last.close = price;
+
+        canvas {
+          height: 280px;
+        }
       }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1 id="title">Binance BTC/USDT</h1>
+        <div class="status">
+          <span id="statusDot" class="dot"></span>
+          <span id="statusText">Not connected</span>
+        </div>
+      </header>
 
-      emptyChart.style.display = candles.length === 0 ? "grid" : "none";
-      setCurrentOHLC();
-      drawCandles();
-    };
+      <div class="controls">
+        <label>
+          Exchange
+          <select id="exchangeSelect"></select>
+        </label>
+        <label>
+          Symbol
+          <select id="symbolSelect"></select>
+        </label>
+        <label>
+          Timeframe
+          <select id="timeframeSelect">
+            <option value="1">1m</option>
+            <option value="2">5m</option>
+            <option value="3">30m</option>
+            <option value="5" selected>1h</option>
+            <option value="8">1d</option>
+            <option value="9">1w</option>
+            <option value="10">1M</option>
+          </select>
+        </label>
+        <label>
+          Order Book Depth
+          <select id="depthSelect">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+          </select>
+        </label>
+        <button id="connectButton" type="button">Connect</button>
+      </div>
 
-    const resizeCanvas = () => {
-      const rect = chartCanvas.getBoundingClientRect();
-      const scale = window.devicePixelRatio || 1;
-      chartCanvas.width = Math.max(1, Math.floor(rect.width * scale));
-      chartCanvas.height = Math.max(1, Math.floor(rect.height * scale));
-      chartCtx.setTransform(scale, 0, 0, scale, 0, 0);
-      drawCandles();
-    };
+      <div class="layout">
+        <div class="panel">
+          <div class="price-header">
+            <div id="price" class="price">-</div>
+            <div id="priceChange" class="price-change">-</div>
+          </div>
+          <div class="chart-info">
+            <span>O: <span id="openPrice">-</span></span>
+            <span>H: <span id="highPrice">-</span></span>
+            <span>L: <span id="lowPrice">-</span></span>
+            <span>C: <span id="closePrice">-</span></span>
+          </div>
+          <div class="chartWrap">
+            <canvas id="candlestickChart"></canvas>
+            <div id="emptyChart" class="emptyChart">Connect to load chart</div>
+          </div>
+        </div>
 
-    const drawCandles = () => {
-      const width = chartCanvas.clientWidth;
-      const height = chartCanvas.clientHeight;
-      chartCtx.clearRect(0, 0, width, height);
+        <div class="panel">
+          <div class="orderbook-header">
+            <div class="panel-title">Order Book</div>
+          </div>
+          <div class="orderbook-table">
+            <div class="orderbook-row header">
+              <div>Price</div>
+              <div>Amount</div>
+              <div>Total</div>
+            </div>
+            <div id="asksContainer"></div>
+            <div class="orderbook-spread">
+              <span id="spreadPrice" class="spread-price">-</span>
+              <span id="spreadDiff" class="spread-diff">Spread: -</span>
+            </div>
+            <div id="bidsContainer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      const padding = { top: 20, right: 80, bottom: 24, left: 12 };
-      const chartWidth = width - padding.left - padding.right;
-      const chartHeight = height - padding.top - padding.bottom;
+    <script>
+      const exchanges = [
+        { id: "2", name: "Binance" },
+        { id: "6", name: "OKX" },
+        { id: "7", name: "KuCoin" },
+        { id: "9", name: "Bybit" },
+        { id: "10", name: "Bitget" },
+        { id: "11", name: "Coinex" },
+        { id: "1", name: "Tokocrypto" },
+        { id: "3", name: "Coinbase" },
+        { id: "4", name: "CEX.IO" },
+        { id: "5", name: "Indodax" },
+        { id: "8", name: "Crypto.com" },
+        { id: "12", name: "Hashkey" },
+      ];
 
-      chartCtx.fillStyle = "#0b0e11";
-      chartCtx.fillRect(0, 0, width, height);
+      const intervals = {
+        1: { label: "1m", ms: 60 * 1000 },
+        2: { label: "5m", ms: 5 * 60 * 1000 },
+        3: { label: "30m", ms: 30 * 60 * 1000 },
+        5: { label: "1h", ms: 60 * 60 * 1000 },
+        8: { label: "1d", ms: 24 * 60 * 60 * 1000 },
+        9: { label: "1w", ms: 7 * 24 * 60 * 60 * 1000 },
+        10: { label: "1M", ms: 30 * 24 * 60 * 60 * 1000 },
+      };
 
-      chartCtx.strokeStyle = "#2b3139";
-      chartCtx.lineWidth = 1;
-      for (let i = 0; i <= 4; i += 1) {
-        const y = padding.top + (chartHeight / 4) * i;
-        chartCtx.beginPath();
-        chartCtx.moveTo(padding.left, y);
-        chartCtx.lineTo(width - padding.right + 8, y);
-        chartCtx.stroke();
-      }
+      const historyLimit = 48;
+      let priceWs;
+      let orderBookWs;
+      let candles = [];
+      let currentPrice = null;
+      let orderBookData = { bids: [], asks: [] };
 
-      if (candles.length === 0) return;
+      const titleEl = document.getElementById("title");
+      const exchangeSelect = document.getElementById("exchangeSelect");
+      const symbolSelect = document.getElementById("symbolSelect");
+      const timeframeSelect = document.getElementById("timeframeSelect");
+      const depthSelect = document.getElementById("depthSelect");
+      const connectButton = document.getElementById("connectButton");
+      const statusDot = document.getElementById("statusDot");
+      const statusText = document.getElementById("statusText");
+      const priceEl = document.getElementById("price");
+      const priceChangeEl = document.getElementById("priceChange");
+      const openPriceEl = document.getElementById("openPrice");
+      const highPriceEl = document.getElementById("highPrice");
+      const lowPriceEl = document.getElementById("lowPrice");
+      const closePriceEl = document.getElementById("closePrice");
+      const chartCanvas = document.getElementById("candlestickChart");
+      const emptyChart = document.getElementById("emptyChart");
+      const chartCtx = chartCanvas.getContext("2d");
+      const asksContainer = document.getElementById("asksContainer");
+      const bidsContainer = document.getElementById("bidsContainer");
+      const spreadPrice = document.getElementById("spreadPrice");
+      const spreadDiff = document.getElementById("spreadDiff");
 
-      const low = Math.min(...candles.map((c) => c.low));
-      const high = Math.max(...candles.map((c) => c.high));
-      const range = high - low || Math.max(high * 0.001, 1);
-      const min = low - range * 0.08;
-      const max = high + range * 0.08;
-      const priceToY = (p) => padding.top + ((max - p) / (max - min)) * chartHeight;
-      const candleWidth = Math.max(4, chartWidth / historyLimit * 0.6);
-      const step = chartWidth / Math.max(historyLimit - 1, 1);
-      const startX = padding.left + chartWidth - step * (candles.length - 1);
+      const setStatus = (text, className = "") => {
+        statusText.textContent = text;
+        statusDot.className = `dot ${className}`.trim();
+      };
 
-      chartCtx.font = "11px -apple-system, sans-serif";
-      chartCtx.fillStyle = "#848e9c";
-      chartCtx.textAlign = "left";
-      chartCtx.textBaseline = "middle";
-      for (let i = 0; i <= 4; i += 1) {
-        const value = max - ((max - min) / 4) * i;
-        const y = padding.top + (chartHeight / 4) * i;
-        chartCtx.fillText(formatPrice(value, 2), width - padding.right + 12, y);
-      }
+      const selectedExchange = () =>
+        exchanges.find((ex) => ex.id === exchangeSelect.value);
 
-      candles.forEach((candle, index) => {
-        const x = startX + step * index;
-        const openY = priceToY(candle.open);
-        const closeY = priceToY(candle.close);
-        const highY = priceToY(candle.high);
-        const lowY = priceToY(candle.low);
-        const rising = candle.close >= candle.open;
-        const color = rising ? "#0ecb81" : "#f6465d";
-        const bodyTop = Math.min(openY, closeY);
-        const bodyHeight = Math.max(2, Math.abs(closeY - openY));
+      const selectedInterval = () => intervals[timeframeSelect.value];
 
-        chartCtx.strokeStyle = color;
-        chartCtx.fillStyle = color;
-        chartCtx.lineWidth = 1.5;
-        chartCtx.beginPath();
-        chartCtx.moveTo(x, highY);
-        chartCtx.lineTo(x, lowY);
-        chartCtx.stroke();
-        chartCtx.fillRect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight);
-      });
-    };
+      const apiHttpBaseUrl = () => {
+        if (
+          window.location.protocol === "http:" ||
+          window.location.protocol === "https:"
+        ) {
+          return `${window.location.protocol}//${window.location.host}`;
+        }
+        return "http://localhost:8080";
+      };
 
-    const renderOrderBook = () => {
-      const maxTotal = Math.max(
-        ...orderBookData.bids.map((b) => b[2] || 0),
-        ...orderBookData.asks.map((a) => a[2] || 0),
-      );
+      const apiWebSocketBaseUrl = () => {
+        if (window.location.protocol === "https:") {
+          return `wss://${window.location.host}`;
+        }
+        if (window.location.protocol === "http:") {
+          return `ws://${window.location.host}`;
+        }
+        return "ws://localhost:8080";
+      };
 
-      asksContainer.innerHTML = orderBookData.asks
-        .slice()
-        .reverse()
-        .map((ask) => {
-          const [price, amount, total] = ask;
-          const percent = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
-          return `
+      const formatPrice = (price, decimals = 2) => {
+        if (price == null) return "-";
+        return Number(price).toLocaleString("en-US", {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: 8,
+        });
+      };
+
+      const formatAmount = (amount) => {
+        if (amount == null) return "-";
+        return Number(amount).toLocaleString("en-US", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 6,
+        });
+      };
+
+      const loadMarkets = async (exchange) => {
+        const response = await fetch(
+          `${apiHttpBaseUrl()}/v1/market/list?exchange=${exchange.id}`,
+        );
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(
+            data.message || data.error || "failed to load markets",
+          );
+        }
+        return (data.markets || [])
+          .filter((market) => market.active !== false)
+          .map((market) => market.symbol)
+          .filter(Boolean)
+          .sort();
+      };
+
+      const populateSymbols = async () => {
+        const exchange = selectedExchange();
+        const previousSymbol = symbolSelect.value;
+        symbolSelect.disabled = true;
+        symbolSelect.replaceChildren(new Option("Loading markets...", ""));
+        setStatus(`Loading ${exchange.name} markets...`);
+
+        try {
+          const symbols = await loadMarkets(exchange);
+          if (symbols.length === 0) {
+            throw new Error("no markets returned");
+          }
+
+          symbolSelect.replaceChildren(
+            ...symbols.map((symbol) => new Option(symbol, symbol)),
+          );
+
+          if (symbols.includes(previousSymbol)) {
+            symbolSelect.value = previousSymbol;
+          } else if (symbols.includes("BTC/USDT")) {
+            symbolSelect.value = "BTC/USDT";
+          } else if (symbols.includes("BTC/USD")) {
+            symbolSelect.value = "BTC/USD";
+          }
+
+          setStatus("Markets loaded");
+        } catch (error) {
+          symbolSelect.replaceChildren(
+            new Option("Failed to load markets", ""),
+          );
+          setStatus(error.message, "error");
+        } finally {
+          symbolSelect.disabled = false;
+        }
+      };
+
+      const resetCandles = () => {
+        candles = [];
+        currentPrice = null;
+        openPriceEl.textContent = "-";
+        highPriceEl.textContent = "-";
+        lowPriceEl.textContent = "-";
+        closePriceEl.textContent = "-";
+        priceEl.textContent = "-";
+        priceChangeEl.textContent = "-";
+        emptyChart.style.display = "grid";
+        drawCandles();
+      };
+
+      const resetOrderBook = () => {
+        orderBookData = { bids: [], asks: [] };
+        spreadPrice.textContent = "-";
+        spreadDiff.textContent = "Spread: -";
+        asksContainer.innerHTML = "";
+        bidsContainer.innerHTML = "";
+      };
+
+      const setCurrentOHLC = () => {
+        const current = candles[candles.length - 1];
+        if (!current) return;
+        openPriceEl.textContent = formatPrice(current.open);
+        highPriceEl.textContent = formatPrice(current.high);
+        lowPriceEl.textContent = formatPrice(current.low);
+        closePriceEl.textContent = formatPrice(current.close);
+      };
+
+      const seedHistory = (quotes) => {
+        candles = quotes.slice(-historyLimit).map((quote) => ({
+          time: new Date(quote.timestamp).getTime(),
+          open: quote.ohlcv.open,
+          high: quote.ohlcv.high,
+          low: quote.ohlcv.low,
+          close: quote.ohlcv.close,
+        }));
+
+        emptyChart.style.display = candles.length === 0 ? "grid" : "none";
+        setCurrentOHLC();
+        drawCandles();
+      };
+
+      const updateLiveCandle = (price, timestamp) => {
+        const interval = selectedInterval().ms;
+        const time = new Date(timestamp).getTime();
+        const bucket = Math.floor(time / interval) * interval;
+        const last = candles[candles.length - 1];
+
+        if (!last || last.time < bucket) {
+          const open = last ? last.close : price;
+          candles.push({
+            time: bucket,
+            open,
+            high: Math.max(open, price),
+            low: Math.min(open, price),
+            close: price,
+          });
+          if (candles.length > historyLimit) {
+            candles.shift();
+          }
+        } else {
+          last.high = Math.max(last.high, price);
+          last.low = Math.min(last.low, price);
+          last.close = price;
+        }
+
+        emptyChart.style.display = candles.length === 0 ? "grid" : "none";
+        setCurrentOHLC();
+        drawCandles();
+      };
+
+      const resizeCanvas = () => {
+        const rect = chartCanvas.getBoundingClientRect();
+        const scale = window.devicePixelRatio || 1;
+        chartCanvas.width = Math.max(1, Math.floor(rect.width * scale));
+        chartCanvas.height = Math.max(1, Math.floor(rect.height * scale));
+        chartCtx.setTransform(scale, 0, 0, scale, 0, 0);
+        drawCandles();
+      };
+
+      const drawCandles = () => {
+        const width = chartCanvas.clientWidth;
+        const height = chartCanvas.clientHeight;
+        chartCtx.clearRect(0, 0, width, height);
+
+        const padding = { top: 20, right: 80, bottom: 24, left: 12 };
+        const chartWidth = width - padding.left - padding.right;
+        const chartHeight = height - padding.top - padding.bottom;
+
+        chartCtx.fillStyle = "#0b0e11";
+        chartCtx.fillRect(0, 0, width, height);
+
+        chartCtx.strokeStyle = "#2b3139";
+        chartCtx.lineWidth = 1;
+        for (let i = 0; i <= 4; i += 1) {
+          const y = padding.top + (chartHeight / 4) * i;
+          chartCtx.beginPath();
+          chartCtx.moveTo(padding.left, y);
+          chartCtx.lineTo(width - padding.right + 8, y);
+          chartCtx.stroke();
+        }
+
+        if (candles.length === 0) return;
+
+        const low = Math.min(...candles.map((c) => c.low));
+        const high = Math.max(...candles.map((c) => c.high));
+        const range = high - low || Math.max(high * 0.001, 1);
+        const min = low - range * 0.08;
+        const max = high + range * 0.08;
+        const priceToY = (p) =>
+          padding.top + ((max - p) / (max - min)) * chartHeight;
+        const candleWidth = Math.max(4, (chartWidth / historyLimit) * 0.6);
+        const step = chartWidth / Math.max(historyLimit - 1, 1);
+        const startX = padding.left + chartWidth - step * (candles.length - 1);
+
+        chartCtx.font = "11px -apple-system, sans-serif";
+        chartCtx.fillStyle = "#848e9c";
+        chartCtx.textAlign = "left";
+        chartCtx.textBaseline = "middle";
+        for (let i = 0; i <= 4; i += 1) {
+          const value = max - ((max - min) / 4) * i;
+          const y = padding.top + (chartHeight / 4) * i;
+          chartCtx.fillText(
+            formatPrice(value, 2),
+            width - padding.right + 12,
+            y,
+          );
+        }
+
+        candles.forEach((candle, index) => {
+          const x = startX + step * index;
+          const openY = priceToY(candle.open);
+          const closeY = priceToY(candle.close);
+          const highY = priceToY(candle.high);
+          const lowY = priceToY(candle.low);
+          const rising = candle.close >= candle.open;
+          const color = rising ? "#0ecb81" : "#f6465d";
+          const bodyTop = Math.min(openY, closeY);
+          const bodyHeight = Math.max(2, Math.abs(closeY - openY));
+
+          chartCtx.strokeStyle = color;
+          chartCtx.fillStyle = color;
+          chartCtx.lineWidth = 1.5;
+          chartCtx.beginPath();
+          chartCtx.moveTo(x, highY);
+          chartCtx.lineTo(x, lowY);
+          chartCtx.stroke();
+          chartCtx.fillRect(
+            x - candleWidth / 2,
+            bodyTop,
+            candleWidth,
+            bodyHeight,
+          );
+        });
+      };
+
+      const renderOrderBook = () => {
+        const maxTotal = Math.max(
+          ...orderBookData.bids.map((b) => b[2] || 0),
+          ...orderBookData.asks.map((a) => a[2] || 0),
+        );
+
+        asksContainer.innerHTML = orderBookData.asks
+          .slice()
+          .reverse()
+          .map((ask) => {
+            const [price, amount, total] = ask;
+            const percent = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
+            return `
             <div class="orderbook-row ask">
               <div>${formatPrice(price, 2)}</div>
               <div>${formatAmount(amount)}</div>
@@ -650,14 +717,14 @@
               <div class="orderbook-bg" style="width: ${percent}%"></div>
             </div>
           `;
-        })
-        .join("");
+          })
+          .join("");
 
-      bidsContainer.innerHTML = orderBookData.bids
-        .map((bid) => {
-          const [price, amount, total] = bid;
-          const percent = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
-          return `
+        bidsContainer.innerHTML = orderBookData.bids
+          .map((bid) => {
+            const [price, amount, total] = bid;
+            const percent = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
+            return `
             <div class="orderbook-row bid">
               <div>${formatPrice(price, 2)}</div>
               <div>${formatAmount(amount)}</div>
@@ -665,165 +732,185 @@
               <div class="orderbook-bg" style="width: ${percent}%"></div>
             </div>
           `;
-        })
-        .join("");
+          })
+          .join("");
 
-      if (orderBookData.bids.length > 0 && orderBookData.asks.length > 0) {
-        const bestBid = orderBookData.bids[0][0];
-        const bestAsk = orderBookData.asks[0][0];
-        const midPrice = (bestBid + bestAsk) / 2;
-        const spread = bestAsk - bestBid;
-        const spreadPercent = (spread / midPrice) * 100;
-        spreadPrice.textContent = formatPrice(midPrice, 2);
-        spreadDiff.textContent = `Spread: ${formatPrice(spread, 2)} (${spreadPercent.toFixed(3)}%)`;
-      }
-    };
-
-    const loadHistory = async (exchange, symbol, interval) => {
-      const end = new Date();
-      const start = new Date(end.getTime() - interval.ms * historyLimit);
-      const baseUrl = apiHttpBaseUrl();
-
-      const response = await fetch(`${baseUrl}/v1/market/quotes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          exchange: Number(exchange.id),
-          symbol,
-          interval: Number(timeframeSelect.value),
-          start: start.toISOString(),
-          end: end.toISOString(),
-          limit: historyLimit,
-        }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || data.error || "failed to load quotes");
-      }
-
-      return data.quotes || [];
-    };
-
-    const connectPriceStream = (exchange, symbol) => {
-      const wsUrl = `${apiWebSocketBaseUrl()}/v1/ws/market/price?exchange=${exchange.id}&symbol=${encodeURIComponent(symbol)}`;
-      
-      priceWs = new WebSocket(wsUrl);
-
-      priceWs.addEventListener("open", () => {
-        console.log("Price stream connected");
-      });
-
-      priceWs.addEventListener("message", (event) => {
-        const data = JSON.parse(event.data);
-        if (data.error) {
-          setStatus(data.error, "error");
-          return;
+        if (orderBookData.bids.length > 0 && orderBookData.asks.length > 0) {
+          const bestBid = orderBookData.bids[0][0];
+          const bestAsk = orderBookData.asks[0][0];
+          const midPrice = (bestBid + bestAsk) / 2;
+          const spread = bestAsk - bestBid;
+          const spreadPercent = (spread / midPrice) * 100;
+          spreadPrice.textContent = formatPrice(midPrice, 2);
+          spreadDiff.textContent = `Spread: ${formatPrice(spread, 2)} (${spreadPercent.toFixed(3)}%)`;
         }
+      };
 
-        const price = Number(data.price);
-        currentPrice = price;
-        priceEl.textContent = formatPrice(price, 2);
+      const loadHistory = async (exchange, symbol, interval) => {
+        const end = new Date();
+        const start = new Date(end.getTime() - interval.ms * historyLimit);
+        const baseUrl = apiHttpBaseUrl();
 
-        const firstCandle = candles[0];
-        if (firstCandle) {
-          const change = price - firstCandle.open;
-          const changePercent = (change / firstCandle.open) * 100;
-          priceChangeEl.textContent = `${change >= 0 ? "+" : ""}${formatPrice(change, 2)} (${changePercent.toFixed(2)}%)`;
-          priceChangeEl.style.color = change >= 0 ? "#0ecb81" : "#f6465d";
-        }
-
-        updateLiveCandle(price, data.timestamp);
-      });
-
-      priceWs.addEventListener("close", () => {
-        console.log("Price stream closed");
-      });
-
-      priceWs.addEventListener("error", () => {
-        console.error("Price stream error");
-      });
-    };
-
-    const connectOrderBookStream = (exchange, symbol, limit) => {
-      const wsUrl = `${apiWebSocketBaseUrl()}/v1/ws/market/orderbook?exchange=${exchange.id}&symbol=${encodeURIComponent(symbol)}&limit=${limit}`;
-      
-      orderBookWs = new WebSocket(wsUrl);
-
-      orderBookWs.addEventListener("open", () => {
-        console.log("Order book stream connected");
-      });
-
-      orderBookWs.addEventListener("message", (event) => {
-        const data = JSON.parse(event.data);
-        if (data.error) {
-          console.error("Order book error:", data.error);
-          return;
-        }
-
-        const bids = data.bids.map((bid, idx, arr) => {
-          const total = arr.slice(0, idx + 1).reduce((sum, b) => sum + b[1], 0);
-          return [bid[0], bid[1], total];
+        const response = await fetch(`${baseUrl}/v1/market/quotes`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            exchange: Number(exchange.id),
+            symbol,
+            interval: Number(timeframeSelect.value),
+            start: start.toISOString(),
+            end: end.toISOString(),
+            limit: historyLimit,
+          }),
         });
 
-        const asks = data.asks.map((ask, idx, arr) => {
-          const total = arr.slice(0, idx + 1).reduce((sum, a) => sum + a[1], 0);
-          return [ask[0], ask[1], total];
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(
+            data.message || data.error || "failed to load quotes",
+          );
+        }
+
+        return data.quotes || [];
+      };
+
+      const connectPriceStream = (exchange, symbol) => {
+        const wsUrl = `${apiWebSocketBaseUrl()}/v1/ws/market/price?exchange=${exchange.id}&symbol=${encodeURIComponent(symbol)}`;
+
+        priceWs = new WebSocket(wsUrl);
+
+        priceWs.addEventListener("open", () => {
+          console.log("Price stream connected");
         });
 
-        orderBookData = { bids, asks };
-        renderOrderBook();
+        priceWs.addEventListener("message", (event) => {
+          const data = JSON.parse(event.data);
+          if (data.error) {
+            setStatus(data.error, "error");
+            return;
+          }
+
+          const price = Number(data.price);
+          currentPrice = price;
+          priceEl.textContent = formatPrice(price, 2);
+
+          const firstCandle = candles[0];
+          if (firstCandle) {
+            const change = price - firstCandle.open;
+            const changePercent = (change / firstCandle.open) * 100;
+            priceChangeEl.textContent = `${change >= 0 ? "+" : ""}${formatPrice(change, 2)} (${changePercent.toFixed(2)}%)`;
+            priceChangeEl.style.color = change >= 0 ? "#0ecb81" : "#f6465d";
+          }
+
+          updateLiveCandle(price, data.timestamp);
+        });
+
+        priceWs.addEventListener("close", () => {
+          console.log("Price stream closed");
+        });
+
+        priceWs.addEventListener("error", () => {
+          console.error("Price stream error");
+        });
+      };
+
+      const connectOrderBookStream = (exchange, symbol, limit) => {
+        const wsUrl = `${apiWebSocketBaseUrl()}/v1/ws/market/orderbook?exchange=${exchange.id}&symbol=${encodeURIComponent(symbol)}&limit=${limit}`;
+
+        orderBookWs = new WebSocket(wsUrl);
+
+        orderBookWs.addEventListener("open", () => {
+          console.log("Order book stream connected");
+        });
+
+        orderBookWs.addEventListener("message", (event) => {
+          const data = JSON.parse(event.data);
+          if (data.error) {
+            console.error("Order book error:", data.error);
+            return;
+          }
+
+          const bids = data.bids.map((bid, idx, arr) => {
+            const total = arr
+              .slice(0, idx + 1)
+              .reduce((sum, b) => sum + b[1], 0);
+            return [bid[0], bid[1], total];
+          });
+
+          const asks = data.asks.map((ask, idx, arr) => {
+            const total = arr
+              .slice(0, idx + 1)
+              .reduce((sum, a) => sum + a[1], 0);
+            return [ask[0], ask[1], total];
+          });
+
+          orderBookData = { bids, asks };
+          renderOrderBook();
+        });
+
+        orderBookWs.addEventListener("close", () => {
+          console.log("Order book stream closed");
+        });
+
+        orderBookWs.addEventListener("error", () => {
+          console.error("Order book stream error");
+        });
+      };
+
+      const connect = async () => {
+        if (priceWs) priceWs.close();
+        if (orderBookWs) orderBookWs.close();
+
+        const exchange = selectedExchange();
+        const symbol = symbolSelect.value;
+        if (!symbol) {
+          setStatus("Select a symbol first", "error");
+          return;
+        }
+        const interval = selectedInterval();
+        const depth = Number(depthSelect.value);
+
+        titleEl.textContent = `${exchange.name} ${symbol}`;
+        resetCandles();
+        resetOrderBook();
+        setStatus("Loading history...");
+
+        try {
+          const quotes = await loadHistory(exchange, symbol, interval);
+          seedHistory(quotes);
+          setStatus("Connecting streams...");
+
+          connectPriceStream(exchange, symbol);
+          connectOrderBookStream(exchange, symbol, depth);
+
+          setStatus("Connected", "connected");
+        } catch (error) {
+          setStatus(error.message, "error");
+          emptyChart.textContent = error.message;
+          emptyChart.style.display = "grid";
+        }
+      };
+
+      const init = async () => {
+        exchangeSelect.replaceChildren(
+          ...exchanges.map((ex) => new Option(ex.name, ex.id)),
+        );
+        exchangeSelect.value = "2";
+        await populateSymbols();
+        resizeCanvas();
+      };
+
+      connectButton.addEventListener("click", connect);
+      exchangeSelect.addEventListener("change", async () => {
+        if (priceWs) priceWs.close();
+        if (orderBookWs) orderBookWs.close();
+        resetCandles();
+        resetOrderBook();
+        await populateSymbols();
       });
+      window.addEventListener("resize", resizeCanvas);
 
-      orderBookWs.addEventListener("close", () => {
-        console.log("Order book stream closed");
-      });
-
-      orderBookWs.addEventListener("error", () => {
-        console.error("Order book stream error");
-      });
-    };
-
-    const connect = async () => {
-      if (priceWs) priceWs.close();
-      if (orderBookWs) orderBookWs.close();
-
-      const exchange = selectedExchange();
-      const symbol = symbolSelect.value;
-      const interval = selectedInterval();
-      const depth = Number(depthSelect.value);
-
-      titleEl.textContent = `${exchange.name} ${symbol}`;
-      resetCandles();
-      resetOrderBook();
-      setStatus("Loading history...");
-
-      try {
-        const quotes = await loadHistory(exchange, symbol, interval);
-        seedHistory(quotes);
-        setStatus("Connecting streams...");
-        
-        connectPriceStream(exchange, symbol);
-        connectOrderBookStream(exchange, symbol, depth);
-        
-        setStatus("Connected", "connected");
-      } catch (error) {
-        setStatus(error.message, "error");
-        emptyChart.textContent = error.message;
-        emptyChart.style.display = "grid";
-      }
-    };
-
-    exchangeSelect.replaceChildren(
-      ...exchanges.map((ex) => new Option(ex.name, ex.id)),
-    );
-    exchangeSelect.value = "2";
-    populateSymbols();
-    resizeCanvas();
-
-    connectButton.addEventListener("click", connect);
-    exchangeSelect.addEventListener("change", populateSymbols);
-    window.addEventListener("resize", resizeCanvas);
-  </script>
-</body>
+      void init();
+    </script>
+  </body>
 </html>
