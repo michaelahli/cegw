@@ -324,6 +324,186 @@ func (x *GetCurrentPriceResponse) GetTimestamp() *timestamppb.Timestamp {
 	return nil
 }
 
+type GetOrderBookRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Exchange      Exchange               `protobuf:"varint,1,opt,name=exchange,proto3,enum=cegw.v1.Exchange" json:"exchange,omitempty"`
+	Symbol        string                 `protobuf:"bytes,2,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetOrderBookRequest) Reset() {
+	*x = GetOrderBookRequest{}
+	mi := &file_cegw_v1_market_data_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetOrderBookRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetOrderBookRequest) ProtoMessage() {}
+
+func (x *GetOrderBookRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cegw_v1_market_data_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetOrderBookRequest.ProtoReflect.Descriptor instead.
+func (*GetOrderBookRequest) Descriptor() ([]byte, []int) {
+	return file_cegw_v1_market_data_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetOrderBookRequest) GetExchange() Exchange {
+	if x != nil {
+		return x.Exchange
+	}
+	return Exchange_EXCHANGE_UNSPECIFIED
+}
+
+func (x *GetOrderBookRequest) GetSymbol() string {
+	if x != nil {
+		return x.Symbol
+	}
+	return ""
+}
+
+func (x *GetOrderBookRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type OrderBookLevel struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Price         float64                `protobuf:"fixed64,1,opt,name=price,proto3" json:"price,omitempty"`
+	Amount        float64                `protobuf:"fixed64,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OrderBookLevel) Reset() {
+	*x = OrderBookLevel{}
+	mi := &file_cegw_v1_market_data_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OrderBookLevel) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OrderBookLevel) ProtoMessage() {}
+
+func (x *OrderBookLevel) ProtoReflect() protoreflect.Message {
+	mi := &file_cegw_v1_market_data_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OrderBookLevel.ProtoReflect.Descriptor instead.
+func (*OrderBookLevel) Descriptor() ([]byte, []int) {
+	return file_cegw_v1_market_data_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *OrderBookLevel) GetPrice() float64 {
+	if x != nil {
+		return x.Price
+	}
+	return 0
+}
+
+func (x *OrderBookLevel) GetAmount() float64 {
+	if x != nil {
+		return x.Amount
+	}
+	return 0
+}
+
+type GetOrderBookResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Symbol        string                 `protobuf:"bytes,1,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	Bids          []*OrderBookLevel      `protobuf:"bytes,2,rep,name=bids,proto3" json:"bids,omitempty"`
+	Asks          []*OrderBookLevel      `protobuf:"bytes,3,rep,name=asks,proto3" json:"asks,omitempty"`
+	Timestamp     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetOrderBookResponse) Reset() {
+	*x = GetOrderBookResponse{}
+	mi := &file_cegw_v1_market_data_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetOrderBookResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetOrderBookResponse) ProtoMessage() {}
+
+func (x *GetOrderBookResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cegw_v1_market_data_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetOrderBookResponse.ProtoReflect.Descriptor instead.
+func (*GetOrderBookResponse) Descriptor() ([]byte, []int) {
+	return file_cegw_v1_market_data_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetOrderBookResponse) GetSymbol() string {
+	if x != nil {
+		return x.Symbol
+	}
+	return ""
+}
+
+func (x *GetOrderBookResponse) GetBids() []*OrderBookLevel {
+	if x != nil {
+		return x.Bids
+	}
+	return nil
+}
+
+func (x *GetOrderBookResponse) GetAsks() []*OrderBookLevel {
+	if x != nil {
+		return x.Asks
+	}
+	return nil
+}
+
+func (x *GetOrderBookResponse) GetTimestamp() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Timestamp
+	}
+	return nil
+}
+
 type SearchTickerRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Exchange      Exchange               `protobuf:"varint,1,opt,name=exchange,proto3,enum=cegw.v1.Exchange" json:"exchange,omitempty"`
@@ -334,7 +514,7 @@ type SearchTickerRequest struct {
 
 func (x *SearchTickerRequest) Reset() {
 	*x = SearchTickerRequest{}
-	mi := &file_cegw_v1_market_data_proto_msgTypes[5]
+	mi := &file_cegw_v1_market_data_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -346,7 +526,7 @@ func (x *SearchTickerRequest) String() string {
 func (*SearchTickerRequest) ProtoMessage() {}
 
 func (x *SearchTickerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cegw_v1_market_data_proto_msgTypes[5]
+	mi := &file_cegw_v1_market_data_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -359,7 +539,7 @@ func (x *SearchTickerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchTickerRequest.ProtoReflect.Descriptor instead.
 func (*SearchTickerRequest) Descriptor() ([]byte, []int) {
-	return file_cegw_v1_market_data_proto_rawDescGZIP(), []int{5}
+	return file_cegw_v1_market_data_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SearchTickerRequest) GetExchange() Exchange {
@@ -388,7 +568,7 @@ type Ticker struct {
 
 func (x *Ticker) Reset() {
 	*x = Ticker{}
-	mi := &file_cegw_v1_market_data_proto_msgTypes[6]
+	mi := &file_cegw_v1_market_data_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -400,7 +580,7 @@ func (x *Ticker) String() string {
 func (*Ticker) ProtoMessage() {}
 
 func (x *Ticker) ProtoReflect() protoreflect.Message {
-	mi := &file_cegw_v1_market_data_proto_msgTypes[6]
+	mi := &file_cegw_v1_market_data_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -413,7 +593,7 @@ func (x *Ticker) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Ticker.ProtoReflect.Descriptor instead.
 func (*Ticker) Descriptor() ([]byte, []int) {
-	return file_cegw_v1_market_data_proto_rawDescGZIP(), []int{6}
+	return file_cegw_v1_market_data_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Ticker) GetSymbol() string {
@@ -453,7 +633,7 @@ type SearchTickerResponse struct {
 
 func (x *SearchTickerResponse) Reset() {
 	*x = SearchTickerResponse{}
-	mi := &file_cegw_v1_market_data_proto_msgTypes[7]
+	mi := &file_cegw_v1_market_data_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -465,7 +645,7 @@ func (x *SearchTickerResponse) String() string {
 func (*SearchTickerResponse) ProtoMessage() {}
 
 func (x *SearchTickerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_cegw_v1_market_data_proto_msgTypes[7]
+	mi := &file_cegw_v1_market_data_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -478,7 +658,7 @@ func (x *SearchTickerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SearchTickerResponse.ProtoReflect.Descriptor instead.
 func (*SearchTickerResponse) Descriptor() ([]byte, []int) {
-	return file_cegw_v1_market_data_proto_rawDescGZIP(), []int{7}
+	return file_cegw_v1_market_data_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *SearchTickerResponse) GetTickers() []*Ticker {
@@ -497,7 +677,7 @@ type ListMarketsRequest struct {
 
 func (x *ListMarketsRequest) Reset() {
 	*x = ListMarketsRequest{}
-	mi := &file_cegw_v1_market_data_proto_msgTypes[8]
+	mi := &file_cegw_v1_market_data_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -509,7 +689,7 @@ func (x *ListMarketsRequest) String() string {
 func (*ListMarketsRequest) ProtoMessage() {}
 
 func (x *ListMarketsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cegw_v1_market_data_proto_msgTypes[8]
+	mi := &file_cegw_v1_market_data_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -522,7 +702,7 @@ func (x *ListMarketsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMarketsRequest.ProtoReflect.Descriptor instead.
 func (*ListMarketsRequest) Descriptor() ([]byte, []int) {
-	return file_cegw_v1_market_data_proto_rawDescGZIP(), []int{8}
+	return file_cegw_v1_market_data_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ListMarketsRequest) GetExchange() Exchange {
@@ -544,7 +724,7 @@ type Market struct {
 
 func (x *Market) Reset() {
 	*x = Market{}
-	mi := &file_cegw_v1_market_data_proto_msgTypes[9]
+	mi := &file_cegw_v1_market_data_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -556,7 +736,7 @@ func (x *Market) String() string {
 func (*Market) ProtoMessage() {}
 
 func (x *Market) ProtoReflect() protoreflect.Message {
-	mi := &file_cegw_v1_market_data_proto_msgTypes[9]
+	mi := &file_cegw_v1_market_data_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -569,7 +749,7 @@ func (x *Market) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Market.ProtoReflect.Descriptor instead.
 func (*Market) Descriptor() ([]byte, []int) {
-	return file_cegw_v1_market_data_proto_rawDescGZIP(), []int{9}
+	return file_cegw_v1_market_data_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *Market) GetSymbol() string {
@@ -610,7 +790,7 @@ type ListMarketsResponse struct {
 
 func (x *ListMarketsResponse) Reset() {
 	*x = ListMarketsResponse{}
-	mi := &file_cegw_v1_market_data_proto_msgTypes[10]
+	mi := &file_cegw_v1_market_data_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -622,7 +802,7 @@ func (x *ListMarketsResponse) String() string {
 func (*ListMarketsResponse) ProtoMessage() {}
 
 func (x *ListMarketsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_cegw_v1_market_data_proto_msgTypes[10]
+	mi := &file_cegw_v1_market_data_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -635,7 +815,7 @@ func (x *ListMarketsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMarketsResponse.ProtoReflect.Descriptor instead.
 func (*ListMarketsResponse) Descriptor() ([]byte, []int) {
-	return file_cegw_v1_market_data_proto_rawDescGZIP(), []int{10}
+	return file_cegw_v1_market_data_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ListMarketsResponse) GetMarkets() []*Market {
@@ -676,7 +856,19 @@ const file_cegw_v1_market_data_proto_rawDesc = "" +
 	"\x17GetCurrentPriceResponse\x12\x16\n" +
 	"\x06symbol\x18\x01 \x01(\tR\x06symbol\x12\x14\n" +
 	"\x05price\x18\x02 \x01(\x01R\x05price\x128\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\"Z\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\"r\n" +
+	"\x13GetOrderBookRequest\x12-\n" +
+	"\bexchange\x18\x01 \x01(\x0e2\x11.cegw.v1.ExchangeR\bexchange\x12\x16\n" +
+	"\x06symbol\x18\x02 \x01(\tR\x06symbol\x12\x14\n" +
+	"\x05limit\x18\x03 \x01(\x05R\x05limit\">\n" +
+	"\x0eOrderBookLevel\x12\x14\n" +
+	"\x05price\x18\x01 \x01(\x01R\x05price\x12\x16\n" +
+	"\x06amount\x18\x02 \x01(\x01R\x06amount\"\xc2\x01\n" +
+	"\x14GetOrderBookResponse\x12\x16\n" +
+	"\x06symbol\x18\x01 \x01(\tR\x06symbol\x12+\n" +
+	"\x04bids\x18\x02 \x03(\v2\x17.cegw.v1.OrderBookLevelR\x04bids\x12+\n" +
+	"\x04asks\x18\x03 \x03(\v2\x17.cegw.v1.OrderBookLevelR\x04asks\x128\n" +
+	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\"Z\n" +
 	"\x13SearchTickerRequest\x12-\n" +
 	"\bexchange\x18\x01 \x01(\x0e2\x11.cegw.v1.ExchangeR\bexchange\x12\x14\n" +
 	"\x05query\x18\x02 \x01(\tR\x05query\"^\n" +
@@ -696,12 +888,15 @@ const file_cegw_v1_market_data_proto_rawDesc = "" +
 	"\x06active\x18\x04 \x01(\bR\x06active\"V\n" +
 	"\x13ListMarketsResponse\x12)\n" +
 	"\amarkets\x18\x01 \x03(\v2\x0f.cegw.v1.MarketR\amarkets\x12\x14\n" +
-	"\x05count\x18\x02 \x01(\x05R\x05count2\xfd\b\n" +
+	"\x05count\x18\x02 \x01(\x05R\x05count2\xc4\n" +
+	"\n" +
 	"\x11MarketDataService\x12\xfb\x01\n" +
 	"\tGetQuotes\x12\x19.cegw.v1.GetQuotesRequest\x1a\x1a.cegw.v1.GetQuotesResponse\"\xb6\x01\x92A\x96\x01\n" +
 	"\vMarket Data\x12\x15Get Historical Quotes\x1apRetrieves historical OHLCV (Open, High, Low, Close, Volume) data for a trading pair from the specified exchange.\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/v1/market/quotes\x12\xe0\x01\n" +
 	"\x0fGetCurrentPrice\x12\x1f.cegw.v1.GetCurrentPriceRequest\x1a .cegw.v1.GetCurrentPriceResponse\"\x89\x01\x92AW\n" +
-	"\vMarket Data\x12\x11Get Current Price\x1a5Retrieves the latest ticker price for a trading pair.\x82\xd3\xe4\x93\x02)\x12'/v1/market/price/{exchange}/{symbol=**}\x12\x98\x02\n" +
+	"\vMarket Data\x12\x11Get Current Price\x1a5Retrieves the latest ticker price for a trading pair.\x82\xd3\xe4\x93\x02)\x12'/v1/market/price/{exchange}/{symbol=**}\x12\xc4\x01\n" +
+	"\fGetOrderBook\x12\x1c.cegw.v1.GetOrderBookRequest\x1a\x1d.cegw.v1.GetOrderBookResponse\"w\x92AX\n" +
+	"\vMarket Data\x12\x0eGet Order Book\x1a9Retrieves the latest order book depth for a trading pair.\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/market/orderbook\x12\x98\x02\n" +
 	"\x12StreamCurrentPrice\x12\x1f.cegw.v1.GetCurrentPriceRequest\x1a .cegw.v1.GetCurrentPriceResponse\"\xbc\x01\x92A\xb8\x01\n" +
 	"\vMarket Data\x12\x14Stream Current Price\x1a\x92\x01Streams the latest ticker price for a trading pair using the exchange WebSocket feed when supported by CCXT. This endpoint is available over gRPC.0\x01\x12\xb7\x01\n" +
 	"\fSearchTicker\x12\x1c.cegw.v1.SearchTickerRequest\x1a\x1d.cegw.v1.SearchTickerResponse\"j\x92AN\n" +
@@ -721,53 +916,62 @@ func file_cegw_v1_market_data_proto_rawDescGZIP() []byte {
 	return file_cegw_v1_market_data_proto_rawDescData
 }
 
-var file_cegw_v1_market_data_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_cegw_v1_market_data_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_cegw_v1_market_data_proto_goTypes = []any{
 	(*GetQuotesRequest)(nil),        // 0: cegw.v1.GetQuotesRequest
 	(*Quote)(nil),                   // 1: cegw.v1.Quote
 	(*GetQuotesResponse)(nil),       // 2: cegw.v1.GetQuotesResponse
 	(*GetCurrentPriceRequest)(nil),  // 3: cegw.v1.GetCurrentPriceRequest
 	(*GetCurrentPriceResponse)(nil), // 4: cegw.v1.GetCurrentPriceResponse
-	(*SearchTickerRequest)(nil),     // 5: cegw.v1.SearchTickerRequest
-	(*Ticker)(nil),                  // 6: cegw.v1.Ticker
-	(*SearchTickerResponse)(nil),    // 7: cegw.v1.SearchTickerResponse
-	(*ListMarketsRequest)(nil),      // 8: cegw.v1.ListMarketsRequest
-	(*Market)(nil),                  // 9: cegw.v1.Market
-	(*ListMarketsResponse)(nil),     // 10: cegw.v1.ListMarketsResponse
-	(Exchange)(0),                   // 11: cegw.v1.Exchange
-	(Interval)(0),                   // 12: cegw.v1.Interval
-	(*timestamppb.Timestamp)(nil),   // 13: google.protobuf.Timestamp
-	(*OHLCV)(nil),                   // 14: cegw.v1.OHLCV
+	(*GetOrderBookRequest)(nil),     // 5: cegw.v1.GetOrderBookRequest
+	(*OrderBookLevel)(nil),          // 6: cegw.v1.OrderBookLevel
+	(*GetOrderBookResponse)(nil),    // 7: cegw.v1.GetOrderBookResponse
+	(*SearchTickerRequest)(nil),     // 8: cegw.v1.SearchTickerRequest
+	(*Ticker)(nil),                  // 9: cegw.v1.Ticker
+	(*SearchTickerResponse)(nil),    // 10: cegw.v1.SearchTickerResponse
+	(*ListMarketsRequest)(nil),      // 11: cegw.v1.ListMarketsRequest
+	(*Market)(nil),                  // 12: cegw.v1.Market
+	(*ListMarketsResponse)(nil),     // 13: cegw.v1.ListMarketsResponse
+	(Exchange)(0),                   // 14: cegw.v1.Exchange
+	(Interval)(0),                   // 15: cegw.v1.Interval
+	(*timestamppb.Timestamp)(nil),   // 16: google.protobuf.Timestamp
+	(*OHLCV)(nil),                   // 17: cegw.v1.OHLCV
 }
 var file_cegw_v1_market_data_proto_depIdxs = []int32{
-	11, // 0: cegw.v1.GetQuotesRequest.exchange:type_name -> cegw.v1.Exchange
-	12, // 1: cegw.v1.GetQuotesRequest.interval:type_name -> cegw.v1.Interval
-	13, // 2: cegw.v1.GetQuotesRequest.start:type_name -> google.protobuf.Timestamp
-	13, // 3: cegw.v1.GetQuotesRequest.end:type_name -> google.protobuf.Timestamp
-	13, // 4: cegw.v1.Quote.timestamp:type_name -> google.protobuf.Timestamp
-	14, // 5: cegw.v1.Quote.ohlcv:type_name -> cegw.v1.OHLCV
+	14, // 0: cegw.v1.GetQuotesRequest.exchange:type_name -> cegw.v1.Exchange
+	15, // 1: cegw.v1.GetQuotesRequest.interval:type_name -> cegw.v1.Interval
+	16, // 2: cegw.v1.GetQuotesRequest.start:type_name -> google.protobuf.Timestamp
+	16, // 3: cegw.v1.GetQuotesRequest.end:type_name -> google.protobuf.Timestamp
+	16, // 4: cegw.v1.Quote.timestamp:type_name -> google.protobuf.Timestamp
+	17, // 5: cegw.v1.Quote.ohlcv:type_name -> cegw.v1.OHLCV
 	1,  // 6: cegw.v1.GetQuotesResponse.quotes:type_name -> cegw.v1.Quote
-	11, // 7: cegw.v1.GetCurrentPriceRequest.exchange:type_name -> cegw.v1.Exchange
-	13, // 8: cegw.v1.GetCurrentPriceResponse.timestamp:type_name -> google.protobuf.Timestamp
-	11, // 9: cegw.v1.SearchTickerRequest.exchange:type_name -> cegw.v1.Exchange
-	6,  // 10: cegw.v1.SearchTickerResponse.tickers:type_name -> cegw.v1.Ticker
-	11, // 11: cegw.v1.ListMarketsRequest.exchange:type_name -> cegw.v1.Exchange
-	9,  // 12: cegw.v1.ListMarketsResponse.markets:type_name -> cegw.v1.Market
-	0,  // 13: cegw.v1.MarketDataService.GetQuotes:input_type -> cegw.v1.GetQuotesRequest
-	3,  // 14: cegw.v1.MarketDataService.GetCurrentPrice:input_type -> cegw.v1.GetCurrentPriceRequest
-	3,  // 15: cegw.v1.MarketDataService.StreamCurrentPrice:input_type -> cegw.v1.GetCurrentPriceRequest
-	5,  // 16: cegw.v1.MarketDataService.SearchTicker:input_type -> cegw.v1.SearchTickerRequest
-	8,  // 17: cegw.v1.MarketDataService.ListMarkets:input_type -> cegw.v1.ListMarketsRequest
-	2,  // 18: cegw.v1.MarketDataService.GetQuotes:output_type -> cegw.v1.GetQuotesResponse
-	4,  // 19: cegw.v1.MarketDataService.GetCurrentPrice:output_type -> cegw.v1.GetCurrentPriceResponse
-	4,  // 20: cegw.v1.MarketDataService.StreamCurrentPrice:output_type -> cegw.v1.GetCurrentPriceResponse
-	7,  // 21: cegw.v1.MarketDataService.SearchTicker:output_type -> cegw.v1.SearchTickerResponse
-	10, // 22: cegw.v1.MarketDataService.ListMarkets:output_type -> cegw.v1.ListMarketsResponse
-	18, // [18:23] is the sub-list for method output_type
-	13, // [13:18] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	14, // 7: cegw.v1.GetCurrentPriceRequest.exchange:type_name -> cegw.v1.Exchange
+	16, // 8: cegw.v1.GetCurrentPriceResponse.timestamp:type_name -> google.protobuf.Timestamp
+	14, // 9: cegw.v1.GetOrderBookRequest.exchange:type_name -> cegw.v1.Exchange
+	6,  // 10: cegw.v1.GetOrderBookResponse.bids:type_name -> cegw.v1.OrderBookLevel
+	6,  // 11: cegw.v1.GetOrderBookResponse.asks:type_name -> cegw.v1.OrderBookLevel
+	16, // 12: cegw.v1.GetOrderBookResponse.timestamp:type_name -> google.protobuf.Timestamp
+	14, // 13: cegw.v1.SearchTickerRequest.exchange:type_name -> cegw.v1.Exchange
+	9,  // 14: cegw.v1.SearchTickerResponse.tickers:type_name -> cegw.v1.Ticker
+	14, // 15: cegw.v1.ListMarketsRequest.exchange:type_name -> cegw.v1.Exchange
+	12, // 16: cegw.v1.ListMarketsResponse.markets:type_name -> cegw.v1.Market
+	0,  // 17: cegw.v1.MarketDataService.GetQuotes:input_type -> cegw.v1.GetQuotesRequest
+	3,  // 18: cegw.v1.MarketDataService.GetCurrentPrice:input_type -> cegw.v1.GetCurrentPriceRequest
+	5,  // 19: cegw.v1.MarketDataService.GetOrderBook:input_type -> cegw.v1.GetOrderBookRequest
+	3,  // 20: cegw.v1.MarketDataService.StreamCurrentPrice:input_type -> cegw.v1.GetCurrentPriceRequest
+	8,  // 21: cegw.v1.MarketDataService.SearchTicker:input_type -> cegw.v1.SearchTickerRequest
+	11, // 22: cegw.v1.MarketDataService.ListMarkets:input_type -> cegw.v1.ListMarketsRequest
+	2,  // 23: cegw.v1.MarketDataService.GetQuotes:output_type -> cegw.v1.GetQuotesResponse
+	4,  // 24: cegw.v1.MarketDataService.GetCurrentPrice:output_type -> cegw.v1.GetCurrentPriceResponse
+	7,  // 25: cegw.v1.MarketDataService.GetOrderBook:output_type -> cegw.v1.GetOrderBookResponse
+	4,  // 26: cegw.v1.MarketDataService.StreamCurrentPrice:output_type -> cegw.v1.GetCurrentPriceResponse
+	10, // 27: cegw.v1.MarketDataService.SearchTicker:output_type -> cegw.v1.SearchTickerResponse
+	13, // 28: cegw.v1.MarketDataService.ListMarkets:output_type -> cegw.v1.ListMarketsResponse
+	23, // [23:29] is the sub-list for method output_type
+	17, // [17:23] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_cegw_v1_market_data_proto_init() }
@@ -782,7 +986,7 @@ func file_cegw_v1_market_data_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cegw_v1_market_data_proto_rawDesc), len(file_cegw_v1_market_data_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	MarketDataService_GetQuotes_FullMethodName          = "/cegw.v1.MarketDataService/GetQuotes"
 	MarketDataService_GetCurrentPrice_FullMethodName    = "/cegw.v1.MarketDataService/GetCurrentPrice"
+	MarketDataService_GetOrderBook_FullMethodName       = "/cegw.v1.MarketDataService/GetOrderBook"
 	MarketDataService_StreamCurrentPrice_FullMethodName = "/cegw.v1.MarketDataService/StreamCurrentPrice"
 	MarketDataService_SearchTicker_FullMethodName       = "/cegw.v1.MarketDataService/SearchTicker"
 	MarketDataService_ListMarkets_FullMethodName        = "/cegw.v1.MarketDataService/ListMarkets"
@@ -32,6 +33,7 @@ const (
 type MarketDataServiceClient interface {
 	GetQuotes(ctx context.Context, in *GetQuotesRequest, opts ...grpc.CallOption) (*GetQuotesResponse, error)
 	GetCurrentPrice(ctx context.Context, in *GetCurrentPriceRequest, opts ...grpc.CallOption) (*GetCurrentPriceResponse, error)
+	GetOrderBook(ctx context.Context, in *GetOrderBookRequest, opts ...grpc.CallOption) (*GetOrderBookResponse, error)
 	StreamCurrentPrice(ctx context.Context, in *GetCurrentPriceRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[GetCurrentPriceResponse], error)
 	SearchTicker(ctx context.Context, in *SearchTickerRequest, opts ...grpc.CallOption) (*SearchTickerResponse, error)
 	ListMarkets(ctx context.Context, in *ListMarketsRequest, opts ...grpc.CallOption) (*ListMarketsResponse, error)
@@ -59,6 +61,16 @@ func (c *marketDataServiceClient) GetCurrentPrice(ctx context.Context, in *GetCu
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetCurrentPriceResponse)
 	err := c.cc.Invoke(ctx, MarketDataService_GetCurrentPrice_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *marketDataServiceClient) GetOrderBook(ctx context.Context, in *GetOrderBookRequest, opts ...grpc.CallOption) (*GetOrderBookResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetOrderBookResponse)
+	err := c.cc.Invoke(ctx, MarketDataService_GetOrderBook_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +122,7 @@ func (c *marketDataServiceClient) ListMarkets(ctx context.Context, in *ListMarke
 type MarketDataServiceServer interface {
 	GetQuotes(context.Context, *GetQuotesRequest) (*GetQuotesResponse, error)
 	GetCurrentPrice(context.Context, *GetCurrentPriceRequest) (*GetCurrentPriceResponse, error)
+	GetOrderBook(context.Context, *GetOrderBookRequest) (*GetOrderBookResponse, error)
 	StreamCurrentPrice(*GetCurrentPriceRequest, grpc.ServerStreamingServer[GetCurrentPriceResponse]) error
 	SearchTicker(context.Context, *SearchTickerRequest) (*SearchTickerResponse, error)
 	ListMarkets(context.Context, *ListMarketsRequest) (*ListMarketsResponse, error)
@@ -128,6 +141,9 @@ func (UnimplementedMarketDataServiceServer) GetQuotes(context.Context, *GetQuote
 }
 func (UnimplementedMarketDataServiceServer) GetCurrentPrice(context.Context, *GetCurrentPriceRequest) (*GetCurrentPriceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCurrentPrice not implemented")
+}
+func (UnimplementedMarketDataServiceServer) GetOrderBook(context.Context, *GetOrderBookRequest) (*GetOrderBookResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetOrderBook not implemented")
 }
 func (UnimplementedMarketDataServiceServer) StreamCurrentPrice(*GetCurrentPriceRequest, grpc.ServerStreamingServer[GetCurrentPriceResponse]) error {
 	return status.Error(codes.Unimplemented, "method StreamCurrentPrice not implemented")
@@ -195,6 +211,24 @@ func _MarketDataService_GetCurrentPrice_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MarketDataService_GetOrderBook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOrderBookRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MarketDataServiceServer).GetOrderBook(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MarketDataService_GetOrderBook_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MarketDataServiceServer).GetOrderBook(ctx, req.(*GetOrderBookRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MarketDataService_StreamCurrentPrice_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(GetCurrentPriceRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -256,6 +290,10 @@ var MarketDataService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCurrentPrice",
 			Handler:    _MarketDataService_GetCurrentPrice_Handler,
+		},
+		{
+			MethodName: "GetOrderBook",
+			Handler:    _MarketDataService_GetOrderBook_Handler,
 		},
 		{
 			MethodName: "SearchTicker",

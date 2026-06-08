@@ -33,6 +33,17 @@ service MarketDataService {
     };
   }
 
+  rpc GetOrderBook(GetOrderBookRequest) returns (GetOrderBookResponse) {
+    option (google.api.http) = {
+      get: "/v1/market/orderbook"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get Order Book"
+      description: "Retrieves the latest order book depth for a trading pair."
+      tags: "Market Data"
+    };
+  }
+
   rpc StreamCurrentPrice(GetCurrentPriceRequest) returns (stream GetCurrentPriceResponse) {
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       summary: "Stream Current Price"
@@ -92,6 +103,24 @@ message GetCurrentPriceResponse {
   string symbol = 1;
   double price = 2;
   google.protobuf.Timestamp timestamp = 3;
+}
+
+message GetOrderBookRequest {
+  Exchange exchange = 1;
+  string symbol = 2;
+  int32 limit = 3;
+}
+
+message OrderBookLevel {
+  double price = 1;
+  double amount = 2;
+}
+
+message GetOrderBookResponse {
+  string symbol = 1;
+  repeated OrderBookLevel bids = 2;
+  repeated OrderBookLevel asks = 3;
+  google.protobuf.Timestamp timestamp = 4;
 }
 
 message SearchTickerRequest {

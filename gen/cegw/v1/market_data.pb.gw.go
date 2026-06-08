@@ -121,6 +121,41 @@ func local_request_MarketDataService_GetCurrentPrice_0(ctx context.Context, mars
 	return msg, metadata, err
 }
 
+var filter_MarketDataService_GetOrderBook_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+
+func request_MarketDataService_GetOrderBook_0(ctx context.Context, marshaler runtime.Marshaler, client MarketDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetOrderBookRequest
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_MarketDataService_GetOrderBook_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := client.GetOrderBook(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+}
+
+func local_request_MarketDataService_GetOrderBook_0(ctx context.Context, marshaler runtime.Marshaler, server MarketDataServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetOrderBookRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_MarketDataService_GetOrderBook_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	msg, err := server.GetOrderBook(ctx, &protoReq)
+	return msg, metadata, err
+}
+
 var filter_MarketDataService_SearchTicker_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
 func request_MarketDataService_SearchTicker_0(ctx context.Context, marshaler runtime.Marshaler, client MarketDataServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
@@ -237,6 +272,26 @@ func RegisterMarketDataServiceHandlerServer(ctx context.Context, mux *runtime.Se
 		}
 		forward_MarketDataService_GetCurrentPrice_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_MarketDataService_GetOrderBook_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/cegw.v1.MarketDataService/GetOrderBook", runtime.WithHTTPPathPattern("/v1/market/orderbook"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_MarketDataService_GetOrderBook_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_MarketDataService_GetOrderBook_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodGet, pattern_MarketDataService_SearchTicker_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -351,6 +406,23 @@ func RegisterMarketDataServiceHandlerClient(ctx context.Context, mux *runtime.Se
 		}
 		forward_MarketDataService_GetCurrentPrice_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
+	mux.Handle(http.MethodGet, pattern_MarketDataService_GetOrderBook_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/cegw.v1.MarketDataService/GetOrderBook", runtime.WithHTTPPathPattern("/v1/market/orderbook"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_MarketDataService_GetOrderBook_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		forward_MarketDataService_GetOrderBook_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+	})
 	mux.Handle(http.MethodGet, pattern_MarketDataService_SearchTicker_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -391,6 +463,7 @@ func RegisterMarketDataServiceHandlerClient(ctx context.Context, mux *runtime.Se
 var (
 	pattern_MarketDataService_GetQuotes_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "market", "quotes"}, ""))
 	pattern_MarketDataService_GetCurrentPrice_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 3, 0, 4, 1, 5, 4}, []string{"v1", "market", "price", "exchange", "symbol"}, ""))
+	pattern_MarketDataService_GetOrderBook_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "market", "orderbook"}, ""))
 	pattern_MarketDataService_SearchTicker_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "market", "search"}, ""))
 	pattern_MarketDataService_ListMarkets_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "market", "list"}, ""))
 )
@@ -398,6 +471,7 @@ var (
 var (
 	forward_MarketDataService_GetQuotes_0       = runtime.ForwardResponseMessage
 	forward_MarketDataService_GetCurrentPrice_0 = runtime.ForwardResponseMessage
+	forward_MarketDataService_GetOrderBook_0    = runtime.ForwardResponseMessage
 	forward_MarketDataService_SearchTicker_0    = runtime.ForwardResponseMessage
 	forward_MarketDataService_ListMarkets_0     = runtime.ForwardResponseMessage
 )

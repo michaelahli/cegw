@@ -235,6 +235,65 @@ func (s *MarketDataService) GetCurrentPrice(ctx context.Context, req *cegwv1.Get
 	}, nil
 }
 
+func (s *MarketDataService) GetOrderBook(ctx context.Context, req *cegwv1.GetOrderBookRequest) (*cegwv1.GetOrderBookResponse, error) {
+	log := s.log.WithContext(ctx).
+		WithField("operation", "GetOrderBook").
+		WithField("symbol", req.Symbol).
+		WithField("exchange", req.Exchange.String()).
+		WithField("limit", req.Limit)
+
+	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
+		log.Warnf("invalid request: exchange unspecified")
+		return nil, status.Error(codes.InvalidArgument, "exchange is required")
+	}
+
+	if req.Symbol == "" {
+		log.Warnf("invalid request: symbol empty")
+		return nil, status.Error(codes.InvalidArgument, "symbol is required")
+	}
+
+	if req.Limit < 0 {
+		log.Warnf("invalid request: negative limit")
+		return nil, status.Error(codes.InvalidArgument, "limit must be greater than or equal to 0")
+	}
+
+	log.Debugf("fetching order book")
+
+	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, nil)
+	if err != nil {
+		log.WithError(err).Errorf("failed to create CCXT client")
+		return nil, err
+	}
+
+	exchange := ccxt.AsExchange(client)
+	if exchange == nil {
+		log.Warnf("exchange not supported")
+		return nil, status.Error(codes.Unimplemented, "exchange not supported")
+	}
+
+	opts := []ccxtlib.FetchOrderBookOptions{}
+	if req.Limit > 0 {
+		opts = append(opts, ccxtlib.WithFetchOrderBookLimit(int64(req.Limit)))
+	}
+
+	orderBook, err := exchange.FetchOrderBook(req.Symbol, opts...)
+	if err != nil {
+		log.WithError(err).Errorf("failed to fetch order book")
+		return nil, ccxt.MapError(err)
+	}
+
+	bids := orderBookLevelsToProto(orderBook.Bids, req.Limit)
+	asks := orderBookLevelsToProto(orderBook.Asks, req.Limit)
+
+	log.WithField("bid_count", len(bids)).WithField("ask_count", len(asks)).Infof("order book fetched successfully")
+	return &cegwv1.GetOrderBookResponse{
+		Symbol:    req.Symbol,
+		Bids:      bids,
+		Asks:      asks,
+		Timestamp: timestamppb.Now(),
+	}, nil
+}
+
 func (s *MarketDataService) StreamCurrentPrice(req *cegwv1.GetCurrentPriceRequest, stream cegwv1.MarketDataService_StreamCurrentPriceServer) error {
 	ctx := stream.Context()
 	log := s.log.WithContext(ctx).
@@ -344,6 +403,24 @@ func tickerToCurrentPriceResponse(symbol string, ticker ccxtlib.Ticker) *cegwv1.
 		Price:     price,
 		Timestamp: timestamppb.Now(),
 	}
+}
+
+func orderBookLevelsToProto(levels [][]float64, limit int32) []*cegwv1.OrderBookLevel {
+	if limit > 0 && len(levels) > int(limit) {
+		levels = levels[:limit]
+	}
+
+	result := make([]*cegwv1.OrderBookLevel, 0, len(levels))
+	for _, level := range levels {
+		if len(level) < 2 {
+			continue
+		}
+		result = append(result, &cegwv1.OrderBookLevel{
+			Price:  level[0],
+			Amount: level[1],
+		})
+	}
+	return result
 }
 
 func (s *MarketDataService) SearchTicker(ctx context.Context, req *cegwv1.SearchTickerRequest) (*cegwv1.SearchTickerResponse, error) {

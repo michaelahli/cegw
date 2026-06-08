@@ -78,6 +78,67 @@
         ]
       }
     },
+    "/v1/market/orderbook": {
+      "get": {
+        "summary": "Get Order Book",
+        "description": "Retrieves the latest order book depth for a trading pair.",
+        "operationId": "MarketDataService_GetOrderBook",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetOrderBookResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "exchange",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "EXCHANGE_UNSPECIFIED",
+              "EXCHANGE_TOKOCRYPTO",
+              "EXCHANGE_BINANCE",
+              "EXCHANGE_COINBASE",
+              "EXCHANGE_CEXIO",
+              "EXCHANGE_INDODAX",
+              "EXCHANGE_OKX",
+              "EXCHANGE_KUCOIN",
+              "EXCHANGE_CRYPTOCOM",
+              "EXCHANGE_BYBIT",
+              "EXCHANGE_BITGET",
+              "EXCHANGE_COINEX",
+              "EXCHANGE_HASHKEY"
+            ],
+            "default": "EXCHANGE_UNSPECIFIED"
+          },
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "Market Data"
+        ]
+      }
+    },
     "/v1/market/price/{exchange}/{symbol}": {
       "get": {
         "summary": "Get Current Price",
@@ -562,6 +623,32 @@
         }
       }
     },
+    "v1GetOrderBookResponse": {
+      "type": "object",
+      "properties": {
+        "symbol": {
+          "type": "string"
+        },
+        "bids": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1OrderBookLevel"
+          }
+        },
+        "asks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1OrderBookLevel"
+          }
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "v1GetQuotesRequest": {
       "type": "object",
       "properties": {
@@ -674,6 +761,19 @@
           "format": "double"
         },
         "volume": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "v1OrderBookLevel": {
+      "type": "object",
+      "properties": {
+        "price": {
+          "type": "number",
+          "format": "double"
+        },
+        "amount": {
           "type": "number",
           "format": "double"
         }

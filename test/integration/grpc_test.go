@@ -91,6 +91,72 @@ func TestGRPC_MarketDataService(t *testing.T) {
 		}
 	})
 
+	t.Run("GetOrderBook_InvalidExchange", func(t *testing.T) {
+		req := &cegwv1.GetOrderBookRequest{
+			Exchange: cegwv1.Exchange_EXCHANGE_UNSPECIFIED,
+			Symbol:   "BTC/USDT",
+			Limit:    10,
+		}
+
+		_, err := client.GetOrderBook(ctx, req)
+		if err == nil {
+			t.Fatal("Expected error for invalid exchange")
+		}
+
+		st, ok := status.FromError(err)
+		if !ok {
+			t.Fatal("Error is not a status error")
+		}
+
+		if st.Code() != codes.InvalidArgument {
+			t.Errorf("Expected InvalidArgument, got %v", st.Code())
+		}
+	})
+
+	t.Run("GetOrderBook_EmptySymbol", func(t *testing.T) {
+		req := &cegwv1.GetOrderBookRequest{
+			Exchange: cegwv1.Exchange_EXCHANGE_TOKOCRYPTO,
+			Symbol:   "",
+			Limit:    10,
+		}
+
+		_, err := client.GetOrderBook(ctx, req)
+		if err == nil {
+			t.Fatal("Expected error for empty symbol")
+		}
+
+		st, ok := status.FromError(err)
+		if !ok {
+			t.Fatal("Error is not a status error")
+		}
+
+		if st.Code() != codes.InvalidArgument {
+			t.Errorf("Expected InvalidArgument, got %v", st.Code())
+		}
+	})
+
+	t.Run("GetOrderBook_NegativeLimit", func(t *testing.T) {
+		req := &cegwv1.GetOrderBookRequest{
+			Exchange: cegwv1.Exchange_EXCHANGE_TOKOCRYPTO,
+			Symbol:   "BTC/USDT",
+			Limit:    -1,
+		}
+
+		_, err := client.GetOrderBook(ctx, req)
+		if err == nil {
+			t.Fatal("Expected error for negative limit")
+		}
+
+		st, ok := status.FromError(err)
+		if !ok {
+			t.Fatal("Error is not a status error")
+		}
+
+		if st.Code() != codes.InvalidArgument {
+			t.Errorf("Expected InvalidArgument, got %v", st.Code())
+		}
+	})
+
 	t.Run("SearchTicker_InvalidExchange", func(t *testing.T) {
 		req := &cegwv1.SearchTickerRequest{
 			Exchange: cegwv1.Exchange_EXCHANGE_UNSPECIFIED,

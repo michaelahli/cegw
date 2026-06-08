@@ -84,6 +84,86 @@ func TestMarketDataService_GetCurrentPrice(t *testing.T) {
 	}
 }
 
+func TestMarketDataService_GetOrderBook(t *testing.T) {
+	cfg := &config.Config{
+		LogLevel:    "error",
+		Timezone:    time.UTC,
+		SandboxMode: true,
+	}
+
+	svc := NewMarketDataService(cfg, newTestLogger(), nil)
+	ctx := context.Background()
+
+	tests := []struct {
+		name     string
+		req      *cegwv1.GetOrderBookRequest
+		wantErr  bool
+		wantCode codes.Code
+	}{
+		{
+			name: "invalid exchange",
+			req: &cegwv1.GetOrderBookRequest{
+				Exchange: cegwv1.Exchange_EXCHANGE_UNSPECIFIED,
+				Symbol:   "BTC/USDT",
+				Limit:    10,
+			},
+			wantErr:  true,
+			wantCode: codes.InvalidArgument,
+		},
+		{
+			name: "empty symbol",
+			req: &cegwv1.GetOrderBookRequest{
+				Exchange: cegwv1.Exchange_EXCHANGE_TOKOCRYPTO,
+				Symbol:   "",
+				Limit:    10,
+			},
+			wantErr:  true,
+			wantCode: codes.InvalidArgument,
+		},
+		{
+			name: "negative limit",
+			req: &cegwv1.GetOrderBookRequest{
+				Exchange: cegwv1.Exchange_EXCHANGE_TOKOCRYPTO,
+				Symbol:   "BTC/USDT",
+				Limit:    -1,
+			},
+			wantErr:  true,
+			wantCode: codes.InvalidArgument,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := svc.GetOrderBook(ctx, tt.req)
+
+			if tt.wantErr {
+				if err == nil {
+					t.Errorf("Expected error but got nil")
+					return
+				}
+				st, ok := status.FromError(err)
+				if !ok {
+					t.Errorf("Error is not a status error")
+					return
+				}
+				if st.Code() != tt.wantCode {
+					t.Errorf("Expected code %v, got %v", tt.wantCode, st.Code())
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+				return
+			}
+
+			if resp == nil {
+				t.Errorf("Response is nil")
+			}
+		})
+	}
+}
+
 func TestMarketDataService_ListMarkets(t *testing.T) {
 	cfg := &config.Config{
 		LogLevel:    "error",

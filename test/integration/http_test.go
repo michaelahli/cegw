@@ -76,6 +76,45 @@ func TestHTTP_MarketDataEndpoints(t *testing.T) {
 		}
 	})
 
+	t.Run("GetOrderBook_InvalidExchange", func(t *testing.T) {
+		url := fmt.Sprintf("%s/v1/market/orderbook?exchange=0&symbol=BTC/USDT&limit=10", baseURL)
+		resp, err := client.Get(url)
+		if err != nil {
+			t.Fatalf("Request failed: %v", err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+
+		if resp.StatusCode == http.StatusOK {
+			t.Error("Expected error status for invalid exchange")
+		}
+	})
+
+	t.Run("GetOrderBook_EmptySymbol", func(t *testing.T) {
+		url := fmt.Sprintf("%s/v1/market/orderbook?exchange=1&symbol=&limit=10", baseURL)
+		resp, err := client.Get(url)
+		if err != nil {
+			t.Fatalf("Request failed: %v", err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+
+		if resp.StatusCode == http.StatusOK {
+			t.Error("Expected error status for empty symbol")
+		}
+	})
+
+	t.Run("GetOrderBook_NegativeLimit", func(t *testing.T) {
+		url := fmt.Sprintf("%s/v1/market/orderbook?exchange=1&symbol=BTC/USDT&limit=-1", baseURL)
+		resp, err := client.Get(url)
+		if err != nil {
+			t.Fatalf("Request failed: %v", err)
+		}
+		defer func() { _ = resp.Body.Close() }()
+
+		if resp.StatusCode == http.StatusOK {
+			t.Error("Expected error status for negative limit")
+		}
+	})
+
 	t.Run("SearchTicker", func(t *testing.T) {
 		t.Skip("Skipping test that requires real exchange API")
 		url := fmt.Sprintf("%s/v1/market/search?exchange=1&query=BTC", baseURL)
