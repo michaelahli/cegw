@@ -3,151 +3,175 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CEGW WebSocket Price Example</title>
+  <title>CEGW WebSocket - Price & Order Book</title>
   <style>
     :root {
       color-scheme: light dark;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       min-height: 100vh;
-      display: grid;
-      place-items: center;
-      background: #f6f7f9;
-      color: #16181d;
+      background: #0b0e11;
+      color: #eaecef;
+      padding: 16px;
     }
 
-    main {
-      width: min(920px, calc(100vw - 32px));
-      border: 1px solid #d8dde6;
-      border-radius: 8px;
-      background: #fff;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 16px;
     }
 
     h1 {
-      margin: 0 0 6px;
-      font-size: 22px;
-      font-weight: 650;
-    }
-
-    .meta {
-      margin: 0 0 20px;
-      color: #596273;
-      font-size: 14px;
+      margin: 0 0 8px;
+      font-size: 20px;
+      font-weight: 600;
+      color: #f0b90b;
     }
 
     .controls {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+      display: flex;
       gap: 12px;
       align-items: end;
-      margin: 20px 0;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
     }
 
     label {
-      display: grid;
+      display: flex;
+      flex-direction: column;
       gap: 6px;
-      color: #596273;
-      font-size: 13px;
-      font-weight: 600;
+      color: #848e9c;
+      font-size: 12px;
+      font-weight: 500;
     }
 
     select,
     button {
-      min-height: 40px;
-      border: 1px solid #c8d0dc;
-      border-radius: 8px;
-      background: #fff;
-      color: #16181d;
+      height: 36px;
+      border: 1px solid #2b3139;
+      border-radius: 4px;
+      background: #1e2329;
+      color: #eaecef;
       font: inherit;
+      font-size: 13px;
     }
 
     select {
-      width: 100%;
+      min-width: 140px;
       padding: 0 10px;
     }
 
     button {
-      padding: 0 16px;
+      padding: 0 20px;
       cursor: pointer;
-      font-weight: 650;
+      font-weight: 600;
+      background: #f0b90b;
+      color: #0b0e11;
+      border: none;
     }
 
-    .price {
-      font-variant-numeric: tabular-nums;
-      font-size: clamp(34px, 8vw, 56px);
-      line-height: 1;
-      margin: 18px 0 10px;
-    }
-
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 18px;
-    }
-
-    .pill {
-      border: 1px solid #d8dde6;
-      border-radius: 999px;
-      padding: 8px 12px;
-      font-size: 13px;
-      background: #fafbfc;
+    button:hover {
+      background: #fcd535;
     }
 
     .status {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      font-size: 14px;
+      font-size: 12px;
+      color: #848e9c;
     }
 
     .dot {
-      width: 9px;
-      height: 9px;
+      width: 8px;
+      height: 8px;
       border-radius: 999px;
-      background: #b4bbc8;
+      background: #474d57;
     }
 
     .dot.connected {
-      background: #169b62;
+      background: #0ecb81;
     }
 
     .dot.error {
-      background: #d13b3b;
+      background: #f6465d;
     }
 
-    .chartHeader {
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .panel {
+      background: #1e2329;
+      border: 1px solid #2b3139;
+      border-radius: 4px;
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    .panel-title {
+      margin: 0 0 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #eaecef;
+    }
+
+    .price-header {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      align-items: baseline;
       gap: 12px;
-      margin-top: 22px;
+      margin-bottom: 8px;
     }
 
-    .chartTitle {
-      margin: 0;
-      font-size: 15px;
-      font-weight: 650;
+    .price {
+      font-size: 24px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: #eaecef;
+    }
+
+    .price-change {
+      font-size: 14px;
+      color: #848e9c;
+    }
+
+    .chart-info {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: #848e9c;
+    }
+
+    .chart-info span {
+      font-variant-numeric: tabular-nums;
     }
 
     .chartWrap {
       position: relative;
-      margin-top: 10px;
-      border: 1px solid #d8dde6;
-      border-radius: 8px;
-      background: #fbfcfe;
+      margin-top: 12px;
+      background: #0b0e11;
+      border-radius: 4px;
       overflow: hidden;
     }
 
     canvas {
       display: block;
       width: 100%;
-      height: 320px;
+      height: 360px;
     }
 
     .emptyChart {
@@ -155,37 +179,140 @@
       inset: 0;
       display: grid;
       place-items: center;
-      color: #7b8494;
-      font-size: 14px;
+      color: #474d57;
+      font-size: 13px;
       pointer-events: none;
     }
 
-    pre {
-      overflow: auto;
-      margin: 20px 0 0;
-      padding: 14px;
-      border-radius: 8px;
-      background: #10141f;
-      color: #e6edf7;
-      font-size: 13px;
-      min-height: 72px;
+    .orderbook-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #2b3139;
     }
 
-    @media (max-width: 720px) {
-      .controls {
+    .orderbook-tabs {
+      display: flex;
+      gap: 8px;
+      font-size: 12px;
+      color: #848e9c;
+    }
+
+    .orderbook-tabs span {
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+
+    .orderbook-tabs span.active {
+      color: #eaecef;
+      background: #2b3139;
+      border-radius: 4px;
+    }
+
+    .orderbook-table {
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .orderbook-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      padding: 3px 0;
+      position: relative;
+    }
+
+    .orderbook-row.header {
+      color: #848e9c;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .orderbook-row.ask {
+      color: #f6465d;
+    }
+
+    .orderbook-row.bid {
+      color: #0ecb81;
+    }
+
+    .orderbook-row > div {
+      padding: 0 4px;
+      z-index: 2;
+    }
+
+    .orderbook-row.ask > div:first-child {
+      text-align: left;
+    }
+
+    .orderbook-row.bid > div:first-child {
+      text-align: left;
+    }
+
+    .orderbook-row > div:nth-child(2),
+    .orderbook-row > div:nth-child(3) {
+      text-align: right;
+    }
+
+    .orderbook-bg {
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 100%;
+      z-index: 1;
+      opacity: 0.15;
+    }
+
+    .orderbook-row.ask .orderbook-bg {
+      background: #f6465d;
+    }
+
+    .orderbook-row.bid .orderbook-bg {
+      background: #0ecb81;
+    }
+
+    .orderbook-spread {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 4px;
+      margin: 8px 0;
+      background: #0b0e11;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+
+    .spread-price {
+      font-weight: 600;
+      color: #0ecb81;
+    }
+
+    .spread-diff {
+      font-size: 11px;
+      color: #848e9c;
+    }
+
+    @media (max-width: 1024px) {
+      .layout {
         grid-template-columns: 1fr;
       }
 
       canvas {
-        height: 260px;
+        height: 280px;
       }
     }
   </style>
 </head>
 <body>
-  <main>
-    <h1 id="title">Binance BTC/USDT</h1>
-    <p class="meta">CEGW OHLCV history + WebSocket live price stream</p>
+  <div class="container">
+    <header>
+      <h1 id="title">Binance BTC/USDT</h1>
+      <div class="status">
+        <span id="statusDot" class="dot"></span>
+        <span id="statusText">Not connected</span>
+      </div>
+    </header>
 
     <div class="controls">
       <label>
@@ -208,34 +335,55 @@
           <option value="10">1M</option>
         </select>
       </label>
-      <button id="connectButton" type="button">Load & Connect</button>
+      <label>
+        Order Book Depth
+        <select id="depthSelect">
+          <option value="10">10</option>
+          <option value="20" selected>20</option>
+          <option value="50">50</option>
+        </select>
+      </label>
+      <button id="connectButton" type="button">Connect</button>
     </div>
 
-    <div class="status">
-      <span id="statusDot" class="dot"></span>
-      <span id="statusText">Not connected</span>
-    </div>
+    <div class="layout">
+      <div class="panel">
+        <div class="price-header">
+          <div id="price" class="price">-</div>
+          <div id="priceChange" class="price-change">-</div>
+        </div>
+        <div class="chart-info">
+          <span>O: <span id="openPrice">-</span></span>
+          <span>H: <span id="highPrice">-</span></span>
+          <span>L: <span id="lowPrice">-</span></span>
+          <span>C: <span id="closePrice">-</span></span>
+        </div>
+        <div class="chartWrap">
+          <canvas id="candlestickChart"></canvas>
+          <div id="emptyChart" class="emptyChart">Connect to load chart</div>
+        </div>
+      </div>
 
-    <div id="price" class="price">-</div>
-
-    <div class="row">
-      <div id="exchangePill" class="pill">Exchange: Binance (2)</div>
-      <div id="symbolPill" class="pill">Symbol: BTC/USDT</div>
-      <div id="timeframePill" class="pill">Timeframe: 1h</div>
-      <div id="timestamp" class="pill">Waiting for update</div>
+      <div class="panel">
+        <div class="orderbook-header">
+          <div class="panel-title">Order Book</div>
+        </div>
+        <div class="orderbook-table">
+          <div class="orderbook-row header">
+            <div>Price</div>
+            <div>Amount</div>
+            <div>Total</div>
+          </div>
+          <div id="asksContainer"></div>
+          <div class="orderbook-spread">
+            <span id="spreadPrice" class="spread-price">-</span>
+            <span id="spreadDiff" class="spread-diff">Spread: -</span>
+          </div>
+          <div id="bidsContainer"></div>
+        </div>
+      </div>
     </div>
-
-    <div class="chartHeader">
-      <p class="chartTitle">Candlestick</p>
-      <div id="ohlcPill" class="pill">OHLC: -</div>
-    </div>
-    <div class="chartWrap">
-      <canvas id="candlestickChart"></canvas>
-      <div id="emptyChart" class="emptyChart">Load history to draw candles</div>
-    </div>
-
-    <pre id="payload">{}</pre>
-  </main>
+  </div>
 
   <script>
     const exchanges = [
@@ -244,13 +392,6 @@
       { id: "7", name: "KuCoin", symbols: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "KCS/USDT"] },
       { id: "9", name: "Bybit", symbols: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "DOGE/USDT"] },
       { id: "10", name: "Bitget", symbols: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "BGB/USDT"] },
-      { id: "11", name: "Coinex", symbols: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "CET/USDT"] },
-      { id: "1", name: "Tokocrypto", symbols: ["BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT"] },
-      { id: "3", name: "Coinbase", symbols: ["BTC/USD", "ETH/USD", "SOL/USD", "XRP/USD", "DOGE/USD"] },
-      { id: "4", name: "CEX.IO", symbols: ["BTC/USD", "ETH/USD", "BTC/USDT", "ETH/USDT"] },
-      { id: "5", name: "Indodax", symbols: ["BTC/IDR", "ETH/IDR", "USDT/IDR", "BNB/IDR", "SOL/IDR"] },
-      { id: "8", name: "Crypto.com", symbols: ["BTC/USDT", "ETH/USDT", "SOL/USDT", "XRP/USDT", "DOGE/USDT"] },
-      { id: "12", name: "Hashkey", symbols: ["BTC/USD", "ETH/USD", "BTC/USDT", "ETH/USDT"] },
     ];
 
     const intervals = {
@@ -264,33 +405,40 @@
     };
 
     const historyLimit = 48;
-    let ws;
+    let priceWs;
+    let orderBookWs;
     let candles = [];
+    let currentPrice = null;
+    let orderBookData = { bids: [], asks: [] };
 
     const titleEl = document.getElementById("title");
     const exchangeSelect = document.getElementById("exchangeSelect");
     const symbolSelect = document.getElementById("symbolSelect");
     const timeframeSelect = document.getElementById("timeframeSelect");
+    const depthSelect = document.getElementById("depthSelect");
     const connectButton = document.getElementById("connectButton");
     const statusDot = document.getElementById("statusDot");
     const statusText = document.getElementById("statusText");
     const priceEl = document.getElementById("price");
-    const exchangePill = document.getElementById("exchangePill");
-    const symbolPill = document.getElementById("symbolPill");
-    const timeframePill = document.getElementById("timeframePill");
-    const ohlcPill = document.getElementById("ohlcPill");
-    const timestampEl = document.getElementById("timestamp");
-    const payloadEl = document.getElementById("payload");
+    const priceChangeEl = document.getElementById("priceChange");
+    const openPriceEl = document.getElementById("openPrice");
+    const highPriceEl = document.getElementById("highPrice");
+    const lowPriceEl = document.getElementById("lowPrice");
+    const closePriceEl = document.getElementById("closePrice");
     const chartCanvas = document.getElementById("candlestickChart");
     const emptyChart = document.getElementById("emptyChart");
     const chartCtx = chartCanvas.getContext("2d");
+    const asksContainer = document.getElementById("asksContainer");
+    const bidsContainer = document.getElementById("bidsContainer");
+    const spreadPrice = document.getElementById("spreadPrice");
+    const spreadDiff = document.getElementById("spreadDiff");
 
     const setStatus = (text, className = "") => {
       statusText.textContent = text;
       statusDot.className = `dot ${className}`.trim();
     };
 
-    const selectedExchange = () => exchanges.find((exchange) => exchange.id === exchangeSelect.value);
+    const selectedExchange = () => exchanges.find((ex) => ex.id === exchangeSelect.value);
 
     const selectedInterval = () => intervals[timeframeSelect.value];
 
@@ -311,10 +459,21 @@
       return "ws://localhost:8080";
     };
 
-    const formatPrice = (price) => Number(price).toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 8,
-    });
+    const formatPrice = (price, decimals = 2) => {
+      if (price == null) return "-";
+      return Number(price).toLocaleString("en-US", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: 8,
+      });
+    };
+
+    const formatAmount = (amount) => {
+      if (amount == null) return "-";
+      return Number(amount).toLocaleString("en-US", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 6,
+      });
+    };
 
     const populateSymbols = () => {
       const exchange = selectedExchange();
@@ -323,21 +482,34 @@
       );
     };
 
-    const resetCandles = (message = "Load history to draw candles") => {
+    const resetCandles = () => {
       candles = [];
-      ohlcPill.textContent = "OHLC: -";
-      emptyChart.textContent = message;
+      currentPrice = null;
+      openPriceEl.textContent = "-";
+      highPriceEl.textContent = "-";
+      lowPriceEl.textContent = "-";
+      closePriceEl.textContent = "-";
+      priceEl.textContent = "-";
+      priceChangeEl.textContent = "-";
       emptyChart.style.display = "grid";
       drawCandles();
     };
 
+    const resetOrderBook = () => {
+      orderBookData = { bids: [], asks: [] };
+      spreadPrice.textContent = "-";
+      spreadDiff.textContent = "Spread: -";
+      asksContainer.innerHTML = "";
+      bidsContainer.innerHTML = "";
+    };
+
     const setCurrentOHLC = () => {
       const current = candles[candles.length - 1];
-      if (!current) {
-        ohlcPill.textContent = "OHLC: -";
-        return;
-      }
-      ohlcPill.textContent = `OHLC: ${formatPrice(current.open)} / ${formatPrice(current.high)} / ${formatPrice(current.low)} / ${formatPrice(current.close)}`;
+      if (!current) return;
+      openPriceEl.textContent = formatPrice(current.open);
+      highPriceEl.textContent = formatPrice(current.high);
+      lowPriceEl.textContent = formatPrice(current.low);
+      closePriceEl.textContent = formatPrice(current.close);
     };
 
     const seedHistory = (quotes) => {
@@ -350,7 +522,6 @@
       }));
 
       emptyChart.style.display = candles.length === 0 ? "grid" : "none";
-      emptyChart.textContent = candles.length === 0 ? "No OHLCV history returned" : "";
       setCurrentOHLC();
       drawCandles();
     };
@@ -398,14 +569,14 @@
       const height = chartCanvas.clientHeight;
       chartCtx.clearRect(0, 0, width, height);
 
-      const padding = { top: 22, right: 72, bottom: 28, left: 14 };
+      const padding = { top: 20, right: 80, bottom: 24, left: 12 };
       const chartWidth = width - padding.left - padding.right;
       const chartHeight = height - padding.top - padding.bottom;
 
-      chartCtx.fillStyle = "#fbfcfe";
+      chartCtx.fillStyle = "#0b0e11";
       chartCtx.fillRect(0, 0, width, height);
 
-      chartCtx.strokeStyle = "#e3e7ee";
+      chartCtx.strokeStyle = "#2b3139";
       chartCtx.lineWidth = 1;
       for (let i = 0; i <= 4; i += 1) {
         const y = padding.top + (chartHeight / 4) * i;
@@ -415,28 +586,26 @@
         chartCtx.stroke();
       }
 
-      if (candles.length === 0) {
-        return;
-      }
+      if (candles.length === 0) return;
 
-      const low = Math.min(...candles.map((candle) => candle.low));
-      const high = Math.max(...candles.map((candle) => candle.high));
+      const low = Math.min(...candles.map((c) => c.low));
+      const high = Math.max(...candles.map((c) => c.high));
       const range = high - low || Math.max(high * 0.001, 1);
       const min = low - range * 0.08;
       const max = high + range * 0.08;
-      const priceToY = (price) => padding.top + ((max - price) / (max - min)) * chartHeight;
-      const candleWidth = Math.max(4, chartWidth / historyLimit * 0.58);
+      const priceToY = (p) => padding.top + ((max - p) / (max - min)) * chartHeight;
+      const candleWidth = Math.max(4, chartWidth / historyLimit * 0.6);
       const step = chartWidth / Math.max(historyLimit - 1, 1);
       const startX = padding.left + chartWidth - step * (candles.length - 1);
 
-      chartCtx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
-      chartCtx.fillStyle = "#596273";
+      chartCtx.font = "11px -apple-system, sans-serif";
+      chartCtx.fillStyle = "#848e9c";
       chartCtx.textAlign = "left";
       chartCtx.textBaseline = "middle";
       for (let i = 0; i <= 4; i += 1) {
         const value = max - ((max - min) / 4) * i;
         const y = padding.top + (chartHeight / 4) * i;
-        chartCtx.fillText(formatPrice(value), width - padding.right + 14, y);
+        chartCtx.fillText(formatPrice(value, 2), width - padding.right + 12, y);
       }
 
       candles.forEach((candle, index) => {
@@ -446,7 +615,7 @@
         const highY = priceToY(candle.high);
         const lowY = priceToY(candle.low);
         const rising = candle.close >= candle.open;
-        const color = rising ? "#169b62" : "#d13b3b";
+        const color = rising ? "#0ecb81" : "#f6465d";
         const bodyTop = Math.min(openY, closeY);
         const bodyHeight = Math.max(2, Math.abs(closeY - openY));
 
@@ -459,6 +628,55 @@
         chartCtx.stroke();
         chartCtx.fillRect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight);
       });
+    };
+
+    const renderOrderBook = () => {
+      const maxTotal = Math.max(
+        ...orderBookData.bids.map((b) => b[2] || 0),
+        ...orderBookData.asks.map((a) => a[2] || 0),
+      );
+
+      asksContainer.innerHTML = orderBookData.asks
+        .slice()
+        .reverse()
+        .map((ask) => {
+          const [price, amount, total] = ask;
+          const percent = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
+          return `
+            <div class="orderbook-row ask">
+              <div>${formatPrice(price, 2)}</div>
+              <div>${formatAmount(amount)}</div>
+              <div>${formatAmount(total)}</div>
+              <div class="orderbook-bg" style="width: ${percent}%"></div>
+            </div>
+          `;
+        })
+        .join("");
+
+      bidsContainer.innerHTML = orderBookData.bids
+        .map((bid) => {
+          const [price, amount, total] = bid;
+          const percent = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
+          return `
+            <div class="orderbook-row bid">
+              <div>${formatPrice(price, 2)}</div>
+              <div>${formatAmount(amount)}</div>
+              <div>${formatAmount(total)}</div>
+              <div class="orderbook-bg" style="width: ${percent}%"></div>
+            </div>
+          `;
+        })
+        .join("");
+
+      if (orderBookData.bids.length > 0 && orderBookData.asks.length > 0) {
+        const bestBid = orderBookData.bids[0][0];
+        const bestAsk = orderBookData.asks[0][0];
+        const midPrice = (bestBid + bestAsk) / 2;
+        const spread = bestAsk - bestBid;
+        const spreadPercent = (spread / midPrice) * 100;
+        spreadPrice.textContent = formatPrice(midPrice, 2);
+        spreadDiff.textContent = `Spread: ${formatPrice(spread, 2)} (${spreadPercent.toFixed(3)}%)`;
+      }
     };
 
     const loadHistory = async (exchange, symbol, interval) => {
@@ -480,8 +698,6 @@
       });
 
       const data = await response.json();
-      payloadEl.textContent = JSON.stringify(data, null, 2);
-
       if (!response.ok) {
         throw new Error(data.message || data.error || "failed to load quotes");
       }
@@ -489,81 +705,124 @@
       return data.quotes || [];
     };
 
-    const connect = async () => {
-      if (ws) {
-        ws.close();
-      }
-
-      const exchange = selectedExchange();
-      const symbol = symbolSelect.value;
-      const interval = selectedInterval();
+    const connectPriceStream = (exchange, symbol) => {
       const wsUrl = `${apiWebSocketBaseUrl()}/v1/ws/market/price?exchange=${exchange.id}&symbol=${encodeURIComponent(symbol)}`;
+      
+      priceWs = new WebSocket(wsUrl);
 
-      titleEl.textContent = `${exchange.name} ${symbol}`;
-      exchangePill.textContent = `Exchange: ${exchange.name} (${exchange.id})`;
-      symbolPill.textContent = `Symbol: ${symbol}`;
-      timeframePill.textContent = `Timeframe: ${interval.label}`;
-      priceEl.textContent = "-";
-      timestampEl.textContent = "Loading history";
-      resetCandles("Loading OHLCV history");
-      setStatus(`Loading ${interval.label} history`);
-
-      try {
-        const quotes = await loadHistory(exchange, symbol, interval);
-        seedHistory(quotes);
-        setStatus(`Connecting to ${wsUrl}`);
-      } catch (error) {
-        setStatus(error.message, "error");
-        emptyChart.textContent = error.message;
-        emptyChart.style.display = "grid";
-        return;
-      }
-
-      ws = new WebSocket(wsUrl);
-
-      ws.addEventListener("open", () => {
-        setStatus("Connected: history + live ticks", "connected");
+      priceWs.addEventListener("open", () => {
+        console.log("Price stream connected");
       });
 
-      ws.addEventListener("message", (event) => {
+      priceWs.addEventListener("message", (event) => {
         const data = JSON.parse(event.data);
-        payloadEl.textContent = JSON.stringify(data, null, 2);
-
         if (data.error) {
           setStatus(data.error, "error");
           return;
         }
 
         const price = Number(data.price);
-        priceEl.textContent = formatPrice(price);
-        timestampEl.textContent = new Date(data.timestamp).toLocaleString();
+        currentPrice = price;
+        priceEl.textContent = formatPrice(price, 2);
+
+        const firstCandle = candles[0];
+        if (firstCandle) {
+          const change = price - firstCandle.open;
+          const changePercent = (change / firstCandle.open) * 100;
+          priceChangeEl.textContent = `${change >= 0 ? "+" : ""}${formatPrice(change, 2)} (${changePercent.toFixed(2)}%)`;
+          priceChangeEl.style.color = change >= 0 ? "#0ecb81" : "#f6465d";
+        }
+
         updateLiveCandle(price, data.timestamp);
       });
 
-      ws.addEventListener("close", () => {
-        setStatus("Disconnected", "error");
+      priceWs.addEventListener("close", () => {
+        console.log("Price stream closed");
       });
 
-      ws.addEventListener("error", () => {
-        setStatus("WebSocket error", "error");
+      priceWs.addEventListener("error", () => {
+        console.error("Price stream error");
       });
     };
 
+    const connectOrderBookStream = (exchange, symbol, limit) => {
+      const wsUrl = `${apiWebSocketBaseUrl()}/v1/ws/market/orderbook?exchange=${exchange.id}&symbol=${encodeURIComponent(symbol)}&limit=${limit}`;
+      
+      orderBookWs = new WebSocket(wsUrl);
+
+      orderBookWs.addEventListener("open", () => {
+        console.log("Order book stream connected");
+      });
+
+      orderBookWs.addEventListener("message", (event) => {
+        const data = JSON.parse(event.data);
+        if (data.error) {
+          console.error("Order book error:", data.error);
+          return;
+        }
+
+        const bids = data.bids.map((bid, idx, arr) => {
+          const total = arr.slice(0, idx + 1).reduce((sum, b) => sum + b[1], 0);
+          return [bid[0], bid[1], total];
+        });
+
+        const asks = data.asks.map((ask, idx, arr) => {
+          const total = arr.slice(0, idx + 1).reduce((sum, a) => sum + a[1], 0);
+          return [ask[0], ask[1], total];
+        });
+
+        orderBookData = { bids, asks };
+        renderOrderBook();
+      });
+
+      orderBookWs.addEventListener("close", () => {
+        console.log("Order book stream closed");
+      });
+
+      orderBookWs.addEventListener("error", () => {
+        console.error("Order book stream error");
+      });
+    };
+
+    const connect = async () => {
+      if (priceWs) priceWs.close();
+      if (orderBookWs) orderBookWs.close();
+
+      const exchange = selectedExchange();
+      const symbol = symbolSelect.value;
+      const interval = selectedInterval();
+      const depth = Number(depthSelect.value);
+
+      titleEl.textContent = `${exchange.name} ${symbol}`;
+      resetCandles();
+      resetOrderBook();
+      setStatus("Loading history...");
+
+      try {
+        const quotes = await loadHistory(exchange, symbol, interval);
+        seedHistory(quotes);
+        setStatus("Connecting streams...");
+        
+        connectPriceStream(exchange, symbol);
+        connectOrderBookStream(exchange, symbol, depth);
+        
+        setStatus("Connected", "connected");
+      } catch (error) {
+        setStatus(error.message, "error");
+        emptyChart.textContent = error.message;
+        emptyChart.style.display = "grid";
+      }
+    };
+
     exchangeSelect.replaceChildren(
-      ...exchanges.map((exchange) => new Option(exchange.name, exchange.id)),
+      ...exchanges.map((ex) => new Option(ex.name, ex.id)),
     );
     exchangeSelect.value = "2";
     populateSymbols();
     resizeCanvas();
 
-    connectButton.addEventListener("click", () => {
-      void connect();
-    });
+    connectButton.addEventListener("click", connect);
     exchangeSelect.addEventListener("change", populateSymbols);
-    timeframeSelect.addEventListener("change", () => {
-      timeframePill.textContent = `Timeframe: ${selectedInterval().label}`;
-      resetCandles("Load history to draw candles");
-    });
     window.addEventListener("resize", resizeCanvas);
   </script>
 </body>
