@@ -67,6 +67,67 @@
         }
       }
     },
+    "/v1/ws/market/orderbook": {
+      "get": {
+        "tags": ["Market Data"],
+        "summary": "Stream Order Book Over WebSocket",
+        "description": "Upgrades the HTTP connection to a WebSocket and streams real-time order book (bids and asks) updates as JSON text frames.\n\nConnect to `ws://{host}/v1/ws/market/orderbook?exchange=2&symbol=BTC%2FUSDT&limit=20`.\n\nSupported exchanges stream via CCXT `watchOrderBook`; unsupported exchanges fall back to REST polling every 1 second. After the `101 Switching Protocols` response, the client receives WebSocket text frames shaped as:\n\n```json\n{\n  \"symbol\": \"BTC/USDT\",\n  \"bids\": [[68000.5, 1.2], [67999.0, 0.5]],\n  \"asks\": [[68001.0, 0.8], [68002.5, 1.0]],\n  \"timestamp\": \"2026-06-08T12:55:50Z\"\n}\n```",
+        "operationId": "MarketData_WebSocketOrderBook",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "exchange",
+            "in": "query",
+            "description": "Numeric exchange identifier from the Exchange enum, for example 2 for Binance.",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "symbol",
+            "in": "query",
+            "description": "Trading pair symbol, for example BTC/USDT.",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of top bids and asks to return per update. Defaults to 20, max 100.",
+            "required": false,
+            "type": "integer",
+            "format": "int32",
+            "default": 20
+          }
+        ],
+        "responses": {
+          "101": {
+            "description": "Switching Protocols. After upgrade, the WebSocket sends OrderBookStreamMessage JSON text frames.",
+            "x-websocket-message-schema": {
+              "$ref": "#/definitions/OrderBookStreamMessage"
+            },
+            "x-websocket-message-example": {
+              "symbol": "BTC/USDT",
+              "bids": [[68000.5, 1.2], [67999.0, 0.5]],
+              "asks": [[68001.0, 0.8], [68002.5, 1.0]],
+              "timestamp": "2026-06-08T12:55:50Z"
+            },
+            "x-websocket-error-schema": {
+              "$ref": "#/definitions/WebSocketErrorMessage"
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters before upgrade."
+          },
+          "401": {
+            "description": "Unauthorized when authentication is enabled."
+          },
+          "500": {
+            "description": "WebSocket upgrade or exchange streaming error."
+          }
+        }
+      }
+    },
     "/examples/websocket": {
       "get": {
         "tags": ["Examples"],
@@ -104,6 +165,40 @@
           "type": "string",
           "format": "date-time",
           "example": "2026-06-07T10:15:30Z"
+        }
+      }
+    },
+    "OrderBookStreamMessage": {
+      "type": "object",
+      "description": "JSON message sent on the WebSocket stream for each order book update.",
+      "required": ["symbol", "bids", "asks", "timestamp"],
+      "properties": {
+        "symbol": {
+          "type": "string",
+          "example": "BTC/USDT"
+        },
+        "bids": {
+          "type": "array",
+          "description": "List of buy orders sorted by price descending. Each entry is [price, volume].",
+          "items": {
+            "type": "array",
+            "items": { "type": "number", "format": "double" }
+          },
+          "example": [[68000.5, 1.2], [67999.0, 0.5]]
+        },
+        "asks": {
+          "type": "array",
+          "description": "List of sell orders sorted by price ascending. Each entry is [price, volume].",
+          "items": {
+            "type": "array",
+            "items": { "type": "number", "format": "double" }
+          },
+          "example": [[68001.0, 0.8], [68002.5, 1.0]]
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-06-08T12:55:50Z"
         }
       }
     },

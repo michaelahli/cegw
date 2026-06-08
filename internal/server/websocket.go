@@ -20,11 +20,24 @@ type priceStreamMessage struct {
 	Timestamp time.Time `json:"timestamp"`
 }
 
+type orderBookStreamMessage struct {
+	Symbol    string          `json:"symbol"`
+	Bids      [][]float64     `json:"bids"`
+	Asks      [][]float64     `json:"asks"`
+	Timestamp time.Time       `json:"timestamp"`
+}
+
 type websocketErrorMessage struct {
 	Error string `json:"error"`
 }
 
 var priceWebsocketUpgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
+var orderBookWebsocketUpgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
@@ -223,4 +236,188 @@ func writeWebsocketError(conn *websocket.Conn, message string) {
 		return
 	}
 	_ = conn.WriteMessage(websocket.TextMessage, payload)
+}
+
+func handleOrderBookWebsocket(log *logger.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		exchange, symbol, limit, ok := parseOrderBookWebsocketRequest(w, r)
+		if !ok {
+			return
+		}
+
+		conn, err := orderBookWebsocketUpgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.WithError(err).Warnf("failed to upgrade websocket connection")
+			return
+		}
+		defer func() { _ = conn.Close() }()
+
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+
+		go func() {
+			for {
+				if _, _, err := conn.ReadMessage(); err != nil {
+					cancel()
+					return
+				}
+			}
+		}()
+
+		streamOrderBookToWebsocket(ctx, conn, log, exchange, symbol, limit)
+	}
+}
+
+func parseOrderBookWebsocketRequest(w http.ResponseWriter, r *http.Request) (cegwv1.Exchange, string, int, bool) {
+	query := r.URL.Query()
+	exchangeRaw := query.Get("exchange")
+	symbol := query.Get("symbol")
+	limitRaw := query.Get("limit")
+
+	if exchangeRaw == "" {
+		http.Error(w, "exchange is required", http.StatusBadRequest)
+		return cegwv1.Exchange_EXCHANGE_UNSPECIFIED, "", 0, false
+	}
+
+	exchange, err := parseExchangeQuery(exchangeRaw)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return cegwv1.Exchange_EXCHANGE_UNSPECIFIED, "", 0, false
+	}
+
+	if symbol == "" {
+		http.Error(w, "symbol is required", http.StatusBadRequest)
+		return cegwv1.Exchange_EXCHANGE_UNSPECIFIED, "", 0, false
+	}
+
+	limit := 20
+	if limitRaw != "" {
+		if parsedLimit, err := fmt.Sscanf(limitRaw, "%d", &limit); err == nil && parsedLimit == 1 {
+			if limit <= 0 || limit > 100 {
+				limit = 20
+			}
+		}
+	}
+
+	return exchange, symbol, limit, true
+}
+
+func streamOrderBookToWebsocket(ctx context.Context, conn *websocket.Conn, log *logger.Logger, exchangeID cegwv1.Exchange, symbol string, limit int) {
+	log = log.WithContext(ctx).
+		WithField("operation", "OrderBookWebSocket").
+		WithField("exchange", exchangeID.String()).
+		WithField("symbol", symbol).
+		WithField("limit", limit)
+
+	client, err := ccxt.NewClientForExchange(ctx, exchangeID, nil)
+	if err != nil {
+		log.WithError(err).Errorf("failed to create CCXT client")
+		writeWebsocketError(conn, "failed to create exchange client")
+		return
+	}
+
+	exchange := ccxt.AsStreamingExchange(client)
+	if exchange == nil {
+		log.Warnf("exchange streaming not supported, falling back to order book polling")
+		pollOrderBookToWebsocket(ctx, conn, client, log, symbol, limit)
+		return
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Debugf("websocket order book stream closed")
+			return
+		default:
+		}
+
+		orderBook, err := exchange.WatchOrderBook(symbol)
+		if err != nil {
+			if ctx.Err() != nil {
+				log.Debugf("websocket order book stream closed during watch")
+				return
+			}
+			if ccxt.IsWatchOrderBookUnsupported(err) {
+				log.WithError(err).Warnf("watch order book unsupported, falling back to polling")
+				pollOrderBookToWebsocket(ctx, conn, client, log, symbol, limit)
+				return
+			}
+			log.WithError(err).Errorf("failed to watch order book")
+			writeWebsocketError(conn, "failed to watch order book")
+			return
+		}
+
+		if !writeOrderBookToWebsocket(conn, symbol, orderBook, limit) {
+			log.Debugf("failed to write websocket order book update")
+			return
+		}
+	}
+}
+
+func pollOrderBookToWebsocket(ctx context.Context, conn *websocket.Conn, client interface{}, log *logger.Logger, symbol string, limit int) {
+	exchange := ccxt.AsExchange(client)
+	if exchange == nil {
+		log.Warnf("exchange polling not supported")
+		writeWebsocketError(conn, "exchange not supported")
+		return
+	}
+
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		orderBook, err := exchange.FetchOrderBook(symbol)
+		if err != nil {
+			if ctx.Err() != nil {
+				log.Debugf("websocket order book polling stream closed during fetch")
+				return
+			}
+			log.WithError(err).Errorf("failed to fetch order book")
+			writeWebsocketError(conn, "failed to fetch order book")
+			return
+		}
+
+		if !writeOrderBookToWebsocket(conn, symbol, orderBook, limit) {
+			log.Debugf("failed to write websocket order book polling update")
+			return
+		}
+
+		select {
+		case <-ctx.Done():
+			log.Debugf("websocket order book polling stream closed")
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+func writeOrderBookToWebsocket(conn *websocket.Conn, symbol string, orderBook ccxtlib.OrderBook, limit int) bool {
+	bids := convertOrderBookSide(orderBook.Bids, limit)
+	asks := convertOrderBookSide(orderBook.Asks, limit)
+
+	message := orderBookStreamMessage{
+		Symbol:    symbol,
+		Bids:      bids,
+		Asks:      asks,
+		Timestamp: time.Now().UTC(),
+	}
+	return conn.WriteJSON(message) == nil
+}
+
+func convertOrderBookSide(side [][]float64, limit int) [][]float64 {
+	if len(side) == 0 {
+		return [][]float64{}
+	}
+
+	if limit > 0 && len(side) > limit {
+		side = side[:limit]
+	}
+
+	result := make([][]float64, len(side))
+	for i, entry := range side {
+		if len(entry) >= 2 {
+			result[i] = []float64{entry[0], entry[1]}
+		}
+	}
+	return result
 }

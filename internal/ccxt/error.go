@@ -1,6 +1,8 @@
 package ccxt
 
 import (
+	"strings"
+
 	ccxt "github.com/ccxt/ccxt/go/v4"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,4 +34,13 @@ func MapError(err error) error {
 	default:
 		return status.Errorf(codes.Internal, "exchange error: %v", ccxtErr.Type)
 	}
+}
+
+// IsWatchOrderBookUnsupported checks if the error indicates WatchOrderBook is not supported.
+func IsWatchOrderBookUnsupported(err error) bool {
+	if err == nil {
+		return false
+	}
+	message := strings.ToLower(err.Error())
+	return strings.Contains(message, "watchorderbook") && strings.Contains(message, "not supported")
 }

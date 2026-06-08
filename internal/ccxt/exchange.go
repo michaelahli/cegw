@@ -6,6 +6,7 @@ import ccxt "github.com/ccxt/ccxt/go/v4"
 type Exchange interface {
 	FetchOHLCV(symbol string, opts ...ccxt.FetchOHLCVOptions) ([]ccxt.OHLCV, error)
 	FetchTicker(symbol string, opts ...ccxt.FetchTickerOptions) (ccxt.Ticker, error)
+	FetchOrderBook(symbol string, opts ...ccxt.FetchOrderBookOptions) (ccxt.OrderBook, error)
 	LoadMarkets(params ...any) (map[string]ccxt.MarketInterface, error)
 	CreateMarketOrder(symbol string, side string, amount float64, opts ...ccxt.CreateMarketOrderOptions) (ccxt.Order, error)
 	FetchBalance(params ...any) (ccxt.Balances, error)
@@ -14,6 +15,7 @@ type Exchange interface {
 // StreamingExchange is implemented by exchanges that expose CCXT WebSocket ticker streams.
 type StreamingExchange interface {
 	WatchTicker(symbol string, opts ...ccxt.WatchTickerOptions) (ccxt.Ticker, error)
+	WatchOrderBook(symbol string, opts ...ccxt.WatchOrderBookOptions) (ccxt.OrderBook, error)
 }
 
 // AsExchange converts CCXT client to common Exchange interface.
