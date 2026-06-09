@@ -199,9 +199,10 @@ func (s *TradingService) TestCredentials(ctx context.Context, req *cegwv1.TestCr
 	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, req.Credentials)
 	if err != nil {
 		log.WithError(err).Warnf("failed to create CCXT client during credential test")
+		// Client creation failure is typically a configuration/credential issue
 		return &cegwv1.TestCredentialsResponse{
 			Valid:   false,
-			Message: "invalid credentials",
+			Message: "failed to initialize exchange client - check credentials format",
 		}, nil
 	}
 
@@ -214,9 +215,46 @@ func (s *TradingService) TestCredentials(ctx context.Context, req *cegwv1.TestCr
 	balances, err := exchange.FetchBalance()
 	if err != nil {
 		log.WithError(err).Warnf("failed to fetch balance during credential test")
+		
+		// Use existing error mapper to classify the error
+		mappedErr := ccxt.MapError(err)
+		if mappedErr != nil {
+			st, ok := status.FromError(mappedErr)
+			if ok {
+				switch st.Code() {
+				case codes.Unauthenticated:
+					return &cegwv1.TestCredentialsResponse{
+						Valid:   false,
+						Message: "invalid credentials - authentication failed",
+					}, nil
+				case codes.Unavailable:
+					return &cegwv1.TestCredentialsResponse{
+						Valid:   false,
+						Message: "exchange temporarily unavailable - please retry later",
+					}, nil
+				case codes.ResourceExhausted:
+					return &cegwv1.TestCredentialsResponse{
+						Valid:   false,
+						Message: "rate limit exceeded - please retry later",
+					}, nil
+				case codes.PermissionDenied:
+					return &cegwv1.TestCredentialsResponse{
+						Valid:   false,
+						Message: "insufficient permissions - API key lacks required permissions",
+					}, nil
+				default:
+					return &cegwv1.TestCredentialsResponse{
+						Valid:   false,
+						Message: st.Message(),
+					}, nil
+				}
+			}
+		}
+		
+		// Fallback for unmapped errors
 		return &cegwv1.TestCredentialsResponse{
 			Valid:   false,
-			Message: "invalid credentials",
+			Message: "credential test failed - " + err.Error(),
 		}, nil
 	}
 
