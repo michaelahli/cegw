@@ -52,7 +52,7 @@ jobs:
           
           # Update Chart.yaml
           sed -i "s/^version: .*/version: $NEW_CHART_VERSION/" $CHART_FILE
-          sed -i "s/^appVersion: .*/appVersion: \"$VERSION\"/" $CHART_FILE
+          sed -i "s/^appVersion: .*/appVersion: \\"$VERSION\\"/" $CHART_FILE
           
           # Show changes
           echo "Updated Chart.yaml:"
