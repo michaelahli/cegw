@@ -6,7 +6,7 @@ on:
       - "v*"
 
 jobs:
-  release:
+  release-chart:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -18,8 +18,58 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Tag: $TAG, Version: $VERSION"
+
+      - name: Update Chart.yaml with new appVersion
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          CHART_FILE="charts/cegw/Chart.yaml"
+          
+          # Get current chart version and increment patch
+          CURRENT_CHART_VERSION=$(grep '^version:' $CHART_FILE | awk '{print $2}')
+          echo "Current chart version: $CURRENT_CHART_VERSION"
+          
+          # Parse semver and increment patch version
+          IFS='.' read -r -a version_parts <<< "$CURRENT_CHART_VERSION"
+          MAJOR="${version_parts[0]}"
+          MINOR="${version_parts[1]}"
+          PATCH="${version_parts[2]}"
+          NEW_PATCH=$((PATCH + 1))
+          NEW_CHART_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
+          
+          echo "New chart version: $NEW_CHART_VERSION"
+          echo "New app version: $VERSION"
+          
+          # Update Chart.yaml
+          sed -i "s/^version: .*/version: $NEW_CHART_VERSION/" $CHART_FILE
+          sed -i "s/^appVersion: .*/appVersion: \"$VERSION\"/" $CHART_FILE
+          
+          # Show changes
+          echo "Updated Chart.yaml:"
+          grep -E '^(version|appVersion):' $CHART_FILE
+          
+          echo "chart_version=$NEW_CHART_VERSION" >> $GITHUB_OUTPUT
+        id: update_chart
+
+      - name: Commit Chart.yaml changes
+        run: |
+          git add charts/cegw/Chart.yaml
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore(chart): bump version to ${{ steps.update_chart.outputs.chart_version }} with appVersion ${{ steps.version.outputs.version }}"
+            git push origin HEAD:main
+          fi
 
       - name: Install Helm
         uses: azure/setup-helm@v4
