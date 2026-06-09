@@ -124,9 +124,19 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 		end = req.End.AsTime()
 	}
 
+	// Default batch limit for CCXT API
+	batchLimit := int64(1000)
+
+	// Apply user-supplied limit if specified
+	userLimit := int64(0)
+	if req.Limit > 0 {
+		userLimit = int64(req.Limit)
+		log = log.WithField("user_limit", userLimit)
+	}
+
 	batchCount := 0
 	for {
-		limit := int64(1000)
+		limit := batchLimit
 		if !end.IsZero() {
 			candleDur := ccxt.IntervalDuration(req.Interval)
 			if candleDur > 0 {
@@ -140,6 +150,12 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 					}
 				}
 			}
+		}
+
+		// Stop batching if user limit is reached
+		if userLimit > 0 && int64(len(mergedKlines)) >= userLimit {
+			log.WithField("merged_count", len(mergedKlines)).Debugf("user limit reached, stopping fetch")
+			break
 		}
 
 		opts := []ccxtlib.FetchOHLCVOptions{
@@ -158,6 +174,12 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 
 		mergedKlines = append(mergedKlines, klines...)
 
+		// Stop if user limit is reached after appending
+		if userLimit > 0 && int64(len(mergedKlines)) >= userLimit {
+			log.WithField("merged_count", len(mergedKlines)).Debugf("user limit reached after batch append")
+			break
+		}
+
 		if len(klines) < 1000 {
 			break
 		}
@@ -167,6 +189,12 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 		if !end.IsZero() && shiftedStart.After(end) {
 			break
 		}
+	}
+
+	// Truncate to user limit if specified
+	if userLimit > 0 && int64(len(mergedKlines)) > userLimit {
+		mergedKlines = mergedKlines[:userLimit]
+		log.WithField("truncated_to", userLimit).Debugf("truncated quotes to user limit")
 	}
 
 	quotes := make([]*cegwv1.Quote, 0, len(mergedKlines))
