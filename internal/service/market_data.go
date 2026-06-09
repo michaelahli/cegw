@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	ccxtlib "github.com/ccxt/ccxt/go/v4"
@@ -18,10 +19,12 @@ import (
 
 type MarketDataService struct {
 	cegwv1.UnimplementedMarketDataServiceServer
-	cfg     *config.Config
-	log     *logger.Logger
-	avail   []*cegwv1.Ticker
-	metrics *metrics.Metrics
+	cfg        *config.Config
+	log        *logger.Logger
+	avail      []*cegwv1.Ticker
+	availMutex sync.RWMutex
+	cacheReady bool
+	metrics    *metrics.Metrics
 }
 
 func NewMarketDataService(cfg *config.Config, log *logger.Logger, m *metrics.Metrics) *MarketDataService {
@@ -65,7 +68,12 @@ func (s *MarketDataService) cacheMarkets() {
 			Symbol: ccxt.StringP(market.Symbol),
 		})
 	}
+
+	s.availMutex.Lock()
 	s.avail = tickers
+	s.cacheReady = true
+	s.availMutex.Unlock()
+
 	log.WithField("ticker_count", len(tickers)).Infof("market cache initialized successfully")
 }
 
@@ -469,8 +477,18 @@ func (s *MarketDataService) SearchTicker(ctx context.Context, req *cegwv1.Search
 
 	log.Debugf("searching tickers")
 
+	s.availMutex.RLock()
+	if !s.cacheReady {
+		s.availMutex.RUnlock()
+		log.Warnf("market cache not ready yet")
+		return nil, status.Error(codes.Unavailable, "market cache is still loading, please retry")
+	}
+	availCopy := make([]*cegwv1.Ticker, len(s.avail))
+	copy(availCopy, s.avail)
+	s.availMutex.RUnlock()
+
 	var filtered []*cegwv1.Ticker
-	for _, ticker := range s.avail {
+	for _, ticker := range availCopy {
 		if contains(ticker.Symbol, req.Query) {
 			filtered = append(filtered, ticker)
 		}
