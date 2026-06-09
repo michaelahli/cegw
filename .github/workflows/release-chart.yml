@@ -30,32 +30,27 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Tag: $TAG, Version: $VERSION"
 
-      - name: Update Chart.yaml with new appVersion
+      - name: Update Chart.yaml appVersion only
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           CHART_FILE="charts/cegw/Chart.yaml"
           
-          # Get current chart version and increment patch (remove quotes)
+          # Get current versions
           CURRENT_CHART_VERSION=$(grep '^version:' $CHART_FILE | awk '{print $2}' | tr -d '"')
+          CURRENT_APP_VERSION=$(grep '^appVersion:' $CHART_FILE | awk '{print $2}' | tr -d '"')
+          
           echo "Current chart version: $CURRENT_CHART_VERSION"
-          
-          # Parse semver and increment patch version
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_CHART_VERSION"
-          NEW_PATCH=$((PATCH + 1))
-          NEW_CHART_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
-          
-          echo "New chart version: $NEW_CHART_VERSION"
+          echo "Current app version: $CURRENT_APP_VERSION"
           echo "New app version: $VERSION"
           
-          # Update Chart.yaml using yq or manual sed
-          sed -i "s/^version: .*/version: $NEW_CHART_VERSION/" $CHART_FILE
+          # Only update appVersion, keep chart version as-is
           sed -i 's/^appVersion: .*/appVersion: "'"$VERSION"'"/' $CHART_FILE
           
           # Show changes
           echo "Updated Chart.yaml:"
           grep -E '^(version|appVersion):' $CHART_FILE
           
-          echo "chart_version=$NEW_CHART_VERSION" >> $GITHUB_OUTPUT
+          echo "chart_version=$CURRENT_CHART_VERSION" >> $GITHUB_OUTPUT
         id: update_chart
 
       - name: Commit Chart.yaml changes
@@ -64,7 +59,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "chore(chart): bump version to ${{ steps.update_chart.outputs.chart_version }} with appVersion ${{ steps.version.outputs.version }}"
+            git commit -m "chore(chart): update appVersion to ${{ steps.version.outputs.version }}"
             git push origin HEAD:main
           fi
 
