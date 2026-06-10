@@ -19,33 +19,35 @@ import (
 
 type MarketDataService struct {
 	cegwv1.UnimplementedMarketDataServiceServer
-	cfg        *config.Config
-	log        *logger.Logger
-	avail      []*cegwv1.Ticker
-	availMutex sync.RWMutex
-	cacheReady bool
-	metrics    *metrics.Metrics
+	cfg         *config.Config
+	log         *logger.Logger
+	availByExch map[cegwv1.Exchange][]*cegwv1.Ticker
+	availMutex  sync.RWMutex
+	cacheReady  map[cegwv1.Exchange]bool
+	metrics     *metrics.Metrics
 }
 
 func NewMarketDataService(cfg *config.Config, log *logger.Logger, m *metrics.Metrics) *MarketDataService {
 	svc := &MarketDataService{
-		cfg:     cfg,
-		log:     log,
-		metrics: m,
+		cfg:         cfg,
+		log:         log,
+		availByExch: make(map[cegwv1.Exchange][]*cegwv1.Ticker),
+		cacheReady:  make(map[cegwv1.Exchange]bool),
+		metrics:     m,
 	}
-	go svc.cacheMarkets()
+	go svc.cacheMarkets(cegwv1.Exchange_EXCHANGE_TOKOCRYPTO)
 	return svc
 }
 
-func (s *MarketDataService) cacheMarkets() {
+func (s *MarketDataService) cacheMarkets(exchangeID cegwv1.Exchange) {
 	ctx := context.Background()
 	log := s.log.WithContext(ctx).WithField("operation", "cacheMarkets")
 
 	log.Debugf("initializing market cache")
 
-	client, err := ccxt.NewClientForExchange(ctx, cegwv1.Exchange_EXCHANGE_TOKOCRYPTO, nil)
+	client, err := ccxt.NewClientForExchange(ctx, exchangeID, nil)
 	if err != nil || client == nil {
-		log.WithError(err).WithField("exchange", "TOKOCRYPTO").Warnf("failed to initialize CCXT client for market cache")
+		log.WithError(err).WithField("exchange", exchangeID.String()).Warnf("failed to initialize CCXT client for market cache")
 		return
 	}
 
@@ -55,7 +57,7 @@ func (s *MarketDataService) cacheMarkets() {
 		return
 	}
 
-	log.Debugf("loading markets from Tokocrypto")
+	log.Debugf("loading markets from exchange")
 	markets, err := exchange.LoadMarkets()
 	if err != nil {
 		log.WithError(err).Errorf("failed to load markets from Tokocrypto")
@@ -70,8 +72,8 @@ func (s *MarketDataService) cacheMarkets() {
 	}
 
 	s.availMutex.Lock()
-	s.avail = tickers
-	s.cacheReady = true
+	s.availByExch[exchangeID] = tickers
+	s.cacheReady[exchangeID] = true
 	s.availMutex.Unlock()
 
 	log.WithField("ticker_count", len(tickers)).Infof("market cache initialized successfully")
@@ -478,13 +480,24 @@ func (s *MarketDataService) SearchTicker(ctx context.Context, req *cegwv1.Search
 	log.Debugf("searching tickers")
 
 	s.availMutex.RLock()
-	if !s.cacheReady {
+	ready := s.cacheReady[req.Exchange]
+	_, exists := s.availByExch[req.Exchange]
+	s.availMutex.RUnlock()
+
+	if !ready || !exists {
+		log.WithField("exchange", req.Exchange.String()).Debugf("market cache missing for exchange, loading on demand")
+		s.cacheMarkets(req.Exchange)
+	}
+
+	s.availMutex.RLock()
+	if !s.cacheReady[req.Exchange] {
 		s.availMutex.RUnlock()
-		log.Warnf("market cache not ready yet")
+		log.WithField("exchange", req.Exchange.String()).Warnf("market cache not ready yet")
 		return nil, status.Error(codes.Unavailable, "market cache is still loading, please retry")
 	}
-	availCopy := make([]*cegwv1.Ticker, len(s.avail))
-	copy(availCopy, s.avail)
+	availForExchange := s.availByExch[req.Exchange]
+	availCopy := make([]*cegwv1.Ticker, len(availForExchange))
+	copy(availCopy, availForExchange)
 	s.availMutex.RUnlock()
 
 	var filtered []*cegwv1.Ticker
