@@ -152,7 +152,23 @@ CEGW supports a few simple environment variables:
 - `HTTPS_PROXY` (optional, supports `http://`, `https://`, `socks5://`)
 - `HTTP_PROXY` (optional, supports `http://`, `https://`, `socks5://`)
 - `NO_PROXY` (optional, comma-separated list of hosts to bypass proxy)
+- `ALLOWED_WS_ORIGINS` (optional, comma-separated list of allowed browser WebSocket origins; empty allows all origins)
 
+For WebSocket origin restriction, supported values include exact origins like `https://app.example.com`, wildcard `*`, and subdomain patterns like `*.example.com`. Non-browser clients without an `Origin` header are still allowed.
+
+### Helm values for WebSocket origins
+
+Set browser WebSocket origins in `values.yaml` as an array:
+
+```yaml
+config:
+  allowedWsOrigins:
+    - https://app.example.com
+    - https://admin.example.com
+    - '*.trusted.com'
+```
+
+This is rendered into the `ALLOWED_WS_ORIGINS` environment variable as a comma-separated list.
 ### Authentication (optional)
 
 - `AUTH_ENABLED` (default `false`) - Enable authentication

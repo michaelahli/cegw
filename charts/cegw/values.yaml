@@ -80,6 +80,7 @@ config:
     basicPassword: ""
     oauth2Issuer: ""
     oauth2Audience: ""
+  allowedWsOrigins: []
 
 livenessProbe:
   httpGet:

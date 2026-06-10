@@ -63,6 +63,10 @@ spec:
         - name: NO_PROXY
           value: {{ .Values.config.noProxy | quote }}
         {{- end }}
+        {{- if .Values.config.allowedWsOrigins }}
+        - name: ALLOWED_WS_ORIGINS
+          value: {{ join "," .Values.config.allowedWsOrigins | quote }}
+        {{- end }}
         {{- if .Values.config.auth.enabled }}
         - name: AUTH_ENABLED
           value: {{ .Values.config.auth.enabled | quote }}
