@@ -3,27 +3,29 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
 type AuthConfig struct {
-	Enabled       bool
-	Type          string // "basic" or "oauth2"
-	BasicUsername string
-	BasicPassword string
-	OAuth2Issuer  string
+	Enabled        bool
+	Type           string // "basic" or "oauth2"
+	BasicUsername  string
+	BasicPassword  string
+	OAuth2Issuer   string
 	OAuth2Audience string
 }
 
 type Config struct {
-	GRPCPort    string
-	HTTPPort    string
-	LogLevel    string
-	HTTPSProxy  string
-	HTTPProxy   string
-	Timezone    *time.Location
-	SandboxMode bool
-	Auth        AuthConfig
+	GRPCPort           string
+	HTTPPort           string
+	LogLevel           string
+	HTTPSProxy         string
+	HTTPProxy          string
+	Timezone           *time.Location
+	SandboxMode        bool
+	Auth               AuthConfig
+	AllowedWSOrigins   []string // Allowed WebSocket origins (empty = allow all)
 }
 
 func Load() (*Config, error) {
@@ -48,6 +50,16 @@ func Load() (*Config, error) {
 	oauth2Issuer := getEnv("AUTH_OAUTH2_ISSUER", "")
 	oauth2Audience := getEnv("AUTH_OAUTH2_AUDIENCE", "")
 
+	// Load WebSocket origin config
+	allowedOrigins := []string{}
+	if originsEnv := getEnv("ALLOWED_WS_ORIGINS", ""); originsEnv != "" {
+		for _, origin := range strings.Split(originsEnv, ",") {
+			if trimmed := strings.TrimSpace(origin); trimmed != "" {
+				allowedOrigins = append(allowedOrigins, trimmed)
+			}
+		}
+	}
+
 	return &Config{
 		GRPCPort:    grpcPort,
 		HTTPPort:    httpPort,
@@ -57,13 +69,14 @@ func Load() (*Config, error) {
 		HTTPSProxy:  httpsProxy,
 		HTTPProxy:   httpProxy,
 		Auth: AuthConfig{
-			Enabled:       authEnabled,
-			Type:          authType,
-			BasicUsername: basicUsername,
-			BasicPassword: basicPassword,
-			OAuth2Issuer:  oauth2Issuer,
+			Enabled:        authEnabled,
+			Type:           authType,
+			BasicUsername:  basicUsername,
+			BasicPassword:  basicPassword,
+			OAuth2Issuer:   oauth2Issuer,
 			OAuth2Audience: oauth2Audience,
 		},
+		AllowedWSOrigins: allowedOrigins,
 	}, nil
 }
 

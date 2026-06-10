@@ -141,12 +141,12 @@ func (s *HTTPServer) Start(ctx context.Context) error {
 	})
 
 	// WebSocket market data streams
-	wsHandler := middleware.AuthMiddleware(s.cfg, s.log)(handlePriceWebsocket(s.log))
+	wsHandler := middleware.AuthMiddleware(s.cfg, s.log)(handlePriceWebsocket(s.cfg, s.log))
 	wsHandler = middleware.HTTPLoggingMiddleware(s.log)(wsHandler)
 	mainMux.Handle("/v1/ws/market/price", wsHandler)
 
 	// WebSocket order book streams
-	obHandler := middleware.AuthMiddleware(s.cfg, s.log)(handleOrderBookWebsocket(s.log))
+	obHandler := middleware.AuthMiddleware(s.cfg, s.log)(handleOrderBookWebsocket(s.cfg, s.log))
 	obHandler = middleware.HTTPLoggingMiddleware(s.log)(obHandler)
 	mainMux.Handle("/v1/ws/market/orderbook", obHandler)
 

@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	ccxtlib "github.com/ccxt/ccxt/go/v4"
 	"github.com/gorilla/websocket"
 	cegwv1 "github.com/michaelahli/cegw/gen/cegw/v1"
 	"github.com/michaelahli/cegw/internal/ccxt"
+	"github.com/michaelahli/cegw/internal/config"
 	"github.com/michaelahli/cegw/internal/logger"
 )
 
@@ -31,26 +33,64 @@ type websocketErrorMessage struct {
 	Error string `json:"error"`
 }
 
-var priceWebsocketUpgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
+// checkWebSocketOrigin validates the Origin header against allowed origins.
+func checkWebSocketOrigin(cfg *config.Config) func(r *http.Request) bool {
+	return func(r *http.Request) bool {
+		// If no origins configured, allow all (backward compatible)
+		if len(cfg.AllowedWSOrigins) == 0 {
+			return true
+		}
+
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			// No origin header - allow (e.g., non-browser clients)
+			return true
+		}
+
+		// Check if origin is in allowed list
+		for _, allowed := range cfg.AllowedWSOrigins {
+			// Support wildcard matching
+			if allowed == "*" {
+				return true
+			}
+			// Exact match
+			if origin == allowed {
+				return true
+			}
+			// Wildcard subdomain matching (e.g., "*.example.com")
+			if strings.HasPrefix(allowed, "*.") {
+				domain := allowed[2:]
+				if strings.HasSuffix(origin, domain) || origin == "https://"+domain || origin == "http://"+domain {
+					return true
+				}
+			}
+		}
+
+		return false
+	}
 }
 
-var orderBookWebsocketUpgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
+func newPriceWebsocketUpgrader(cfg *config.Config) websocket.Upgrader {
+	return websocket.Upgrader{
+		CheckOrigin: checkWebSocketOrigin(cfg),
+	}
 }
 
-func handlePriceWebsocket(log *logger.Logger) http.HandlerFunc {
+func newOrderBookWebsocketUpgrader(cfg *config.Config) websocket.Upgrader {
+	return websocket.Upgrader{
+		CheckOrigin: checkWebSocketOrigin(cfg),
+	}
+}
+
+func handlePriceWebsocket(cfg *config.Config, log *logger.Logger) http.HandlerFunc {
+	upgrader := newPriceWebsocketUpgrader(cfg)
 	return func(w http.ResponseWriter, r *http.Request) {
 		exchange, symbol, ok := parsePriceWebsocketRequest(w, r)
 		if !ok {
 			return
 		}
 
-		conn, err := priceWebsocketUpgrader.Upgrade(w, r, nil)
+		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.WithError(err).Warnf("failed to upgrade websocket connection")
 			return
@@ -238,14 +278,15 @@ func writeWebsocketError(conn *websocket.Conn, message string) {
 	_ = conn.WriteMessage(websocket.TextMessage, payload)
 }
 
-func handleOrderBookWebsocket(log *logger.Logger) http.HandlerFunc {
+func handleOrderBookWebsocket(cfg *config.Config, log *logger.Logger) http.HandlerFunc {
+	upgrader := newOrderBookWebsocketUpgrader(cfg)
 	return func(w http.ResponseWriter, r *http.Request) {
 		exchange, symbol, limit, ok := parseOrderBookWebsocketRequest(w, r)
 		if !ok {
 			return
 		}
 
-		conn, err := orderBookWebsocketUpgrader.Upgrade(w, r, nil)
+		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.WithError(err).Warnf("failed to upgrade websocket connection")
 			return
