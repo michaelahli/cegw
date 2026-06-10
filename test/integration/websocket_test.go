@@ -186,11 +186,33 @@ func TestWebSocket_OrderBookStream(t *testing.T) {
 		}
 	})
 
-	t.Run("InvalidExchangeParameter", func(t *testing.T) {
-		wsURL := fmt.Sprintf("ws://%s/v1/ws/market/orderbook?exchange=0&symbol=BTC/USDT&limit=10", httpAddr)
+	t.Run("InvalidLimitParameter", func(t *testing.T) {
+		wsURL := fmt.Sprintf("ws://%s/v1/ws/market/orderbook?exchange=2&symbol=BTC/USDT&limit=abc", httpAddr)
 		_, resp, err := websocket.DefaultDialer.Dial(wsURL, nil)
 		if err == nil {
-			t.Fatal("Expected error for invalid exchange")
+			t.Fatal("Expected error for invalid limit parameter")
+		}
+		if resp != nil && resp.StatusCode != http.StatusBadRequest {
+			t.Errorf("Expected status 400, got %d", resp.StatusCode)
+		}
+	})
+
+	t.Run("OutOfRangeLimitParameter", func(t *testing.T) {
+		wsURL := fmt.Sprintf("ws://%s/v1/ws/market/orderbook?exchange=2&symbol=BTC/USDT&limit=101", httpAddr)
+		_, resp, err := websocket.DefaultDialer.Dial(wsURL, nil)
+		if err == nil {
+			t.Fatal("Expected error for out-of-range limit parameter")
+		}
+		if resp != nil && resp.StatusCode != http.StatusBadRequest {
+			t.Errorf("Expected status 400, got %d", resp.StatusCode)
+		}
+	})
+
+	t.Run("ZeroLimitParameter", func(t *testing.T) {
+		wsURL := fmt.Sprintf("ws://%s/v1/ws/market/orderbook?exchange=2&symbol=BTC/USDT&limit=0", httpAddr)
+		_, resp, err := websocket.DefaultDialer.Dial(wsURL, nil)
+		if err == nil {
+			t.Fatal("Expected error for zero limit parameter")
 		}
 		if resp != nil && resp.StatusCode != http.StatusBadRequest {
 			t.Errorf("Expected status 400, got %d", resp.StatusCode)

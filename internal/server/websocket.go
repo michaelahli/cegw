@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -333,11 +334,16 @@ func parseOrderBookWebsocketRequest(w http.ResponseWriter, r *http.Request) (ceg
 
 	limit := 20
 	if limitRaw != "" {
-		if parsedLimit, err := fmt.Sscanf(limitRaw, "%d", &limit); err == nil && parsedLimit == 1 {
-			if limit <= 0 || limit > 100 {
-				limit = 20
-			}
+		parsedLimit, err := strconv.Atoi(limitRaw)
+		if err != nil {
+			http.Error(w, "limit must be a valid integer", http.StatusBadRequest)
+			return cegwv1.Exchange_EXCHANGE_UNSPECIFIED, "", 0, false
 		}
+		if parsedLimit <= 0 || parsedLimit > 100 {
+			http.Error(w, "limit must be between 1 and 100", http.StatusBadRequest)
+			return cegwv1.Exchange_EXCHANGE_UNSPECIFIED, "", 0, false
+		}
+		limit = parsedLimit
 	}
 
 	return exchange, symbol, limit, true
