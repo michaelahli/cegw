@@ -5,6 +5,10 @@ metadata:
   labels:
     {{- include "cegw.labels" . | nindent 4 }}
     app.kubernetes.io/component: grpc
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -22,6 +26,10 @@ metadata:
   labels:
     {{- include "cegw.labels" . | nindent 4 }}
     app.kubernetes.io/component: http
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   type: {{ .Values.service.type }}
   ports:
