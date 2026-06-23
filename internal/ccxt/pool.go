@@ -10,9 +10,12 @@ import (
 )
 
 // clientRef tracks an exchange client with its reference count.
+// A positive refs count means at least one long-lived consumer (WebSocket,
+// gRPC stream) is holding the client. Short-lived consumers (REST calls)
+// use Borrow which does not affect refs.
 type clientRef struct {
 	client interface{}
-	refs   int64
+	refs   int64 // long-lived references only
 }
 
 // ClientPool is a shared pool of CCXT exchange clients per exchange ID.
@@ -39,22 +42,40 @@ func GetClientPool(log *logger.Logger) *ClientPool {
 	return globalPool
 }
 
-// Acquire returns a shared CCXT exchange client for the given exchange.
-// If a client already exists, its reference count is incremented and the
-// existing client is returned. Otherwise, a new client is created.
+// Acquire returns a shared CCXT exchange client for the given exchange
+// and increments the long-lived reference count. Use this for long-lived
+// consumers such as WebSocket connections and gRPC streams.
 //
 // The caller MUST call Release when the client is no longer needed.
 func (p *ClientPool) Acquire(ctx context.Context, exchange cegwv1.Exchange, creds *cegwv1.Credentials) (interface{}, error) {
+	return p.getOrCreate(ctx, exchange, creds, true)
+}
+
+// Borrow returns a shared CCXT exchange client for the given exchange
+// WITHOUT incrementing the reference count. Use this for short-lived
+// consumers such as REST API calls.
+//
+// The caller does NOT need to call Release.
+func (p *ClientPool) Borrow(ctx context.Context, exchange cegwv1.Exchange, creds *cegwv1.Credentials) (interface{}, error) {
+	return p.getOrCreate(ctx, exchange, creds, false)
+}
+
+// getOrCreate returns an existing client or creates a new one.
+// If trackRef is true, the reference count is incremented.
+func (p *ClientPool) getOrCreate(ctx context.Context, exchange cegwv1.Exchange, creds *cegwv1.Credentials, trackRef bool) (interface{}, error) {
 	p.mu.Lock()
 
 	// Check for existing client
 	if ref, ok := p.clients[exchange]; ok {
-		atomic.AddInt64(&ref.refs, 1)
+		if trackRef {
+			atomic.AddInt64(&ref.refs, 1)
+		}
 		client := ref.client
 		p.mu.Unlock()
 		p.log.WithContext(ctx).
 			WithField("exchange", exchange.String()).
 			WithField("refs", atomic.LoadInt64(&ref.refs)).
+			WithField("tracked", trackRef).
 			Debugf("client pool: reusing existing client")
 		return client, nil
 	}
@@ -73,7 +94,10 @@ func (p *ClientPool) Acquire(ctx context.Context, exchange cegwv1.Exchange, cred
 
 	ref := &clientRef{
 		client: client,
-		refs:   1,
+		refs:   0,
+	}
+	if trackRef {
+		ref.refs = 1
 	}
 	p.clients[exchange] = ref
 
@@ -81,6 +105,7 @@ func (p *ClientPool) Acquire(ctx context.Context, exchange cegwv1.Exchange, cred
 
 	p.log.WithContext(ctx).
 		WithField("exchange", exchange.String()).
+		WithField("tracked", trackRef).
 		Debugf("client pool: created new client")
 
 	return client, nil

@@ -226,3 +226,135 @@ func TestGetClientPool_Singleton(t *testing.T) {
 		t.Error("GetClientPool should return the same singleton instance")
 	}
 }
+
+func TestClientPool_BorrowDoesNotIncrementRefs(t *testing.T) {
+	log := logger.New("error", nil)
+	pool := &ClientPool{
+		clients: make(map[cegwv1.Exchange]*clientRef),
+		log:     log,
+	}
+
+	ctx := context.Background()
+
+	// Borrow creates a client with refs=0
+	client1, err := pool.Borrow(ctx, cegwv1.Exchange_EXCHANGE_TOKOCRYPTO, nil)
+	if err != nil {
+		t.Fatalf("borrow failed: %v", err)
+	}
+	if client1 == nil {
+		t.Fatal("borrow returned nil client")
+	}
+
+	pool.mu.Lock()
+	ref := pool.clients[cegwv1.Exchange_EXCHANGE_TOKOCRYPTO]
+	pool.mu.Unlock()
+	if ref == nil {
+		t.Fatal("client not found in pool after borrow")
+	}
+	if ref.refs != 0 {
+		t.Errorf("borrow should not increment refs, got %d", ref.refs)
+	}
+
+	// Second borrow returns same client, still refs=0
+	client2, err := pool.Borrow(ctx, cegwv1.Exchange_EXCHANGE_TOKOCRYPTO, nil)
+	if err != nil {
+		t.Fatalf("second borrow failed: %v", err)
+	}
+	if client1 != client2 {
+		t.Error("borrow should return same client instance")
+	}
+
+	pool.mu.Lock()
+	ref = pool.clients[cegwv1.Exchange_EXCHANGE_TOKOCRYPTO]
+	pool.mu.Unlock()
+	if ref.refs != 0 {
+		t.Errorf("refs should still be 0 after multiple borrows, got %d", ref.refs)
+	}
+}
+
+func TestClientPool_BorrowThenAcquire(t *testing.T) {
+	log := logger.New("error", nil)
+	pool := &ClientPool{
+		clients: make(map[cegwv1.Exchange]*clientRef),
+		log:     log,
+	}
+
+	ctx := context.Background()
+
+	// Borrow first (refs=0)
+	client1, err := pool.Borrow(ctx, cegwv1.Exchange_EXCHANGE_TOKOCRYPTO, nil)
+	if err != nil {
+		t.Fatalf("borrow failed: %v", err)
+	}
+
+	// Then acquire (refs=1)
+	client2, err := pool.Acquire(ctx, cegwv1.Exchange_EXCHANGE_TOKOCRYPTO, nil)
+	if err != nil {
+		t.Fatalf("acquire failed: %v", err)
+	}
+
+	if client1 != client2 {
+		t.Error("borrow and acquire should return same client instance")
+	}
+
+	pool.mu.Lock()
+	ref := pool.clients[cegwv1.Exchange_EXCHANGE_TOKOCRYPTO]
+	pool.mu.Unlock()
+	if ref.refs != 1 {
+		t.Errorf("expected refs=1 after borrow+acquire, got %d", ref.refs)
+	}
+
+	// Release the acquire - should remove from pool (refs goes to 0)
+	pool.Release(ctx, cegwv1.Exchange_EXCHANGE_TOKOCRYPTO)
+
+	pool.mu.Lock()
+	_, exists := pool.clients[cegwv1.Exchange_EXCHANGE_TOKOCRYPTO]
+	pool.mu.Unlock()
+	if exists {
+		t.Error("client should be removed after release when only acquire ref was held")
+	}
+}
+
+func TestClientPool_AcquireKeepsClientAlive(t *testing.T) {
+	log := logger.New("error", nil)
+	pool := &ClientPool{
+		clients: make(map[cegwv1.Exchange]*clientRef),
+		log:     log,
+	}
+
+	ctx := context.Background()
+
+	// Acquire first (refs=1)
+	client1, err := pool.Acquire(ctx, cegwv1.Exchange_EXCHANGE_TOKOCRYPTO, nil)
+	if err != nil {
+		t.Fatalf("acquire failed: %v", err)
+	}
+
+	// Borrow many times - refs stays at 1
+	for i := 0; i < 5; i++ {
+		client, err := pool.Borrow(ctx, cegwv1.Exchange_EXCHANGE_TOKOCRYPTO, nil)
+		if err != nil {
+			t.Fatalf("borrow %d failed: %v", i, err)
+		}
+		if client != client1 {
+			t.Errorf("borrow %d returned different client", i)
+		}
+	}
+
+	pool.mu.Lock()
+	ref := pool.clients[cegwv1.Exchange_EXCHANGE_TOKOCRYPTO]
+	pool.mu.Unlock()
+	if ref.refs != 1 {
+		t.Errorf("refs should still be 1 after borrows, got %d", ref.refs)
+	}
+
+	// Release the acquire
+	pool.Release(ctx, cegwv1.Exchange_EXCHANGE_TOKOCRYPTO)
+
+	pool.mu.Lock()
+	_, exists := pool.clients[cegwv1.Exchange_EXCHANGE_TOKOCRYPTO]
+	pool.mu.Unlock()
+	if exists {
+		t.Error("client should be removed after all acquires released")
+	}
+}

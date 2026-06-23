@@ -175,7 +175,7 @@ func streamPriceToWebsocket(ctx context.Context, conn *websocket.Conn, log *logg
 		WithField("exchange", exchangeID.String()).
 		WithField("symbol", symbol)
 
-	client, err := ccxt.NewClientForExchange(ctx, exchangeID, nil)
+	client, err := ccxt.GetClientPool(log).Acquire(ctx, exchangeID, nil)
 	if err != nil {
 		log.WithError(err).Errorf("failed to create CCXT client")
 		writeWebsocketError(conn, "failed to create exchange client")
@@ -357,7 +357,7 @@ func streamOrderBookToWebsocket(ctx context.Context, conn *websocket.Conn, log *
 		WithField("symbol", symbol).
 		WithField("limit", limit)
 
-	client, err := ccxt.NewClientForExchange(ctx, exchangeID, nil)
+	client, err := ccxt.GetClientPool(log).Acquire(ctx, exchangeID, nil)
 	if err != nil {
 		log.WithError(err).Errorf("failed to create CCXT client")
 		writeWebsocketError(conn, "failed to create exchange client")

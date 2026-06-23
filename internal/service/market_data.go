@@ -351,7 +351,7 @@ func (s *MarketDataService) StreamCurrentPrice(req *cegwv1.GetCurrentPriceReques
 
 	log.Debugf("starting current price stream")
 
-	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, nil)
+	client, err := ccxt.GetClientPool(s.log).Acquire(ctx, req.Exchange, nil)
 	if err != nil {
 		log.WithError(err).Errorf("failed to create CCXT client")
 		return err

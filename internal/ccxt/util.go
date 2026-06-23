@@ -26,9 +26,13 @@ func NewClientForExchange(ctx context.Context, exchange cegwv1.Exchange, creds *
 	// Use shared pool for stateless (no-credentials) clients.
 	// Credential-based clients (trading) are NOT pooled because each user
 	// has unique API keys.
+	//
+	// Short-lived REST calls use Borrow (no ref counting).
+	// Long-lived WebSocket/gRPC stream consumers should call
+	// AcquireClientForExchange directly.
 	if creds == nil {
 		pool := GetClientPool(log)
-		return pool.Acquire(ctx, exchange, nil)
+		return pool.Borrow(ctx, exchange, nil)
 	}
 
 	return newClientForExchange(ctx, exchange, creds)
