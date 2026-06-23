@@ -153,6 +153,8 @@ CEGW supports a few simple environment variables:
 - `HTTP_PROXY` (optional, supports `http://`, `https://`, `socks5://`)
 - `NO_PROXY` (optional, comma-separated list of hosts to bypass proxy)
 - `ALLOWED_WS_ORIGINS` (optional, comma-separated list of allowed browser WebSocket origins; empty allows all origins)
+- `WS_PRICE_POLL_INTERVAL` (default `5s`) - Price stream polling interval when native WebSocket is unavailable
+- `WS_ORDERBOOK_POLL_INTERVAL` (default `3s`) - Order book stream polling interval when native WebSocket is unavailable
 
 For WebSocket origin restriction, supported values include exact origins like `https://app.example.com`, wildcard `*`, and subdomain patterns like `*.example.com`. Non-browser clients without an `Origin` header are still allowed.
 
