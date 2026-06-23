@@ -110,7 +110,7 @@ func handlePriceWebsocket(cfg *config.Config, log *logger.Logger) http.HandlerFu
 			}
 		}()
 
-		streamPriceToWebsocket(ctx, conn, log, exchange, symbol)
+		streamPriceToWebsocket(ctx, conn, log, cfg, exchange, symbol)
 	}
 }
 
@@ -169,7 +169,7 @@ func parseExchangeQuery(exchangeRaw string) (cegwv1.Exchange, error) {
 	}
 }
 
-func streamPriceToWebsocket(ctx context.Context, conn *websocket.Conn, log *logger.Logger, exchangeID cegwv1.Exchange, symbol string) {
+func streamPriceToWebsocket(ctx context.Context, conn *websocket.Conn, log *logger.Logger, cfg *config.Config, exchangeID cegwv1.Exchange, symbol string) {
 	log = log.WithContext(ctx).
 		WithField("operation", "PriceWebSocket").
 		WithField("exchange", exchangeID.String()).
@@ -186,7 +186,7 @@ func streamPriceToWebsocket(ctx context.Context, conn *websocket.Conn, log *logg
 	exchange := ccxt.AsStreamingExchange(client)
 	if exchange == nil {
 		log.Warnf("exchange streaming not supported, falling back to ticker polling")
-		pollPriceToWebsocket(ctx, conn, client, log, symbol)
+		pollPriceToWebsocket(ctx, conn, client, log, cfg, symbol)
 		return
 	}
 
@@ -206,7 +206,7 @@ func streamPriceToWebsocket(ctx context.Context, conn *websocket.Conn, log *logg
 			}
 			if ccxt.IsWatchTickerUnsupported(err) {
 				log.WithError(err).Warnf("watch ticker unsupported, falling back to ticker polling")
-				pollPriceToWebsocket(ctx, conn, client, log, symbol)
+				pollPriceToWebsocket(ctx, conn, client, log, cfg, symbol)
 				return
 			}
 			log.WithError(err).Errorf("failed to watch ticker")
@@ -221,7 +221,7 @@ func streamPriceToWebsocket(ctx context.Context, conn *websocket.Conn, log *logg
 	}
 }
 
-func pollPriceToWebsocket(ctx context.Context, conn *websocket.Conn, client interface{}, log *logger.Logger, symbol string) {
+func pollPriceToWebsocket(ctx context.Context, conn *websocket.Conn, client interface{}, log *logger.Logger, cfg *config.Config, symbol string) {
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
 		log.Warnf("exchange polling not supported")
@@ -229,7 +229,7 @@ func pollPriceToWebsocket(ctx context.Context, conn *websocket.Conn, client inte
 		return
 	}
 
-	ticker := time.NewTicker(3 * time.Second)
+	ticker := time.NewTicker(cfg.WSPricePollInterval)
 	defer ticker.Stop()
 
 	for {
@@ -307,7 +307,7 @@ func handleOrderBookWebsocket(cfg *config.Config, log *logger.Logger) http.Handl
 			}
 		}()
 
-		streamOrderBookToWebsocket(ctx, conn, log, exchange, symbol, limit)
+		streamOrderBookToWebsocket(ctx, conn, log, cfg, exchange, symbol, limit)
 	}
 }
 
@@ -350,7 +350,7 @@ func parseOrderBookWebsocketRequest(w http.ResponseWriter, r *http.Request) (ceg
 	return exchange, symbol, limit, true
 }
 
-func streamOrderBookToWebsocket(ctx context.Context, conn *websocket.Conn, log *logger.Logger, exchangeID cegwv1.Exchange, symbol string, limit int) {
+func streamOrderBookToWebsocket(ctx context.Context, conn *websocket.Conn, log *logger.Logger, cfg *config.Config, exchangeID cegwv1.Exchange, symbol string, limit int) {
 	log = log.WithContext(ctx).
 		WithField("operation", "OrderBookWebSocket").
 		WithField("exchange", exchangeID.String()).
@@ -368,7 +368,7 @@ func streamOrderBookToWebsocket(ctx context.Context, conn *websocket.Conn, log *
 	exchange := ccxt.AsStreamingExchange(client)
 	if exchange == nil {
 		log.Warnf("exchange streaming not supported, falling back to order book polling")
-		pollOrderBookToWebsocket(ctx, conn, client, log, symbol, limit)
+		pollOrderBookToWebsocket(ctx, conn, client, log, cfg, symbol, limit)
 		return
 	}
 
@@ -388,7 +388,7 @@ func streamOrderBookToWebsocket(ctx context.Context, conn *websocket.Conn, log *
 			}
 			if ccxt.IsWatchOrderBookUnsupported(err) {
 				log.WithError(err).Warnf("watch order book unsupported, falling back to polling")
-				pollOrderBookToWebsocket(ctx, conn, client, log, symbol, limit)
+				pollOrderBookToWebsocket(ctx, conn, client, log, cfg, symbol, limit)
 				return
 			}
 			log.WithError(err).Errorf("failed to watch order book")
@@ -403,7 +403,7 @@ func streamOrderBookToWebsocket(ctx context.Context, conn *websocket.Conn, log *
 	}
 }
 
-func pollOrderBookToWebsocket(ctx context.Context, conn *websocket.Conn, client interface{}, log *logger.Logger, symbol string, limit int) {
+func pollOrderBookToWebsocket(ctx context.Context, conn *websocket.Conn, client interface{}, log *logger.Logger, cfg *config.Config, symbol string, limit int) {
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
 		log.Warnf("exchange polling not supported")
@@ -411,7 +411,7 @@ func pollOrderBookToWebsocket(ctx context.Context, conn *websocket.Conn, client 
 		return
 	}
 
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(cfg.WSOrderBookPollInterval)
 	defer ticker.Stop()
 
 	for {

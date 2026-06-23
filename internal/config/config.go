@@ -17,15 +17,17 @@ type AuthConfig struct {
 }
 
 type Config struct {
-	GRPCPort           string
-	HTTPPort           string
-	LogLevel           string
-	HTTPSProxy         string
-	HTTPProxy          string
-	Timezone           *time.Location
-	SandboxMode        bool
-	Auth               AuthConfig
-	AllowedWSOrigins   []string // Allowed WebSocket origins (empty = allow all)
+	GRPCPort              string
+	HTTPPort              string
+	LogLevel              string
+	HTTPSProxy            string
+	HTTPProxy             string
+	Timezone              *time.Location
+	SandboxMode           bool
+	Auth                  AuthConfig
+	AllowedWSOrigins      []string      // Allowed WebSocket origins (empty = allow all)
+	WSPricePollInterval   time.Duration // WebSocket price stream poll interval (fallback)
+	WSOrderBookPollInterval time.Duration // WebSocket order book stream poll interval (fallback)
 }
 
 func Load() (*Config, error) {
@@ -60,14 +62,18 @@ func Load() (*Config, error) {
 		}
 	}
 
+	// Load WebSocket poll intervals (in seconds, parsed as time.Duration)
+	wsPricePoll := getEnvDuration("WS_PRICE_POLL_INTERVAL", 5*time.Second)
+	wsOrderBookPoll := getEnvDuration("WS_ORDERBOOK_POLL_INTERVAL", 3*time.Second)
+
 	return &Config{
-		GRPCPort:    grpcPort,
-		HTTPPort:    httpPort,
-		LogLevel:    logLevel,
-		Timezone:    loc,
-		SandboxMode: sandboxMode,
-		HTTPSProxy:  httpsProxy,
-		HTTPProxy:   httpProxy,
+		GRPCPort:               grpcPort,
+		HTTPPort:               httpPort,
+		LogLevel:               logLevel,
+		Timezone:               loc,
+		SandboxMode:            sandboxMode,
+		HTTPSProxy:             httpsProxy,
+		HTTPProxy:              httpProxy,
 		Auth: AuthConfig{
 			Enabled:        authEnabled,
 			Type:           authType,
@@ -76,7 +82,9 @@ func Load() (*Config, error) {
 			OAuth2Issuer:   oauth2Issuer,
 			OAuth2Audience: oauth2Audience,
 		},
-		AllowedWSOrigins: allowedOrigins,
+		AllowedWSOrigins:       allowedOrigins,
+		WSPricePollInterval:    wsPricePoll,
+		WSOrderBookPollInterval: wsOrderBookPoll,
 	}, nil
 }
 
@@ -91,6 +99,17 @@ func getEnvBool(key string, defaultValue bool) bool {
 	if value := os.Getenv(key); value != "" {
 		if b, err := strconv.ParseBool(value); err == nil {
 			return b
+		}
+	}
+	return defaultValue
+}
+
+// getEnvDuration reads an environment variable as a duration string (e.g., "5s", "1m").
+// Returns the parsed duration or the default if parsing fails or the variable is unset.
+func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
+	if value := os.Getenv(key); value != "" {
+		if d, err := time.ParseDuration(value); err == nil {
+			return d
 		}
 	}
 	return defaultValue

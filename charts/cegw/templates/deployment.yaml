@@ -67,6 +67,10 @@ spec:
         - name: ALLOWED_WS_ORIGINS
           value: {{ join "," .Values.config.allowedWsOrigins | quote }}
         {{- end }}
+        - name: WS_PRICE_POLL_INTERVAL
+          value: {{ .Values.config.wsPricePollInterval | quote }}
+        - name: WS_ORDERBOOK_POLL_INTERVAL
+          value: {{ .Values.config.wsOrderBookPollInterval | quote }}
         {{- if .Values.config.auth.enabled }}
         - name: AUTH_ENABLED
           value: {{ .Values.config.auth.enabled | quote }}

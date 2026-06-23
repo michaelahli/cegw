@@ -407,7 +407,7 @@ func (s *MarketDataService) pollCurrentPrice(ctx context.Context, client interfa
 		return status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
-	ticker := time.NewTicker(3 * time.Second)
+	ticker := time.NewTicker(s.cfg.WSPricePollInterval)
 	defer ticker.Stop()
 
 	for {

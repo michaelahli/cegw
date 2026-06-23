@@ -82,6 +82,8 @@ config:
     oauth2Issuer: ""
     oauth2Audience: ""
   allowedWsOrigins: []
+  wsPricePollInterval: "5s"
+  wsOrderBookPollInterval: "3s"
 
 livenessProbe:
   httpGet:
