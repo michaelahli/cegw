@@ -24,10 +24,10 @@ type priceStreamMessage struct {
 }
 
 type orderBookStreamMessage struct {
-	Symbol    string          `json:"symbol"`
-	Bids      [][]float64     `json:"bids"`
-	Asks      [][]float64     `json:"asks"`
-	Timestamp time.Time       `json:"timestamp"`
+	Symbol    string      `json:"symbol"`
+	Bids      [][]float64 `json:"bids"`
+	Asks      [][]float64 `json:"asks"`
+	Timestamp time.Time   `json:"timestamp"`
 }
 
 type websocketErrorMessage struct {
@@ -181,6 +181,7 @@ func streamPriceToWebsocket(ctx context.Context, conn *websocket.Conn, log *logg
 		writeWebsocketError(conn, "failed to create exchange client")
 		return
 	}
+	defer ccxt.ReleaseClientForExchange(ctx, exchangeID)
 
 	exchange := ccxt.AsStreamingExchange(client)
 	if exchange == nil {
@@ -362,6 +363,7 @@ func streamOrderBookToWebsocket(ctx context.Context, conn *websocket.Conn, log *
 		writeWebsocketError(conn, "failed to create exchange client")
 		return
 	}
+	defer ccxt.ReleaseClientForExchange(ctx, exchangeID)
 
 	exchange := ccxt.AsStreamingExchange(client)
 	if exchange == nil {

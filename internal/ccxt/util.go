@@ -23,66 +23,34 @@ func NewClientForExchange(ctx context.Context, exchange cegwv1.Exchange, creds *
 		log = logger.New("error", nil) // This will log only errors
 	}
 
-	cfg := ClientConfig{
-		Sandbox:  false,
-		ProxyURL: ProxyFromEnv(log),
-		Options: map[string]any{
-			"recvWindow": 5000,
-		},
+	// Use shared pool for stateless (no-credentials) clients.
+	// Credential-based clients (trading) are NOT pooled because each user
+	// has unique API keys.
+	if creds == nil {
+		pool := GetClientPool(log)
+		return pool.Acquire(ctx, exchange, nil)
 	}
 
-	if creds != nil {
-		cfg.APIKey = creds.ApiKey
-		cfg.APISecret = creds.ApiSecret
-		cfg.Sandbox = creds.Sandbox
-		if creds.Sandbox {
-			cfg.Options["sandbox"] = true
+	return newClientForExchange(ctx, exchange, creds)
+}
+
+// ReleaseClientForExchange releases a shared client back to the pool.
+// This should be called when a long-lived client (e.g., WebSocket connection)
+// is no longer needed. Short-lived clients (REST API calls) do not need to
+// call this because the pool is designed for reuse.
+func ReleaseClientForExchange(ctx context.Context, exchange cegwv1.Exchange) {
+	var log *logger.Logger
+	if logVal := ctx.Value("logger"); logVal != nil {
+		if l, ok := logVal.(*logger.Logger); ok {
+			log = l
 		}
 	}
-
-	switch exchange {
-	case cegwv1.Exchange_EXCHANGE_TOKOCRYPTO:
-		client := NewTokocryptoClient(cfg, log)
-		return client.Client(ctx)
-	case cegwv1.Exchange_EXCHANGE_BINANCE:
-		client := NewBinanceClient(cfg, log)
-		return client.Client(ctx)
-	case cegwv1.Exchange_EXCHANGE_COINBASE:
-		client := NewCoinbaseClient(cfg, log)
-		return client.Client(ctx)
-	case cegwv1.Exchange_EXCHANGE_CEXIO:
-		client := NewCEXIOClient(cfg, log)
-		return client.Client(ctx)
-	case cegwv1.Exchange_EXCHANGE_INDODAX:
-		client := NewIndodaxClient(cfg, log)
-		return client.Client(ctx)
-	case cegwv1.Exchange_EXCHANGE_OKX:
-		client := NewOKXClient(cfg, log)
-		return client.Client(ctx)
-	case cegwv1.Exchange_EXCHANGE_KUCOIN:
-		client := NewKuCoinClient(cfg, log)
-		return client.Client(ctx)
-	case cegwv1.Exchange_EXCHANGE_CRYPTOCOM:
-		client := NewCryptocomClient(cfg, log)
-		return client.Client(ctx)
-	case cegwv1.Exchange_EXCHANGE_BYBIT:
-		client := NewBybitClient(cfg, log)
-		return client.Client(ctx)
-	case cegwv1.Exchange_EXCHANGE_BITGET:
-		client := NewBitgetClient(cfg, log)
-		return client.Client(ctx)
-	case cegwv1.Exchange_EXCHANGE_COINEX:
-		client := NewCoinexClient(cfg, log)
-		return client.Client(ctx)
-	case cegwv1.Exchange_EXCHANGE_HASHKEY:
-		client := NewHashkeyClient(cfg, log)
-		return client.Client(ctx)
-	default:
-		log.WithContext(ctx).
-			WithField("exchange", exchange.String()).
-			Warnf("unsupported exchange")
-		return nil, nil
+	if log == nil {
+		log = logger.New("error", nil)
 	}
+
+	pool := GetClientPool(log)
+	pool.Release(ctx, exchange)
 }
 
 func IsWatchTickerUnsupported(err error) bool {
