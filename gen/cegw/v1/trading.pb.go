@@ -736,6 +736,142 @@ func (x *CancelOrderResponse) GetMessage() string {
 	return ""
 }
 
+type CreateLimitOrderRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Exchange      Exchange               `protobuf:"varint,1,opt,name=exchange,proto3,enum=cegw.v1.Exchange" json:"exchange,omitempty"`
+	Symbol        string                 `protobuf:"bytes,2,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	Side          OrderSide              `protobuf:"varint,3,opt,name=side,proto3,enum=cegw.v1.OrderSide" json:"side,omitempty"`
+	Quantity      float64                `protobuf:"fixed64,4,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	Price         float64                `protobuf:"fixed64,5,opt,name=price,proto3" json:"price,omitempty"`
+	TimeInForce   TimeInForce            `protobuf:"varint,6,opt,name=time_in_force,json=timeInForce,proto3,enum=cegw.v1.TimeInForce" json:"time_in_force,omitempty"`
+	Credentials   *Credentials           `protobuf:"bytes,7,opt,name=credentials,proto3" json:"credentials,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateLimitOrderRequest) Reset() {
+	*x = CreateLimitOrderRequest{}
+	mi := &file_cegw_v1_trading_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateLimitOrderRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateLimitOrderRequest) ProtoMessage() {}
+
+func (x *CreateLimitOrderRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cegw_v1_trading_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateLimitOrderRequest.ProtoReflect.Descriptor instead.
+func (*CreateLimitOrderRequest) Descriptor() ([]byte, []int) {
+	return file_cegw_v1_trading_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *CreateLimitOrderRequest) GetExchange() Exchange {
+	if x != nil {
+		return x.Exchange
+	}
+	return Exchange_EXCHANGE_UNSPECIFIED
+}
+
+func (x *CreateLimitOrderRequest) GetSymbol() string {
+	if x != nil {
+		return x.Symbol
+	}
+	return ""
+}
+
+func (x *CreateLimitOrderRequest) GetSide() OrderSide {
+	if x != nil {
+		return x.Side
+	}
+	return OrderSide_ORDER_SIDE_UNSPECIFIED
+}
+
+func (x *CreateLimitOrderRequest) GetQuantity() float64 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
+func (x *CreateLimitOrderRequest) GetPrice() float64 {
+	if x != nil {
+		return x.Price
+	}
+	return 0
+}
+
+func (x *CreateLimitOrderRequest) GetTimeInForce() TimeInForce {
+	if x != nil {
+		return x.TimeInForce
+	}
+	return TimeInForce_TIME_IN_FORCE_UNSPECIFIED
+}
+
+func (x *CreateLimitOrderRequest) GetCredentials() *Credentials {
+	if x != nil {
+		return x.Credentials
+	}
+	return nil
+}
+
+type CreateLimitOrderResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Order         *Order                 `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateLimitOrderResponse) Reset() {
+	*x = CreateLimitOrderResponse{}
+	mi := &file_cegw_v1_trading_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateLimitOrderResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateLimitOrderResponse) ProtoMessage() {}
+
+func (x *CreateLimitOrderResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cegw_v1_trading_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateLimitOrderResponse.ProtoReflect.Descriptor instead.
+func (*CreateLimitOrderResponse) Descriptor() ([]byte, []int) {
+	return file_cegw_v1_trading_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *CreateLimitOrderResponse) GetOrder() *Order {
+	if x != nil {
+		return x.Order
+	}
+	return nil
+}
+
 var File_cegw_v1_trading_proto protoreflect.FileDescriptor
 
 const file_cegw_v1_trading_proto_rawDesc = "" +
@@ -787,10 +923,22 @@ const file_cegw_v1_trading_proto_rawDesc = "" +
 	"\vcredentials\x18\x04 \x01(\v2\x14.cegw.v1.CredentialsR\vcredentials\"I\n" +
 	"\x13CancelOrderResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xd0\a\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"\xac\x02\n" +
+	"\x17CreateLimitOrderRequest\x12-\n" +
+	"\bexchange\x18\x01 \x01(\x0e2\x11.cegw.v1.ExchangeR\bexchange\x12\x16\n" +
+	"\x06symbol\x18\x02 \x01(\tR\x06symbol\x12&\n" +
+	"\x04side\x18\x03 \x01(\x0e2\x12.cegw.v1.OrderSideR\x04side\x12\x1a\n" +
+	"\bquantity\x18\x04 \x01(\x01R\bquantity\x12\x14\n" +
+	"\x05price\x18\x05 \x01(\x01R\x05price\x128\n" +
+	"\rtime_in_force\x18\x06 \x01(\x0e2\x14.cegw.v1.TimeInForceR\vtimeInForce\x126\n" +
+	"\vcredentials\x18\a \x01(\v2\x14.cegw.v1.CredentialsR\vcredentials\"@\n" +
+	"\x18CreateLimitOrderResponse\x12$\n" +
+	"\x05order\x18\x01 \x01(\v2\x0e.cegw.v1.OrderR\x05order2\xa4\t\n" +
 	"\x0eTradingService\x12\xd6\x01\n" +
 	"\x11CreateMarketOrder\x12!.cegw.v1.CreateMarketOrderRequest\x1a\".cegw.v1.CreateMarketOrderResponse\"z\x92A[\n" +
-	"\aTrading\x12\x13Create Market Order\x1a;Place a market buy or sell order on the specified exchange.\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/v1/trading/order\x12\xc6\x01\n" +
+	"\aTrading\x12\x13Create Market Order\x1a;Place a market buy or sell order on the specified exchange.\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/v1/trading/order\x12\xd1\x01\n" +
+	"\x10CreateLimitOrder\x12 .cegw.v1.CreateLimitOrderRequest\x1a!.cegw.v1.CreateLimitOrderResponse\"x\x92AS\n" +
+	"\aTrading\x12\x12Create Limit Order\x1a4Place a limit buy or sell order at a specific price.\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/v1/trading/order/limit\x12\xc6\x01\n" +
 	"\x0fTestCredentials\x12\x1f.cegw.v1.TestCredentialsRequest\x1a .cegw.v1.TestCredentialsResponse\"p\x92AF\n" +
 	"\aTrading\x12\x10Test Credentials\x1a)Validate API credentials for an exchange.\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/v1/trading/credentials/test\x12\xa6\x01\n" +
 	"\n" +
@@ -813,7 +961,7 @@ func file_cegw_v1_trading_proto_rawDescGZIP() []byte {
 	return file_cegw_v1_trading_proto_rawDescData
 }
 
-var file_cegw_v1_trading_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_cegw_v1_trading_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_cegw_v1_trading_proto_goTypes = []any{
 	(*CreateMarketOrderRequest)(nil),  // 0: cegw.v1.CreateMarketOrderRequest
 	(*Order)(nil),                     // 1: cegw.v1.Order
@@ -827,45 +975,55 @@ var file_cegw_v1_trading_proto_goTypes = []any{
 	(*GetOrderResponse)(nil),          // 9: cegw.v1.GetOrderResponse
 	(*CancelOrderRequest)(nil),        // 10: cegw.v1.CancelOrderRequest
 	(*CancelOrderResponse)(nil),       // 11: cegw.v1.CancelOrderResponse
-	(Exchange)(0),                     // 12: cegw.v1.Exchange
-	(OrderSide)(0),                    // 13: cegw.v1.OrderSide
-	(*Credentials)(nil),               // 14: cegw.v1.Credentials
-	(OrderStatus)(0),                  // 15: cegw.v1.OrderStatus
-	(*timestamppb.Timestamp)(nil),     // 16: google.protobuf.Timestamp
+	(*CreateLimitOrderRequest)(nil),   // 12: cegw.v1.CreateLimitOrderRequest
+	(*CreateLimitOrderResponse)(nil),  // 13: cegw.v1.CreateLimitOrderResponse
+	(Exchange)(0),                     // 14: cegw.v1.Exchange
+	(OrderSide)(0),                    // 15: cegw.v1.OrderSide
+	(*Credentials)(nil),               // 16: cegw.v1.Credentials
+	(OrderStatus)(0),                  // 17: cegw.v1.OrderStatus
+	(*timestamppb.Timestamp)(nil),     // 18: google.protobuf.Timestamp
+	(TimeInForce)(0),                  // 19: cegw.v1.TimeInForce
 }
 var file_cegw_v1_trading_proto_depIdxs = []int32{
-	12, // 0: cegw.v1.CreateMarketOrderRequest.exchange:type_name -> cegw.v1.Exchange
-	13, // 1: cegw.v1.CreateMarketOrderRequest.side:type_name -> cegw.v1.OrderSide
-	14, // 2: cegw.v1.CreateMarketOrderRequest.credentials:type_name -> cegw.v1.Credentials
-	13, // 3: cegw.v1.Order.side:type_name -> cegw.v1.OrderSide
-	15, // 4: cegw.v1.Order.status:type_name -> cegw.v1.OrderStatus
-	16, // 5: cegw.v1.Order.timestamp:type_name -> google.protobuf.Timestamp
+	14, // 0: cegw.v1.CreateMarketOrderRequest.exchange:type_name -> cegw.v1.Exchange
+	15, // 1: cegw.v1.CreateMarketOrderRequest.side:type_name -> cegw.v1.OrderSide
+	16, // 2: cegw.v1.CreateMarketOrderRequest.credentials:type_name -> cegw.v1.Credentials
+	15, // 3: cegw.v1.Order.side:type_name -> cegw.v1.OrderSide
+	17, // 4: cegw.v1.Order.status:type_name -> cegw.v1.OrderStatus
+	18, // 5: cegw.v1.Order.timestamp:type_name -> google.protobuf.Timestamp
 	1,  // 6: cegw.v1.CreateMarketOrderResponse.order:type_name -> cegw.v1.Order
-	12, // 7: cegw.v1.TestCredentialsRequest.exchange:type_name -> cegw.v1.Exchange
-	14, // 8: cegw.v1.TestCredentialsRequest.credentials:type_name -> cegw.v1.Credentials
-	12, // 9: cegw.v1.GetBalanceRequest.exchange:type_name -> cegw.v1.Exchange
-	14, // 10: cegw.v1.GetBalanceRequest.credentials:type_name -> cegw.v1.Credentials
+	14, // 7: cegw.v1.TestCredentialsRequest.exchange:type_name -> cegw.v1.Exchange
+	16, // 8: cegw.v1.TestCredentialsRequest.credentials:type_name -> cegw.v1.Credentials
+	14, // 9: cegw.v1.GetBalanceRequest.exchange:type_name -> cegw.v1.Exchange
+	16, // 10: cegw.v1.GetBalanceRequest.credentials:type_name -> cegw.v1.Credentials
 	6,  // 11: cegw.v1.GetBalanceResponse.balances:type_name -> cegw.v1.Balance
-	12, // 12: cegw.v1.GetOrderRequest.exchange:type_name -> cegw.v1.Exchange
-	14, // 13: cegw.v1.GetOrderRequest.credentials:type_name -> cegw.v1.Credentials
+	14, // 12: cegw.v1.GetOrderRequest.exchange:type_name -> cegw.v1.Exchange
+	16, // 13: cegw.v1.GetOrderRequest.credentials:type_name -> cegw.v1.Credentials
 	1,  // 14: cegw.v1.GetOrderResponse.order:type_name -> cegw.v1.Order
-	12, // 15: cegw.v1.CancelOrderRequest.exchange:type_name -> cegw.v1.Exchange
-	14, // 16: cegw.v1.CancelOrderRequest.credentials:type_name -> cegw.v1.Credentials
-	0,  // 17: cegw.v1.TradingService.CreateMarketOrder:input_type -> cegw.v1.CreateMarketOrderRequest
-	3,  // 18: cegw.v1.TradingService.TestCredentials:input_type -> cegw.v1.TestCredentialsRequest
-	5,  // 19: cegw.v1.TradingService.GetBalance:input_type -> cegw.v1.GetBalanceRequest
-	8,  // 20: cegw.v1.TradingService.GetOrder:input_type -> cegw.v1.GetOrderRequest
-	10, // 21: cegw.v1.TradingService.CancelOrder:input_type -> cegw.v1.CancelOrderRequest
-	2,  // 22: cegw.v1.TradingService.CreateMarketOrder:output_type -> cegw.v1.CreateMarketOrderResponse
-	4,  // 23: cegw.v1.TradingService.TestCredentials:output_type -> cegw.v1.TestCredentialsResponse
-	7,  // 24: cegw.v1.TradingService.GetBalance:output_type -> cegw.v1.GetBalanceResponse
-	9,  // 25: cegw.v1.TradingService.GetOrder:output_type -> cegw.v1.GetOrderResponse
-	11, // 26: cegw.v1.TradingService.CancelOrder:output_type -> cegw.v1.CancelOrderResponse
-	22, // [22:27] is the sub-list for method output_type
-	17, // [17:22] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	14, // 15: cegw.v1.CancelOrderRequest.exchange:type_name -> cegw.v1.Exchange
+	16, // 16: cegw.v1.CancelOrderRequest.credentials:type_name -> cegw.v1.Credentials
+	14, // 17: cegw.v1.CreateLimitOrderRequest.exchange:type_name -> cegw.v1.Exchange
+	15, // 18: cegw.v1.CreateLimitOrderRequest.side:type_name -> cegw.v1.OrderSide
+	19, // 19: cegw.v1.CreateLimitOrderRequest.time_in_force:type_name -> cegw.v1.TimeInForce
+	16, // 20: cegw.v1.CreateLimitOrderRequest.credentials:type_name -> cegw.v1.Credentials
+	1,  // 21: cegw.v1.CreateLimitOrderResponse.order:type_name -> cegw.v1.Order
+	0,  // 22: cegw.v1.TradingService.CreateMarketOrder:input_type -> cegw.v1.CreateMarketOrderRequest
+	12, // 23: cegw.v1.TradingService.CreateLimitOrder:input_type -> cegw.v1.CreateLimitOrderRequest
+	3,  // 24: cegw.v1.TradingService.TestCredentials:input_type -> cegw.v1.TestCredentialsRequest
+	5,  // 25: cegw.v1.TradingService.GetBalance:input_type -> cegw.v1.GetBalanceRequest
+	8,  // 26: cegw.v1.TradingService.GetOrder:input_type -> cegw.v1.GetOrderRequest
+	10, // 27: cegw.v1.TradingService.CancelOrder:input_type -> cegw.v1.CancelOrderRequest
+	2,  // 28: cegw.v1.TradingService.CreateMarketOrder:output_type -> cegw.v1.CreateMarketOrderResponse
+	13, // 29: cegw.v1.TradingService.CreateLimitOrder:output_type -> cegw.v1.CreateLimitOrderResponse
+	4,  // 30: cegw.v1.TradingService.TestCredentials:output_type -> cegw.v1.TestCredentialsResponse
+	7,  // 31: cegw.v1.TradingService.GetBalance:output_type -> cegw.v1.GetBalanceResponse
+	9,  // 32: cegw.v1.TradingService.GetOrder:output_type -> cegw.v1.GetOrderResponse
+	11, // 33: cegw.v1.TradingService.CancelOrder:output_type -> cegw.v1.CancelOrderResponse
+	28, // [28:34] is the sub-list for method output_type
+	22, // [22:28] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_cegw_v1_trading_proto_init() }
@@ -880,7 +1038,7 @@ func file_cegw_v1_trading_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cegw_v1_trading_proto_rawDesc), len(file_cegw_v1_trading_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

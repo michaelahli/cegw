@@ -22,6 +22,18 @@ service TradingService {
     };
   }
 
+  rpc CreateLimitOrder(CreateLimitOrderRequest) returns (CreateLimitOrderResponse) {
+    option (google.api.http) = {
+      post: "/v1/trading/order/limit"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Create Limit Order"
+      description: "Place a limit buy or sell order at a specific price."
+      tags: "Trading"
+    };
+  }
+
   rpc TestCredentials(TestCredentialsRequest) returns (TestCredentialsResponse) {
     option (google.api.http) = {
       post: "/v1/trading/credentials/test"
@@ -139,4 +151,18 @@ message CancelOrderRequest {
 message CancelOrderResponse {
   bool success = 1;
   string message = 2;
+}
+
+message CreateLimitOrderRequest {
+  Exchange exchange = 1;
+  string symbol = 2;
+  OrderSide side = 3;
+  double quantity = 4;
+  double price = 5;
+  TimeInForce time_in_force = 6;
+  Credentials credentials = 7;
+}
+
+message CreateLimitOrderResponse {
+  Order order = 1;
 }

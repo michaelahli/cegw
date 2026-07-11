@@ -378,6 +378,58 @@ func (AlertStatus) EnumDescriptor() ([]byte, []int) {
 	return file_cegw_v1_common_proto_rawDescGZIP(), []int{5}
 }
 
+type TimeInForce int32
+
+const (
+	TimeInForce_TIME_IN_FORCE_UNSPECIFIED TimeInForce = 0
+	TimeInForce_TIME_IN_FORCE_GTC         TimeInForce = 1
+	TimeInForce_TIME_IN_FORCE_IOC         TimeInForce = 2
+	TimeInForce_TIME_IN_FORCE_FOK         TimeInForce = 3
+)
+
+// Enum value maps for TimeInForce.
+var (
+	TimeInForce_name = map[int32]string{
+		0: "TIME_IN_FORCE_UNSPECIFIED",
+		1: "TIME_IN_FORCE_GTC",
+		2: "TIME_IN_FORCE_IOC",
+		3: "TIME_IN_FORCE_FOK",
+	}
+	TimeInForce_value = map[string]int32{
+		"TIME_IN_FORCE_UNSPECIFIED": 0,
+		"TIME_IN_FORCE_GTC":         1,
+		"TIME_IN_FORCE_IOC":         2,
+		"TIME_IN_FORCE_FOK":         3,
+	}
+)
+
+func (x TimeInForce) Enum() *TimeInForce {
+	p := new(TimeInForce)
+	*p = x
+	return p
+}
+
+func (x TimeInForce) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TimeInForce) Descriptor() protoreflect.EnumDescriptor {
+	return file_cegw_v1_common_proto_enumTypes[6].Descriptor()
+}
+
+func (TimeInForce) Type() protoreflect.EnumType {
+	return &file_cegw_v1_common_proto_enumTypes[6]
+}
+
+func (x TimeInForce) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TimeInForce.Descriptor instead.
+func (TimeInForce) EnumDescriptor() ([]byte, []int) {
+	return file_cegw_v1_common_proto_rawDescGZIP(), []int{6}
+}
+
 type OHLCV struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	High          float64                `protobuf:"fixed64,1,opt,name=high,proto3" json:"high,omitempty"`
@@ -576,7 +628,12 @@ const file_cegw_v1_common_proto_rawDesc = "" +
 	"\vAlertStatus\x12\x1c\n" +
 	"\x18ALERT_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14ALERT_STATUS_PENDING\x10\x01\x12\x1a\n" +
-	"\x16ALERT_STATUS_TRIGGERED\x10\x02B0Z.github.com/michaelahli/cegw/gen/cegw/v1;cegwv1b\x06proto3"
+	"\x16ALERT_STATUS_TRIGGERED\x10\x02*q\n" +
+	"\vTimeInForce\x12\x1d\n" +
+	"\x19TIME_IN_FORCE_UNSPECIFIED\x10\x00\x12\x15\n" +
+	"\x11TIME_IN_FORCE_GTC\x10\x01\x12\x15\n" +
+	"\x11TIME_IN_FORCE_IOC\x10\x02\x12\x15\n" +
+	"\x11TIME_IN_FORCE_FOK\x10\x03B0Z.github.com/michaelahli/cegw/gen/cegw/v1;cegwv1b\x06proto3"
 
 var (
 	file_cegw_v1_common_proto_rawDescOnce sync.Once
@@ -590,7 +647,7 @@ func file_cegw_v1_common_proto_rawDescGZIP() []byte {
 	return file_cegw_v1_common_proto_rawDescData
 }
 
-var file_cegw_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
+var file_cegw_v1_common_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
 var file_cegw_v1_common_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_cegw_v1_common_proto_goTypes = []any{
 	(Exchange)(0),           // 0: cegw.v1.Exchange
@@ -599,8 +656,9 @@ var file_cegw_v1_common_proto_goTypes = []any{
 	(OrderStatus)(0),        // 3: cegw.v1.OrderStatus
 	(ComparisonOperator)(0), // 4: cegw.v1.ComparisonOperator
 	(AlertStatus)(0),        // 5: cegw.v1.AlertStatus
-	(*OHLCV)(nil),           // 6: cegw.v1.OHLCV
-	(*Credentials)(nil),     // 7: cegw.v1.Credentials
+	(TimeInForce)(0),        // 6: cegw.v1.TimeInForce
+	(*OHLCV)(nil),           // 7: cegw.v1.OHLCV
+	(*Credentials)(nil),     // 8: cegw.v1.Credentials
 }
 var file_cegw_v1_common_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -620,7 +678,7 @@ func file_cegw_v1_common_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cegw_v1_common_proto_rawDesc), len(file_cegw_v1_common_proto_rawDesc)),
-			NumEnums:      6,
+			NumEnums:      7,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,

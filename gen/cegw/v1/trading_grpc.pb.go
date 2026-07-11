@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	TradingService_CreateMarketOrder_FullMethodName = "/cegw.v1.TradingService/CreateMarketOrder"
+	TradingService_CreateLimitOrder_FullMethodName  = "/cegw.v1.TradingService/CreateLimitOrder"
 	TradingService_TestCredentials_FullMethodName   = "/cegw.v1.TradingService/TestCredentials"
 	TradingService_GetBalance_FullMethodName        = "/cegw.v1.TradingService/GetBalance"
 	TradingService_GetOrder_FullMethodName          = "/cegw.v1.TradingService/GetOrder"
@@ -31,6 +32,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TradingServiceClient interface {
 	CreateMarketOrder(ctx context.Context, in *CreateMarketOrderRequest, opts ...grpc.CallOption) (*CreateMarketOrderResponse, error)
+	CreateLimitOrder(ctx context.Context, in *CreateLimitOrderRequest, opts ...grpc.CallOption) (*CreateLimitOrderResponse, error)
 	TestCredentials(ctx context.Context, in *TestCredentialsRequest, opts ...grpc.CallOption) (*TestCredentialsResponse, error)
 	GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceResponse, error)
 	GetOrder(ctx context.Context, in *GetOrderRequest, opts ...grpc.CallOption) (*GetOrderResponse, error)
@@ -49,6 +51,16 @@ func (c *tradingServiceClient) CreateMarketOrder(ctx context.Context, in *Create
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateMarketOrderResponse)
 	err := c.cc.Invoke(ctx, TradingService_CreateMarketOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tradingServiceClient) CreateLimitOrder(ctx context.Context, in *CreateLimitOrderRequest, opts ...grpc.CallOption) (*CreateLimitOrderResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateLimitOrderResponse)
+	err := c.cc.Invoke(ctx, TradingService_CreateLimitOrder_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -100,6 +112,7 @@ func (c *tradingServiceClient) CancelOrder(ctx context.Context, in *CancelOrderR
 // for forward compatibility.
 type TradingServiceServer interface {
 	CreateMarketOrder(context.Context, *CreateMarketOrderRequest) (*CreateMarketOrderResponse, error)
+	CreateLimitOrder(context.Context, *CreateLimitOrderRequest) (*CreateLimitOrderResponse, error)
 	TestCredentials(context.Context, *TestCredentialsRequest) (*TestCredentialsResponse, error)
 	GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error)
 	GetOrder(context.Context, *GetOrderRequest) (*GetOrderResponse, error)
@@ -116,6 +129,9 @@ type UnimplementedTradingServiceServer struct{}
 
 func (UnimplementedTradingServiceServer) CreateMarketOrder(context.Context, *CreateMarketOrderRequest) (*CreateMarketOrderResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateMarketOrder not implemented")
+}
+func (UnimplementedTradingServiceServer) CreateLimitOrder(context.Context, *CreateLimitOrderRequest) (*CreateLimitOrderResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateLimitOrder not implemented")
 }
 func (UnimplementedTradingServiceServer) TestCredentials(context.Context, *TestCredentialsRequest) (*TestCredentialsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method TestCredentials not implemented")
@@ -164,6 +180,24 @@ func _TradingService_CreateMarketOrder_Handler(srv interface{}, ctx context.Cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TradingServiceServer).CreateMarketOrder(ctx, req.(*CreateMarketOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TradingService_CreateLimitOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateLimitOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingServiceServer).CreateLimitOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TradingService_CreateLimitOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingServiceServer).CreateLimitOrder(ctx, req.(*CreateLimitOrderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -250,6 +284,10 @@ var TradingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateMarketOrder",
 			Handler:    _TradingService_CreateMarketOrder_Handler,
+		},
+		{
+			MethodName: "CreateLimitOrder",
+			Handler:    _TradingService_CreateLimitOrder_Handler,
 		},
 		{
 			MethodName: "TestCredentials",

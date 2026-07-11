@@ -61,6 +61,13 @@ enum AlertStatus {
   ALERT_STATUS_TRIGGERED = 2;
 }
 
+enum TimeInForce {
+  TIME_IN_FORCE_UNSPECIFIED = 0;
+  TIME_IN_FORCE_GTC = 1;
+  TIME_IN_FORCE_IOC = 2;
+  TIME_IN_FORCE_FOK = 3;
+}
+
 message OHLCV {
   double high = 1;
   double low = 2;

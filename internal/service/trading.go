@@ -169,6 +169,149 @@ func (s *TradingService) CreateMarketOrder(ctx context.Context, req *cegwv1.Crea
 	}, nil
 }
 
+// timeInForceToString converts the TimeInForce enum to CCXT string format.
+func timeInForceToString(tif cegwv1.TimeInForce) string {
+	switch tif {
+	case cegwv1.TimeInForce_TIME_IN_FORCE_GTC:
+		return "GTC"
+	case cegwv1.TimeInForce_TIME_IN_FORCE_IOC:
+		return "IOC"
+	case cegwv1.TimeInForce_TIME_IN_FORCE_FOK:
+		return "FOK"
+	default:
+		return "GTC"
+	}
+}
+
+func (s *TradingService) CreateLimitOrder(ctx context.Context, req *cegwv1.CreateLimitOrderRequest) (*cegwv1.CreateLimitOrderResponse, error) {
+	log := s.log.WithContext(ctx).
+		WithField("operation", "CreateLimitOrder").
+		WithField("symbol", req.Symbol).
+		WithField("exchange", req.Exchange.String()).
+		WithField("side", req.Side.String()).
+		WithField("quantity", req.Quantity).
+		WithField("price", req.Price)
+
+	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
+		log.Warnf("invalid request: exchange unspecified")
+		return nil, status.Error(codes.InvalidArgument, "exchange is required")
+	}
+
+	if req.Symbol == "" {
+		log.Warnf("invalid request: symbol empty")
+		return nil, status.Error(codes.InvalidArgument, "symbol is required")
+	}
+
+	if req.Side == cegwv1.OrderSide_ORDER_SIDE_UNSPECIFIED {
+		log.Warnf("invalid request: side unspecified")
+		return nil, status.Error(codes.InvalidArgument, "order side is required")
+	}
+
+	if req.Quantity <= 0 {
+		log.Warnf("invalid request: quantity not positive")
+		return nil, status.Error(codes.InvalidArgument, "quantity must be positive")
+	}
+
+	if req.Price <= 0 {
+		log.Warnf("invalid request: price not positive")
+		return nil, status.Error(codes.InvalidArgument, "price must be positive")
+	}
+
+	if req.Credentials == nil {
+		log.Warnf("invalid request: credentials missing")
+		return nil, status.Error(codes.InvalidArgument, "credentials are required")
+	}
+
+	if req.Credentials.ApiKey == "" {
+		log.Warnf("invalid request: api_key missing")
+		return nil, status.Error(codes.InvalidArgument, "api_key is required")
+	}
+
+	if req.Credentials.ApiSecret == "" {
+		log.Warnf("invalid request: api_secret missing")
+		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
+	}
+
+	log.Debugf("creating limit order")
+
+	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, req.Credentials)
+	if err != nil {
+		log.WithError(err).Errorf("failed to create CCXT client")
+		return nil, err
+	}
+
+	exchange := ccxt.AsExchange(client)
+	if exchange == nil {
+		log.Warnf("exchange not supported")
+		return nil, status.Error(codes.Unimplemented, "exchange not supported")
+	}
+
+	var side string
+	switch req.Side {
+	case cegwv1.OrderSide_ORDER_SIDE_BUY:
+		side = "buy"
+	case cegwv1.OrderSide_ORDER_SIDE_SELL:
+		side = "sell"
+	default:
+		log.Warnf("invalid order side")
+		return nil, status.Error(codes.InvalidArgument, "invalid order side")
+	}
+
+	var opts []ccxtlib.CreateLimitOrderOptions
+	if req.TimeInForce != cegwv1.TimeInForce_TIME_IN_FORCE_UNSPECIFIED {
+		tif := timeInForceToString(req.TimeInForce)
+		log.WithField("time_in_force", tif).Debugf("setting time-in-force")
+		opts = append(opts, ccxtlib.WithCreateLimitOrderParams(map[string]any{
+			"timeInForce": tif,
+		}))
+	}
+
+	order, err := exchange.CreateLimitOrder(req.Symbol, side, req.Quantity, req.Price, opts...)
+	if err != nil {
+		log.WithError(err).Errorf("failed to create limit order")
+		return nil, ccxt.MapError(err)
+	}
+
+	orderStatus := cegwv1.OrderStatus_ORDER_STATUS_UNSPECIFIED
+	if order.Status != nil {
+		switch *order.Status {
+		case "new":
+			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_NEW
+		case "filled":
+			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_FILLED
+		case "partially_filled":
+			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_PARTIALLY_FILLED
+		case "canceled":
+			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_CANCELED
+		case "rejected":
+			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_REJECTED
+		}
+	}
+
+	var timestamp *timestamppb.Timestamp
+	if order.Timestamp != nil {
+		timestamp = timestamppb.New(time.UnixMilli(ccxt.Int64P(order.Timestamp)))
+	} else {
+		timestamp = timestamppb.Now()
+	}
+
+	log.WithField("order_id", order.Id).
+		WithField("order_status", orderStatus.String()).
+		Infof("limit order created successfully")
+
+	return &cegwv1.CreateLimitOrderResponse{
+		Order: &cegwv1.Order{
+			OrderId:   ccxt.StringP(order.Id),
+			Symbol:    req.Symbol,
+			Side:      req.Side,
+			Quantity:  ccxt.Float64P(order.Amount),
+			Price:     req.Price,
+			Status:    orderStatus,
+			Timestamp: timestamp,
+		},
+	}, nil
+}
+
 func (s *TradingService) GetBalance(ctx context.Context, req *cegwv1.GetBalanceRequest) (*cegwv1.GetBalanceResponse, error) {
 	log := s.log.WithContext(ctx).
 		WithField("operation", "GetBalance").
