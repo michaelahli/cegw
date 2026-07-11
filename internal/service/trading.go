@@ -130,44 +130,82 @@ func (s *TradingService) CreateMarketOrder(ctx context.Context, req *cegwv1.Crea
 		return nil, status.Error(codes.InvalidArgument, "invalid order side")
 	}
 
-	orderStatus := cegwv1.OrderStatus_ORDER_STATUS_UNSPECIFIED
-	if order.Status != nil {
-		switch *order.Status {
-		case "new":
-			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_NEW
-		case "filled":
-			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_FILLED
-		case "partially_filled":
-			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_PARTIALLY_FILLED
-		case "canceled":
-			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_CANCELED
-		case "rejected":
-			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_REJECTED
-		}
-	}
-
-	var timestamp *timestamppb.Timestamp
-	if order.Timestamp != nil {
-		timestamp = timestamppb.New(time.UnixMilli(ccxt.Int64P(order.Timestamp)))
-	} else {
-		timestamp = timestamppb.Now()
-	}
-
 	log.WithField("order_id", order.Id).
-		WithField("order_status", orderStatus.String()).
+		WithField("order_status", mapOrderStatus(order.Status).String()).
 		Infof("market order created successfully")
 
 	return &cegwv1.CreateMarketOrderResponse{
-		Order: &cegwv1.Order{
-			OrderId:   ccxt.StringP(order.Id),
-			Symbol:    req.Symbol,
-			Side:      req.Side,
-			Quantity:  ccxt.Float64P(order.Amount),
-			Price:     ccxt.Float64P(order.Price),
-			Status:    orderStatus,
-			Timestamp: timestamp,
-		},
+		Order: buildOrder(order, ccxt.Float64P(order.Price)),
 	}, nil
+}
+
+// mapOrderStatus converts a CCXT order status string to proto OrderStatus enum.
+// CCXT uses many statuses: open, closed, canceled, filled, new, partially_filled,
+// rejected, expired, etc. We map them to a simplified proto enum.
+func mapOrderStatus(status *string) cegwv1.OrderStatus {
+	if status == nil {
+		return cegwv1.OrderStatus_ORDER_STATUS_UNSPECIFIED
+	}
+	switch *status {
+	case "open":
+		return cegwv1.OrderStatus_ORDER_STATUS_NEW
+	case "new":
+		return cegwv1.OrderStatus_ORDER_STATUS_NEW
+	case "filled":
+		return cegwv1.OrderStatus_ORDER_STATUS_FILLED
+	case "partially_filled":
+		return cegwv1.OrderStatus_ORDER_STATUS_PARTIALLY_FILLED
+	case "canceled":
+		return cegwv1.OrderStatus_ORDER_STATUS_CANCELED
+	case "rejected":
+		return cegwv1.OrderStatus_ORDER_STATUS_REJECTED
+	case "closed":
+		return cegwv1.OrderStatus_ORDER_STATUS_FILLED
+	case "expired":
+		return cegwv1.OrderStatus_ORDER_STATUS_REJECTED
+	default:
+		return cegwv1.OrderStatus_ORDER_STATUS_NEW
+	}
+}
+
+// mapOrderSide converts a CCXT side string to proto OrderSide enum.
+func mapOrderSide(side *string) cegwv1.OrderSide {
+	if side == nil {
+		return cegwv1.OrderSide_ORDER_SIDE_UNSPECIFIED
+	}
+	switch *side {
+	case "buy":
+		return cegwv1.OrderSide_ORDER_SIDE_BUY
+	case "sell":
+		return cegwv1.OrderSide_ORDER_SIDE_SELL
+	default:
+		return cegwv1.OrderSide_ORDER_SIDE_UNSPECIFIED
+	}
+}
+
+// orderTimestamp converts a CCXT millisecond timestamp to protobuf Timestamp.
+func orderTimestamp(ts *int64) *timestamppb.Timestamp {
+	if ts != nil {
+		return timestamppb.New(time.UnixMilli(*ts))
+	}
+	return timestamppb.Now()
+}
+
+// buildOrder converts a CCXT Order to the proto Order message.
+func buildOrder(order ccxtlib.Order, overridePrice float64) *cegwv1.Order {
+	price := ccxt.Float64P(order.Price)
+	if overridePrice != 0 {
+		price = overridePrice
+	}
+	return &cegwv1.Order{
+		OrderId:   ccxt.StringP(order.Id),
+		Symbol:    ccxt.StringP(order.Symbol),
+		Side:      mapOrderSide(order.Side),
+		Quantity:  ccxt.Float64P(order.Amount),
+		Price:     price,
+		Status:    mapOrderStatus(order.Status),
+		Timestamp: orderTimestamp(order.Timestamp),
+	}
 }
 
 // timeInForceToString converts the TimeInForce enum to CCXT string format.
@@ -273,43 +311,12 @@ func (s *TradingService) CreateLimitOrder(ctx context.Context, req *cegwv1.Creat
 		return nil, ccxt.MapError(err)
 	}
 
-	orderStatus := cegwv1.OrderStatus_ORDER_STATUS_UNSPECIFIED
-	if order.Status != nil {
-		switch *order.Status {
-		case "new":
-			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_NEW
-		case "filled":
-			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_FILLED
-		case "partially_filled":
-			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_PARTIALLY_FILLED
-		case "canceled":
-			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_CANCELED
-		case "rejected":
-			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_REJECTED
-		}
-	}
-
-	var timestamp *timestamppb.Timestamp
-	if order.Timestamp != nil {
-		timestamp = timestamppb.New(time.UnixMilli(ccxt.Int64P(order.Timestamp)))
-	} else {
-		timestamp = timestamppb.Now()
-	}
-
 	log.WithField("order_id", order.Id).
-		WithField("order_status", orderStatus.String()).
+		WithField("order_status", mapOrderStatus(order.Status).String()).
 		Infof("limit order created successfully")
 
 	return &cegwv1.CreateLimitOrderResponse{
-		Order: &cegwv1.Order{
-			OrderId:   ccxt.StringP(order.Id),
-			Symbol:    req.Symbol,
-			Side:      req.Side,
-			Quantity:  ccxt.Float64P(order.Amount),
-			Price:     req.Price,
-			Status:    orderStatus,
-			Timestamp: timestamp,
-		},
+		Order: buildOrder(order, req.Price),
 	}, nil
 }
 
@@ -450,53 +457,12 @@ func (s *TradingService) GetOrder(ctx context.Context, req *cegwv1.GetOrderReque
 		return nil, ccxt.MapError(err)
 	}
 
-	orderStatus := cegwv1.OrderStatus_ORDER_STATUS_UNSPECIFIED
-	if order.Status != nil {
-		switch *order.Status {
-		case "new":
-			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_NEW
-		case "filled":
-			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_FILLED
-		case "partially_filled":
-			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_PARTIALLY_FILLED
-		case "canceled":
-			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_CANCELED
-		case "rejected":
-			orderStatus = cegwv1.OrderStatus_ORDER_STATUS_REJECTED
-		}
-	}
-
-	var timestamp *timestamppb.Timestamp
-	if order.Timestamp != nil {
-		timestamp = timestamppb.New(time.UnixMilli(ccxt.Int64P(order.Timestamp)))
-	} else {
-		timestamp = timestamppb.Now()
-	}
-
-	orderSide := cegwv1.OrderSide_ORDER_SIDE_UNSPECIFIED
-	if order.Side != nil {
-		switch *order.Side {
-		case "buy":
-			orderSide = cegwv1.OrderSide_ORDER_SIDE_BUY
-		case "sell":
-			orderSide = cegwv1.OrderSide_ORDER_SIDE_SELL
-		}
-	}
-
 	log.WithField("order_id", order.Id).
-		WithField("order_status", orderStatus.String()).
+		WithField("order_status", mapOrderStatus(order.Status).String()).
 		Infof("order fetched successfully")
 
 	return &cegwv1.GetOrderResponse{
-		Order: &cegwv1.Order{
-			OrderId:   ccxt.StringP(order.Id),
-			Symbol:    ccxt.StringP(order.Symbol),
-			Side:      orderSide,
-			Quantity:  ccxt.Float64P(order.Amount),
-			Price:     ccxt.Float64P(order.Price),
-			Status:    orderStatus,
-			Timestamp: timestamp,
-		},
+		Order: buildOrder(order, 0),
 	}, nil
 }
 
@@ -683,48 +649,7 @@ func (s *TradingService) ListOpenOrders(ctx context.Context, req *cegwv1.ListOpe
 
 	var result []*cegwv1.Order
 	for _, order := range orders {
-		orderStatus := cegwv1.OrderStatus_ORDER_STATUS_UNSPECIFIED
-		if order.Status != nil {
-			switch *order.Status {
-			case "new":
-				orderStatus = cegwv1.OrderStatus_ORDER_STATUS_NEW
-			case "filled":
-				orderStatus = cegwv1.OrderStatus_ORDER_STATUS_FILLED
-			case "partially_filled":
-				orderStatus = cegwv1.OrderStatus_ORDER_STATUS_PARTIALLY_FILLED
-			case "canceled":
-				orderStatus = cegwv1.OrderStatus_ORDER_STATUS_CANCELED
-			case "rejected":
-				orderStatus = cegwv1.OrderStatus_ORDER_STATUS_REJECTED
-			}
-		}
-
-		orderSide := cegwv1.OrderSide_ORDER_SIDE_UNSPECIFIED
-		if order.Side != nil {
-			switch *order.Side {
-			case "buy":
-				orderSide = cegwv1.OrderSide_ORDER_SIDE_BUY
-			case "sell":
-				orderSide = cegwv1.OrderSide_ORDER_SIDE_SELL
-			}
-		}
-
-		var timestamp *timestamppb.Timestamp
-		if order.Timestamp != nil {
-			timestamp = timestamppb.New(time.UnixMilli(ccxt.Int64P(order.Timestamp)))
-		} else {
-			timestamp = timestamppb.Now()
-		}
-
-		result = append(result, &cegwv1.Order{
-			OrderId:   ccxt.StringP(order.Id),
-			Symbol:    ccxt.StringP(order.Symbol),
-			Side:      orderSide,
-			Quantity:  ccxt.Float64P(order.Amount),
-			Price:     ccxt.Float64P(order.Price),
-			Status:    orderStatus,
-			Timestamp: timestamp,
-		})
+		result = append(result, buildOrder(order, 0))
 	}
 
 	log.WithField("order_count", len(result)).Infof("open orders fetched successfully")
@@ -787,48 +712,7 @@ func (s *TradingService) ListClosedOrders(ctx context.Context, req *cegwv1.ListC
 
 	var result []*cegwv1.Order
 	for _, order := range orders {
-		orderStatus := cegwv1.OrderStatus_ORDER_STATUS_UNSPECIFIED
-		if order.Status != nil {
-			switch *order.Status {
-			case "new":
-				orderStatus = cegwv1.OrderStatus_ORDER_STATUS_NEW
-			case "filled":
-				orderStatus = cegwv1.OrderStatus_ORDER_STATUS_FILLED
-			case "partially_filled":
-				orderStatus = cegwv1.OrderStatus_ORDER_STATUS_PARTIALLY_FILLED
-			case "canceled":
-				orderStatus = cegwv1.OrderStatus_ORDER_STATUS_CANCELED
-			case "rejected":
-				orderStatus = cegwv1.OrderStatus_ORDER_STATUS_REJECTED
-			}
-		}
-
-		orderSide := cegwv1.OrderSide_ORDER_SIDE_UNSPECIFIED
-		if order.Side != nil {
-			switch *order.Side {
-			case "buy":
-				orderSide = cegwv1.OrderSide_ORDER_SIDE_BUY
-			case "sell":
-				orderSide = cegwv1.OrderSide_ORDER_SIDE_SELL
-			}
-		}
-
-		var timestamp *timestamppb.Timestamp
-		if order.Timestamp != nil {
-			timestamp = timestamppb.New(time.UnixMilli(ccxt.Int64P(order.Timestamp)))
-		} else {
-			timestamp = timestamppb.Now()
-		}
-
-		result = append(result, &cegwv1.Order{
-			OrderId:   ccxt.StringP(order.Id),
-			Symbol:    ccxt.StringP(order.Symbol),
-			Side:      orderSide,
-			Quantity:  ccxt.Float64P(order.Amount),
-			Price:     ccxt.Float64P(order.Price),
-			Status:    orderStatus,
-			Timestamp: timestamp,
-		})
+		result = append(result, buildOrder(order, 0))
 	}
 
 	log.WithField("order_count", len(result)).Infof("closed orders fetched successfully")
