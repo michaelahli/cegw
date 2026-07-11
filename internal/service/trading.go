@@ -617,12 +617,16 @@ func (s *TradingService) CancelAllOrders(ctx context.Context, req *cegwv1.Cancel
 	}
 
 	count := len(cancelledOrders)
+	if count > 2147483647 {
+		count = 2147483647
+	}
+	cancelledCount := int32(count)
 	log.WithField("cancelled_count", count).Infof("all orders cancelled successfully")
 
 	return &cegwv1.CancelAllOrdersResponse{
 		Success:        true,
 		Message:        fmt.Sprintf("cancelled %d orders", count),
-		CancelledCount: int32(count),
+		CancelledCount: cancelledCount,
 	}, nil
 }
 
