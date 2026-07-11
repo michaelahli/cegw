@@ -1250,28 +1250,48 @@
         return data;
       }
 
-      function renderOrderList(orders) {
-        if (!orders || orders.length === 0) {
-          return "<p style='color:#848e9c;margin:0;'>No orders found.</p>";
+      function parseSide(v) {
+        if (typeof v === "string") {
+          if (v.endsWith("BUY")) return "Buy";
+          if (v.endsWith("SELL")) return "Sell";
         }
-        let html =
-          '<table style="width:100%;font-size:11px;border-collapse:collapse;"><thead><tr style="color:#848e9c;text-align:left;"><th>Order ID</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Price</th><th>Status</th></tr></thead><tbody>';
-        const statusLabels = {
+        const labels = { 1: "Buy", 2: "Sell" };
+        return labels[v] || v || "-";
+      }
+
+      function parseStatus(v) {
+        if (typeof v === "string") {
+          if (v.endsWith("NEW")) return "New";
+          if (v.endsWith("FILLED")) return "Filled";
+          if (v.endsWith("PARTIALLY_FILLED")) return "Partial";
+          if (v.endsWith("CANCELED")) return "Canceled";
+          if (v.endsWith("REJECTED")) return "Rejected";
+        }
+        const labels = {
           1: "New",
           2: "Filled",
           3: "Partial",
           4: "Canceled",
           5: "Rejected",
         };
-        const sideLabels = { 1: "Buy", 2: "Sell" };
+        return labels[v] || v || "-";
+      }
+
+      function renderOrderList(orders) {
+        if (!orders || orders.length === 0) {
+          return "<p style='color:#848e9c;margin:0;'>No orders found.</p>";
+        }
+        let html =
+          '<table style="width:100%;font-size:11px;border-collapse:collapse;"><thead><tr style="color:#848e9c;text-align:left;"><th>Order ID</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Price</th><th>Status</th></tr></thead><tbody>';
         for (const o of orders) {
+          const id = (o.order_id || o.orderId || "-");
           html += `<tr style="border-bottom:1px solid #2b3139;">
-            <td style="padding:4px 6px;">${(o.order_id || "-").slice(0, 14)}</td>
+            <td style="padding:4px 6px;">${id.slice(0, 14)}</td>
             <td>${o.symbol || "-"}</td>
-            <td>${sideLabels[o.side] || "-"}</td>
-            <td>${o.quantity || "-"}</td>
+            <td>${parseSide(o.side)}</td>
+            <td>${o.quantity ?? "-"}</td>
             <td>${o.price != null ? o.price : "-"}</td>
-            <td>${statusLabels[o.status] || "-"}</td>
+            <td>${parseStatus(o.status)}</td>
           </tr>`;
         }
         html += "</tbody></table>";
