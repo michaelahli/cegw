@@ -504,6 +504,118 @@ func (x *GetBalanceResponse) GetBalances() []*Balance {
 	return nil
 }
 
+type GetOrderRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Exchange      Exchange               `protobuf:"varint,1,opt,name=exchange,proto3,enum=cegw.v1.Exchange" json:"exchange,omitempty"`
+	OrderId       string                 `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	Symbol        string                 `protobuf:"bytes,3,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	Credentials   *Credentials           `protobuf:"bytes,4,opt,name=credentials,proto3" json:"credentials,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetOrderRequest) Reset() {
+	*x = GetOrderRequest{}
+	mi := &file_cegw_v1_trading_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetOrderRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetOrderRequest) ProtoMessage() {}
+
+func (x *GetOrderRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cegw_v1_trading_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetOrderRequest.ProtoReflect.Descriptor instead.
+func (*GetOrderRequest) Descriptor() ([]byte, []int) {
+	return file_cegw_v1_trading_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GetOrderRequest) GetExchange() Exchange {
+	if x != nil {
+		return x.Exchange
+	}
+	return Exchange_EXCHANGE_UNSPECIFIED
+}
+
+func (x *GetOrderRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+func (x *GetOrderRequest) GetSymbol() string {
+	if x != nil {
+		return x.Symbol
+	}
+	return ""
+}
+
+func (x *GetOrderRequest) GetCredentials() *Credentials {
+	if x != nil {
+		return x.Credentials
+	}
+	return nil
+}
+
+type GetOrderResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Order         *Order                 `protobuf:"bytes,1,opt,name=order,proto3" json:"order,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetOrderResponse) Reset() {
+	*x = GetOrderResponse{}
+	mi := &file_cegw_v1_trading_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetOrderResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetOrderResponse) ProtoMessage() {}
+
+func (x *GetOrderResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cegw_v1_trading_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetOrderResponse.ProtoReflect.Descriptor instead.
+func (*GetOrderResponse) Descriptor() ([]byte, []int) {
+	return file_cegw_v1_trading_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *GetOrderResponse) GetOrder() *Order {
+	if x != nil {
+		return x.Order
+	}
+	return nil
+}
+
 var File_cegw_v1_trading_proto protoreflect.FileDescriptor
 
 const file_cegw_v1_trading_proto_rawDesc = "" +
@@ -540,7 +652,14 @@ const file_cegw_v1_trading_proto_rawDesc = "" +
 	"\x04used\x18\x03 \x01(\x01R\x04used\x12\x14\n" +
 	"\x05total\x18\x04 \x01(\x01R\x05total\"B\n" +
 	"\x12GetBalanceResponse\x12,\n" +
-	"\bbalances\x18\x01 \x03(\v2\x10.cegw.v1.BalanceR\bbalances2\xdb\x04\n" +
+	"\bbalances\x18\x01 \x03(\v2\x10.cegw.v1.BalanceR\bbalances\"\xab\x01\n" +
+	"\x0fGetOrderRequest\x12-\n" +
+	"\bexchange\x18\x01 \x01(\x0e2\x11.cegw.v1.ExchangeR\bexchange\x12\x19\n" +
+	"\border_id\x18\x02 \x01(\tR\aorderId\x12\x16\n" +
+	"\x06symbol\x18\x03 \x01(\tR\x06symbol\x126\n" +
+	"\vcredentials\x18\x04 \x01(\v2\x14.cegw.v1.CredentialsR\vcredentials\"8\n" +
+	"\x10GetOrderResponse\x12$\n" +
+	"\x05order\x18\x01 \x01(\v2\x0e.cegw.v1.OrderR\x05order2\x95\x06\n" +
 	"\x0eTradingService\x12\xd6\x01\n" +
 	"\x11CreateMarketOrder\x12!.cegw.v1.CreateMarketOrderRequest\x1a\".cegw.v1.CreateMarketOrderResponse\"z\x92A[\n" +
 	"\aTrading\x12\x13Create Market Order\x1a;Place a market buy or sell order on the specified exchange.\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/v1/trading/order\x12\xc6\x01\n" +
@@ -548,7 +667,9 @@ const file_cegw_v1_trading_proto_rawDesc = "" +
 	"\aTrading\x12\x10Test Credentials\x1a)Validate API credentials for an exchange.\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/v1/trading/credentials/test\x12\xa6\x01\n" +
 	"\n" +
 	"GetBalance\x12\x1a.cegw.v1.GetBalanceRequest\x1a\x1b.cegw.v1.GetBalanceResponse\"_\x92A>\n" +
-	"\aTrading\x12\vGet Balance\x1a&Fetch account balance for an exchange.\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/trading/balanceB0Z.github.com/michaelahli/cegw/gen/cegw/v1;cegwv1b\x06proto3"
+	"\aTrading\x12\vGet Balance\x1a&Fetch account balance for an exchange.\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/trading/balance\x12\xb7\x01\n" +
+	"\bGetOrder\x12\x18.cegw.v1.GetOrderRequest\x1a\x19.cegw.v1.GetOrderResponse\"v\x92AD\n" +
+	"\aTrading\x12\tGet Order\x1a.Fetch a specific order by ID from an exchange.\x82\xd3\xe4\x93\x02)\x12'/v1/trading/order/{exchange}/{order_id}B0Z.github.com/michaelahli/cegw/gen/cegw/v1;cegwv1b\x06proto3"
 
 var (
 	file_cegw_v1_trading_proto_rawDescOnce sync.Once
@@ -562,7 +683,7 @@ func file_cegw_v1_trading_proto_rawDescGZIP() []byte {
 	return file_cegw_v1_trading_proto_rawDescData
 }
 
-var file_cegw_v1_trading_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_cegw_v1_trading_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_cegw_v1_trading_proto_goTypes = []any{
 	(*CreateMarketOrderRequest)(nil),  // 0: cegw.v1.CreateMarketOrderRequest
 	(*Order)(nil),                     // 1: cegw.v1.Order
@@ -572,36 +693,43 @@ var file_cegw_v1_trading_proto_goTypes = []any{
 	(*GetBalanceRequest)(nil),         // 5: cegw.v1.GetBalanceRequest
 	(*Balance)(nil),                   // 6: cegw.v1.Balance
 	(*GetBalanceResponse)(nil),        // 7: cegw.v1.GetBalanceResponse
-	(Exchange)(0),                     // 8: cegw.v1.Exchange
-	(OrderSide)(0),                    // 9: cegw.v1.OrderSide
-	(*Credentials)(nil),               // 10: cegw.v1.Credentials
-	(OrderStatus)(0),                  // 11: cegw.v1.OrderStatus
-	(*timestamppb.Timestamp)(nil),     // 12: google.protobuf.Timestamp
+	(*GetOrderRequest)(nil),           // 8: cegw.v1.GetOrderRequest
+	(*GetOrderResponse)(nil),          // 9: cegw.v1.GetOrderResponse
+	(Exchange)(0),                     // 10: cegw.v1.Exchange
+	(OrderSide)(0),                    // 11: cegw.v1.OrderSide
+	(*Credentials)(nil),               // 12: cegw.v1.Credentials
+	(OrderStatus)(0),                  // 13: cegw.v1.OrderStatus
+	(*timestamppb.Timestamp)(nil),     // 14: google.protobuf.Timestamp
 }
 var file_cegw_v1_trading_proto_depIdxs = []int32{
-	8,  // 0: cegw.v1.CreateMarketOrderRequest.exchange:type_name -> cegw.v1.Exchange
-	9,  // 1: cegw.v1.CreateMarketOrderRequest.side:type_name -> cegw.v1.OrderSide
-	10, // 2: cegw.v1.CreateMarketOrderRequest.credentials:type_name -> cegw.v1.Credentials
-	9,  // 3: cegw.v1.Order.side:type_name -> cegw.v1.OrderSide
-	11, // 4: cegw.v1.Order.status:type_name -> cegw.v1.OrderStatus
-	12, // 5: cegw.v1.Order.timestamp:type_name -> google.protobuf.Timestamp
+	10, // 0: cegw.v1.CreateMarketOrderRequest.exchange:type_name -> cegw.v1.Exchange
+	11, // 1: cegw.v1.CreateMarketOrderRequest.side:type_name -> cegw.v1.OrderSide
+	12, // 2: cegw.v1.CreateMarketOrderRequest.credentials:type_name -> cegw.v1.Credentials
+	11, // 3: cegw.v1.Order.side:type_name -> cegw.v1.OrderSide
+	13, // 4: cegw.v1.Order.status:type_name -> cegw.v1.OrderStatus
+	14, // 5: cegw.v1.Order.timestamp:type_name -> google.protobuf.Timestamp
 	1,  // 6: cegw.v1.CreateMarketOrderResponse.order:type_name -> cegw.v1.Order
-	8,  // 7: cegw.v1.TestCredentialsRequest.exchange:type_name -> cegw.v1.Exchange
-	10, // 8: cegw.v1.TestCredentialsRequest.credentials:type_name -> cegw.v1.Credentials
-	8,  // 9: cegw.v1.GetBalanceRequest.exchange:type_name -> cegw.v1.Exchange
-	10, // 10: cegw.v1.GetBalanceRequest.credentials:type_name -> cegw.v1.Credentials
+	10, // 7: cegw.v1.TestCredentialsRequest.exchange:type_name -> cegw.v1.Exchange
+	12, // 8: cegw.v1.TestCredentialsRequest.credentials:type_name -> cegw.v1.Credentials
+	10, // 9: cegw.v1.GetBalanceRequest.exchange:type_name -> cegw.v1.Exchange
+	12, // 10: cegw.v1.GetBalanceRequest.credentials:type_name -> cegw.v1.Credentials
 	6,  // 11: cegw.v1.GetBalanceResponse.balances:type_name -> cegw.v1.Balance
-	0,  // 12: cegw.v1.TradingService.CreateMarketOrder:input_type -> cegw.v1.CreateMarketOrderRequest
-	3,  // 13: cegw.v1.TradingService.TestCredentials:input_type -> cegw.v1.TestCredentialsRequest
-	5,  // 14: cegw.v1.TradingService.GetBalance:input_type -> cegw.v1.GetBalanceRequest
-	2,  // 15: cegw.v1.TradingService.CreateMarketOrder:output_type -> cegw.v1.CreateMarketOrderResponse
-	4,  // 16: cegw.v1.TradingService.TestCredentials:output_type -> cegw.v1.TestCredentialsResponse
-	7,  // 17: cegw.v1.TradingService.GetBalance:output_type -> cegw.v1.GetBalanceResponse
-	15, // [15:18] is the sub-list for method output_type
-	12, // [12:15] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	10, // 12: cegw.v1.GetOrderRequest.exchange:type_name -> cegw.v1.Exchange
+	12, // 13: cegw.v1.GetOrderRequest.credentials:type_name -> cegw.v1.Credentials
+	1,  // 14: cegw.v1.GetOrderResponse.order:type_name -> cegw.v1.Order
+	0,  // 15: cegw.v1.TradingService.CreateMarketOrder:input_type -> cegw.v1.CreateMarketOrderRequest
+	3,  // 16: cegw.v1.TradingService.TestCredentials:input_type -> cegw.v1.TestCredentialsRequest
+	5,  // 17: cegw.v1.TradingService.GetBalance:input_type -> cegw.v1.GetBalanceRequest
+	8,  // 18: cegw.v1.TradingService.GetOrder:input_type -> cegw.v1.GetOrderRequest
+	2,  // 19: cegw.v1.TradingService.CreateMarketOrder:output_type -> cegw.v1.CreateMarketOrderResponse
+	4,  // 20: cegw.v1.TradingService.TestCredentials:output_type -> cegw.v1.TestCredentialsResponse
+	7,  // 21: cegw.v1.TradingService.GetBalance:output_type -> cegw.v1.GetBalanceResponse
+	9,  // 22: cegw.v1.TradingService.GetOrder:output_type -> cegw.v1.GetOrderResponse
+	19, // [19:23] is the sub-list for method output_type
+	15, // [15:19] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_cegw_v1_trading_proto_init() }
@@ -616,7 +744,7 @@ func file_cegw_v1_trading_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cegw_v1_trading_proto_rawDesc), len(file_cegw_v1_trading_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

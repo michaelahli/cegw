@@ -45,6 +45,17 @@ service TradingService {
       tags: "Trading"
     };
   }
+
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse) {
+    option (google.api.http) = {
+      get: "/v1/trading/order/{exchange}/{order_id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get Order"
+      description: "Fetch a specific order by ID from an exchange."
+      tags: "Trading"
+    };
+  }
 }
 
 message CreateMarketOrderRequest {
@@ -93,4 +104,15 @@ message Balance {
 
 message GetBalanceResponse {
   repeated Balance balances = 1;
+}
+
+message GetOrderRequest {
+  Exchange exchange = 1;
+  string order_id = 2;
+  string symbol = 3;
+  Credentials credentials = 4;
+}
+
+message GetOrderResponse {
+  Order order = 1;
 }

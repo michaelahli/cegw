@@ -22,6 +22,7 @@ const (
 	TradingService_CreateMarketOrder_FullMethodName = "/cegw.v1.TradingService/CreateMarketOrder"
 	TradingService_TestCredentials_FullMethodName   = "/cegw.v1.TradingService/TestCredentials"
 	TradingService_GetBalance_FullMethodName        = "/cegw.v1.TradingService/GetBalance"
+	TradingService_GetOrder_FullMethodName          = "/cegw.v1.TradingService/GetOrder"
 )
 
 // TradingServiceClient is the client API for TradingService service.
@@ -31,6 +32,7 @@ type TradingServiceClient interface {
 	CreateMarketOrder(ctx context.Context, in *CreateMarketOrderRequest, opts ...grpc.CallOption) (*CreateMarketOrderResponse, error)
 	TestCredentials(ctx context.Context, in *TestCredentialsRequest, opts ...grpc.CallOption) (*TestCredentialsResponse, error)
 	GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*GetBalanceResponse, error)
+	GetOrder(ctx context.Context, in *GetOrderRequest, opts ...grpc.CallOption) (*GetOrderResponse, error)
 }
 
 type tradingServiceClient struct {
@@ -71,6 +73,16 @@ func (c *tradingServiceClient) GetBalance(ctx context.Context, in *GetBalanceReq
 	return out, nil
 }
 
+func (c *tradingServiceClient) GetOrder(ctx context.Context, in *GetOrderRequest, opts ...grpc.CallOption) (*GetOrderResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetOrderResponse)
+	err := c.cc.Invoke(ctx, TradingService_GetOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TradingServiceServer is the server API for TradingService service.
 // All implementations must embed UnimplementedTradingServiceServer
 // for forward compatibility.
@@ -78,6 +90,7 @@ type TradingServiceServer interface {
 	CreateMarketOrder(context.Context, *CreateMarketOrderRequest) (*CreateMarketOrderResponse, error)
 	TestCredentials(context.Context, *TestCredentialsRequest) (*TestCredentialsResponse, error)
 	GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error)
+	GetOrder(context.Context, *GetOrderRequest) (*GetOrderResponse, error)
 	mustEmbedUnimplementedTradingServiceServer()
 }
 
@@ -96,6 +109,9 @@ func (UnimplementedTradingServiceServer) TestCredentials(context.Context, *TestC
 }
 func (UnimplementedTradingServiceServer) GetBalance(context.Context, *GetBalanceRequest) (*GetBalanceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetBalance not implemented")
+}
+func (UnimplementedTradingServiceServer) GetOrder(context.Context, *GetOrderRequest) (*GetOrderResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetOrder not implemented")
 }
 func (UnimplementedTradingServiceServer) mustEmbedUnimplementedTradingServiceServer() {}
 func (UnimplementedTradingServiceServer) testEmbeddedByValue()                        {}
@@ -172,6 +188,24 @@ func _TradingService_GetBalance_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingService_GetOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingServiceServer).GetOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TradingService_GetOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingServiceServer).GetOrder(ctx, req.(*GetOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TradingService_ServiceDesc is the grpc.ServiceDesc for TradingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -190,6 +224,10 @@ var TradingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetBalance",
 			Handler:    _TradingService_GetBalance_Handler,
+		},
+		{
+			MethodName: "GetOrder",
+			Handler:    _TradingService_GetOrder_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
