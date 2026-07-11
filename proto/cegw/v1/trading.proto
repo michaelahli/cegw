@@ -56,6 +56,18 @@ service TradingService {
       tags: "Trading"
     };
   }
+
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse) {
+    option (google.api.http) = {
+      post: "/v1/trading/order/cancel"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Cancel Order"
+      description: "Cancel an open order on the specified exchange."
+      tags: "Trading"
+    };
+  }
 }
 
 message CreateMarketOrderRequest {
@@ -115,4 +127,16 @@ message GetOrderRequest {
 
 message GetOrderResponse {
   Order order = 1;
+}
+
+message CancelOrderRequest {
+  Exchange exchange = 1;
+  string order_id = 2;
+  string symbol = 3;
+  Credentials credentials = 4;
+}
+
+message CancelOrderResponse {
+  bool success = 1;
+  string message = 2;
 }

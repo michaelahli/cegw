@@ -10,6 +10,7 @@ type Exchange interface {
 	LoadMarkets(params ...any) (map[string]ccxt.MarketInterface, error)
 	CreateMarketOrder(symbol string, side string, amount float64, opts ...ccxt.CreateMarketOrderOptions) (ccxt.Order, error)
 	FetchOrder(id string, opts ...ccxt.FetchOrderOptions) (ccxt.Order, error)
+	CancelOrder(id string, opts ...ccxt.CancelOrderOptions) (ccxt.Order, error)
 	FetchBalance(params ...any) (ccxt.Balances, error)
 }
 

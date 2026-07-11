@@ -356,6 +356,71 @@ func (s *TradingService) GetOrder(ctx context.Context, req *cegwv1.GetOrderReque
 	}, nil
 }
 
+func (s *TradingService) CancelOrder(ctx context.Context, req *cegwv1.CancelOrderRequest) (*cegwv1.CancelOrderResponse, error) {
+	log := s.log.WithContext(ctx).
+		WithField("operation", "CancelOrder").
+		WithField("exchange", req.Exchange.String()).
+		WithField("order_id", req.OrderId).
+		WithField("symbol", req.Symbol)
+
+	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
+		log.Warnf("invalid request: exchange unspecified")
+		return nil, status.Error(codes.InvalidArgument, "exchange is required")
+	}
+
+	if req.OrderId == "" {
+		log.Warnf("invalid request: order_id empty")
+		return nil, status.Error(codes.InvalidArgument, "order_id is required")
+	}
+
+	if req.Symbol == "" {
+		log.Warnf("invalid request: symbol empty")
+		return nil, status.Error(codes.InvalidArgument, "symbol is required")
+	}
+
+	if req.Credentials == nil {
+		log.Warnf("invalid request: credentials missing")
+		return nil, status.Error(codes.InvalidArgument, "credentials are required")
+	}
+
+	if req.Credentials.ApiKey == "" {
+		log.Warnf("invalid request: api_key missing")
+		return nil, status.Error(codes.InvalidArgument, "api_key is required")
+	}
+
+	if req.Credentials.ApiSecret == "" {
+		log.Warnf("invalid request: api_secret missing")
+		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
+	}
+
+	log.Debugf("cancelling order")
+
+	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, req.Credentials)
+	if err != nil {
+		log.WithError(err).Errorf("failed to create CCXT client")
+		return nil, err
+	}
+
+	exchange := ccxt.AsExchange(client)
+	if exchange == nil {
+		log.Warnf("exchange not supported")
+		return nil, status.Error(codes.Unimplemented, "exchange not supported")
+	}
+
+	_, err = exchange.CancelOrder(req.OrderId, ccxtlib.WithCancelOrderSymbol(req.Symbol))
+	if err != nil {
+		log.WithError(err).Errorf("failed to cancel order")
+		return nil, ccxt.MapError(err)
+	}
+
+	log.Infof("order cancelled successfully")
+
+	return &cegwv1.CancelOrderResponse{
+		Success: true,
+		Message: "order cancelled successfully",
+	}, nil
+}
+
 func (s *TradingService) TestCredentials(ctx context.Context, req *cegwv1.TestCredentialsRequest) (*cegwv1.TestCredentialsResponse, error) {
 	log := s.log.WithContext(ctx).
 		WithField("operation", "TestCredentials").
