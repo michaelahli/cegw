@@ -451,6 +451,40 @@
         ]
       }
     },
+    "/v1/trading/order/get": {
+      "post": {
+        "summary": "Get Order",
+        "description": "Fetch a specific order by ID from an exchange.",
+        "operationId": "TradingService_GetOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1GetOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Trading"
+        ]
+      }
+    },
     "/v1/trading/order/limit": {
       "post": {
         "summary": "Create Limit Order",
@@ -478,83 +512,6 @@
             "schema": {
               "$ref": "#/definitions/v1CreateLimitOrderRequest"
             }
-          }
-        ],
-        "tags": [
-          "Trading"
-        ]
-      }
-    },
-    "/v1/trading/order/{exchange}/{orderId}": {
-      "get": {
-        "summary": "Get Order",
-        "description": "Fetch a specific order by ID from an exchange.",
-        "operationId": "TradingService_GetOrder",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1GetOrderResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "exchange",
-            "in": "path",
-            "required": true,
-            "type": "string",
-            "enum": [
-              "EXCHANGE_UNSPECIFIED",
-              "EXCHANGE_TOKOCRYPTO",
-              "EXCHANGE_BINANCE",
-              "EXCHANGE_COINBASE",
-              "EXCHANGE_CEXIO",
-              "EXCHANGE_INDODAX",
-              "EXCHANGE_OKX",
-              "EXCHANGE_KUCOIN",
-              "EXCHANGE_CRYPTOCOM",
-              "EXCHANGE_BYBIT",
-              "EXCHANGE_BITGET",
-              "EXCHANGE_COINEX",
-              "EXCHANGE_HASHKEY"
-            ]
-          },
-          {
-            "name": "orderId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "symbol",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "credentials.apiKey",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "credentials.apiSecret",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "credentials.sandbox",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
           }
         ],
         "tags": [
@@ -596,8 +553,8 @@
         ]
       }
     },
-    "/v1/trading/orders/closed/{exchange}": {
-      "get": {
+    "/v1/trading/orders/closed": {
+      "post": {
         "summary": "List Closed Orders",
         "description": "Fetch closed orders for a symbol or all symbols from an exchange.",
         "operationId": "TradingService_ListClosedOrders",
@@ -617,49 +574,12 @@
         },
         "parameters": [
           {
-            "name": "exchange",
-            "in": "path",
+            "name": "body",
+            "in": "body",
             "required": true,
-            "type": "string",
-            "enum": [
-              "EXCHANGE_UNSPECIFIED",
-              "EXCHANGE_TOKOCRYPTO",
-              "EXCHANGE_BINANCE",
-              "EXCHANGE_COINBASE",
-              "EXCHANGE_CEXIO",
-              "EXCHANGE_INDODAX",
-              "EXCHANGE_OKX",
-              "EXCHANGE_KUCOIN",
-              "EXCHANGE_CRYPTOCOM",
-              "EXCHANGE_BYBIT",
-              "EXCHANGE_BITGET",
-              "EXCHANGE_COINEX",
-              "EXCHANGE_HASHKEY"
-            ]
-          },
-          {
-            "name": "symbol",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "credentials.apiKey",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "credentials.apiSecret",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "credentials.sandbox",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
+            "schema": {
+              "$ref": "#/definitions/v1ListClosedOrdersRequest"
+            }
           }
         ],
         "tags": [
@@ -667,8 +587,8 @@
         ]
       }
     },
-    "/v1/trading/orders/open/{exchange}": {
-      "get": {
+    "/v1/trading/orders/open": {
+      "post": {
         "summary": "List Open Orders",
         "description": "Fetch all open orders for a symbol or all symbols from an exchange.",
         "operationId": "TradingService_ListOpenOrders",
@@ -688,49 +608,12 @@
         },
         "parameters": [
           {
-            "name": "exchange",
-            "in": "path",
+            "name": "body",
+            "in": "body",
             "required": true,
-            "type": "string",
-            "enum": [
-              "EXCHANGE_UNSPECIFIED",
-              "EXCHANGE_TOKOCRYPTO",
-              "EXCHANGE_BINANCE",
-              "EXCHANGE_COINBASE",
-              "EXCHANGE_CEXIO",
-              "EXCHANGE_INDODAX",
-              "EXCHANGE_OKX",
-              "EXCHANGE_KUCOIN",
-              "EXCHANGE_CRYPTOCOM",
-              "EXCHANGE_BYBIT",
-              "EXCHANGE_BITGET",
-              "EXCHANGE_COINEX",
-              "EXCHANGE_HASHKEY"
-            ]
-          },
-          {
-            "name": "symbol",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "credentials.apiKey",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "credentials.apiSecret",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "credentials.sandbox",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
+            "schema": {
+              "$ref": "#/definitions/v1ListOpenOrdersRequest"
+            }
           }
         ],
         "tags": [
@@ -1424,11 +1307,42 @@
         }
       }
     },
+    "v1GetOrderRequest": {
+      "type": "object",
+      "properties": {
+        "exchange": {
+          "$ref": "#/definitions/v1Exchange"
+        },
+        "orderId": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "credentials": {
+          "$ref": "#/definitions/v1Credentials"
+        }
+      }
+    },
     "v1GetOrderResponse": {
       "type": "object",
       "properties": {
         "order": {
           "$ref": "#/definitions/v1Order"
+        }
+      }
+    },
+    "v1ListClosedOrdersRequest": {
+      "type": "object",
+      "properties": {
+        "exchange": {
+          "$ref": "#/definitions/v1Exchange"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "credentials": {
+          "$ref": "#/definitions/v1Credentials"
         }
       }
     },
@@ -1441,6 +1355,20 @@
             "type": "object",
             "$ref": "#/definitions/v1Order"
           }
+        }
+      }
+    },
+    "v1ListOpenOrdersRequest": {
+      "type": "object",
+      "properties": {
+        "exchange": {
+          "$ref": "#/definitions/v1Exchange"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "credentials": {
+          "$ref": "#/definitions/v1Credentials"
         }
       }
     },
