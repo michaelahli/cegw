@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>CEGW WebSocket - Price & Order Book</title>
+    <title>CEGW - Trading Dashboard</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -112,6 +112,165 @@
         grid-template-columns: 1fr 360px;
         gap: 16px;
         margin-top: 16px;
+      }
+
+      .trading-section {
+        margin-top: 16px;
+      }
+
+      .trading-section .panel {
+        margin-bottom: 0;
+      }
+
+      .section-title {
+        margin: 0 0 16px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #f0b90b;
+      }
+
+      .credential-bar {
+        display: flex;
+        gap: 8px;
+        align-items: end;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+        padding: 12px;
+        background: #0b0e11;
+        border-radius: 4px;
+      }
+
+      .credential-bar label {
+        flex: 1;
+        min-width: 160px;
+      }
+
+      .credential-bar input {
+        height: 32px;
+        border: 1px solid #2b3139;
+        border-radius: 4px;
+        background: #1e2329;
+        color: #eaecef;
+        font: inherit;
+        font-size: 12px;
+        padding: 0 8px;
+        width: 100%;
+      }
+
+      .trading-tabs {
+        display: flex;
+        gap: 2px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+
+      .trading-tab {
+        padding: 8px 14px;
+        background: #0b0e11;
+        border: 1px solid #2b3139;
+        border-radius: 4px 4px 0 0;
+        color: #848e9c;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border-bottom: none;
+      }
+
+      .trading-tab.active {
+        background: #1e2329;
+        color: #f0b90b;
+        border-color: #f0b90b;
+      }
+
+      .trading-form {
+        padding: 12px;
+        background: #0b0e11;
+        border-radius: 0 4px 4px 4px;
+        display: none;
+      }
+
+      .trading-form.active {
+        display: block;
+      }
+
+      .trading-form .form-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: end;
+        margin-bottom: 10px;
+      }
+
+      .trading-form label {
+        min-width: 100px;
+        flex: 1;
+      }
+
+      .trading-form input,
+      .trading-form select {
+        height: 32px;
+        border: 1px solid #2b3139;
+        border-radius: 4px;
+        background: #1e2329;
+        color: #eaecef;
+        font: inherit;
+        font-size: 12px;
+        padding: 0 8px;
+        width: 100%;
+      }
+
+      .trading-form button {
+        height: 32px;
+        font-size: 12px;
+      }
+
+      .trading-result {
+        margin-top: 12px;
+        padding: 12px;
+        background: #0b0e11;
+        border: 1px solid #2b3139;
+        border-radius: 4px;
+        max-height: 400px;
+        overflow: auto;
+        display: none;
+      }
+
+      .trading-result.active {
+        display: block;
+      }
+
+      .trading-result pre {
+        margin: 0;
+        white-space: pre-wrap;
+        font-size: 11px;
+        font-family: monospace;
+        color: #eaecef;
+      }
+
+      .trading-result .error {
+        color: #f6465d;
+      }
+
+      .trading-result .success {
+        color: #0ecb81;
+      }
+
+      .order-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .order-list li {
+        padding: 6px 0;
+        border-bottom: 1px solid #2b3139;
+        font-size: 11px;
+        display: flex;
+        gap: 12px;
+      }
+
+      .order-list li:last-child {
+        border-bottom: none;
       }
 
       .panel {
@@ -383,6 +542,141 @@
           </div>
         </div>
       </div>
+
+      <!-- Trading API Section -->
+      <div class="trading-section">
+        <div class="panel">
+          <div class="section-title">Trading API</div>
+
+          <!-- Credentials -->
+          <div class="credential-bar">
+            <label>
+              API Key
+              <input type="text" id="credApiKey" placeholder="Your API key" />
+            </label>
+            <label>
+              API Secret
+              <input type="password" id="credApiSecret" placeholder="Your API secret" />
+            </label>
+            <label>
+              <div style="display:flex;align-items:center;gap:6px;height:32px;">
+                <input type="checkbox" id="credSandbox" checked /> Sandbox mode
+              </div>
+            </label>
+          </div>
+
+          <!-- Tabs -->
+          <div class="trading-tabs">
+            <span class="trading-tab active" data-tab="market">Market Order</span>
+            <span class="trading-tab" data-tab="limit">Limit Order</span>
+            <span class="trading-tab" data-tab="getOrder">Get Order</span>
+            <span class="trading-tab" data-tab="openOrders">Open Orders</span>
+            <span class="trading-tab" data-tab="closedOrders">Closed Orders</span>
+            <span class="trading-tab" data-tab="cancel">Cancel</span>
+            <span class="trading-tab" data-tab="cancelAll">Cancel All</span>
+            <span class="trading-tab" data-tab="balance">Balance</span>
+            <span class="trading-tab" data-tab="testCreds">Test Creds</span>
+          </div>
+
+          <!-- Market Order Form -->
+          <div class="trading-form active" id="form-market">
+            <div class="form-row">
+              <label>Symbol <input type="text" id="moSymbol" /></label>
+              <label>Side
+                <select id="moSide">
+                  <option value="1">Buy</option>
+                  <option value="2">Sell</option>
+                </select>
+              </label>
+              <label>Quantity <input type="number" id="moQuantity" step="any" /></label>
+            </div>
+            <button onclick="createMarketOrder()">Place Market Order</button>
+          </div>
+
+          <!-- Limit Order Form -->
+          <div class="trading-form" id="form-limit">
+            <div class="form-row">
+              <label>Symbol <input type="text" id="loSymbol" /></label>
+              <label>Side
+                <select id="loSide">
+                  <option value="1">Buy</option>
+                  <option value="2">Sell</option>
+                </select>
+              </label>
+              <label>Quantity <input type="number" id="loQuantity" step="any" /></label>
+              <label>Price <input type="number" id="loPrice" step="any" /></label>
+              <label>TIF
+                <select id="loTIF">
+                  <option value="1">GTC</option>
+                  <option value="2">IOC</option>
+                  <option value="3">FOK</option>
+                </select>
+              </label>
+            </div>
+            <button onclick="createLimitOrder()">Place Limit Order</button>
+          </div>
+
+          <!-- Get Order Form -->
+          <div class="trading-form" id="form-getOrder">
+            <div class="form-row">
+              <label>Order ID <input type="text" id="goOrderId" /></label>
+              <label>Symbol (optional) <input type="text" id="goSymbol" /></label>
+            </div>
+            <button onclick="getOrder()">Get Order</button>
+          </div>
+
+          <!-- Open Orders Form -->
+          <div class="trading-form" id="form-openOrders">
+            <div class="form-row">
+              <label>Symbol (optional, blank = all) <input type="text" id="ooSymbol" /></label>
+            </div>
+            <button onclick="listOpenOrders()">List Open Orders</button>
+          </div>
+
+          <!-- Closed Orders Form -->
+          <div class="trading-form" id="form-closedOrders">
+            <div class="form-row">
+              <label>Symbol (optional, blank = all) <input type="text" id="coSymbol" /></label>
+            </div>
+            <button onclick="listClosedOrders()">List Closed Orders</button>
+          </div>
+
+          <!-- Cancel Order Form -->
+          <div class="trading-form" id="form-cancel">
+            <div class="form-row">
+              <label>Order ID <input type="text" id="caOrderId" /></label>
+              <label>Symbol <input type="text" id="caSymbol" /></label>
+            </div>
+            <button onclick="cancelOrder()">Cancel Order</button>
+          </div>
+
+          <!-- Cancel All Orders Form -->
+          <div class="trading-form" id="form-cancelAll">
+            <div class="form-row">
+              <label>Symbol (optional, blank = all) <input type="text" id="calSymbol" /></label>
+            </div>
+            <button onclick="cancelAllOrders()">Cancel All Orders</button>
+          </div>
+
+          <!-- Balance Form -->
+          <div class="trading-form" id="form-balance">
+            <p style="font-size:12px;color:#848e9c;">No parameters needed.</p>
+            <button onclick="getBalance()">Get Balance</button>
+          </div>
+
+          <!-- Test Credentials Form -->
+          <div class="trading-form" id="form-testCreds">
+            <p style="font-size:12px;color:#848e9c;">Tests the credentials above.</p>
+            <button onclick="testCredentials()">Test Credentials</button>
+          </div>
+
+          <!-- Result display -->
+          <div class="trading-result" id="tradingResult">
+            <pre id="tradingResultContent"></pre>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <script>
@@ -909,6 +1203,302 @@
         await populateSymbols();
       });
       window.addEventListener("resize", resizeCanvas);
+
+      // ── Trading API helpers ──
+
+      function getExchangeId() {
+        return Number(exchangeSelect.value);
+      }
+
+      function getSymbol() {
+        return symbolSelect.value;
+      }
+
+      function getCredentials() {
+        const apiKey = document.getElementById("credApiKey").value.trim();
+        const apiSecret = document.getElementById("credApiSecret").value.trim();
+        const sandbox = document.getElementById("credSandbox").checked;
+        if (!apiKey || !apiSecret) {
+          return null;
+        }
+        return { api_key: apiKey, api_secret: apiSecret, sandbox };
+      }
+
+      function showTradingResult(data, isError) {
+        const container = document.getElementById("tradingResult");
+        const content = document.getElementById("tradingResultContent");
+        container.classList.add("active");
+        content.className = isError ? "error" : "success";
+        if (typeof data === "string") {
+          content.textContent = data;
+        } else {
+          content.textContent = JSON.stringify(data, null, 2);
+        }
+      }
+
+      async function tradingPost(path, body) {
+        const baseUrl = apiHttpBaseUrl();
+        const resp = await fetch(`${baseUrl}${path}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+          throw new Error(data.message || data.error || resp.statusText);
+        }
+        return data;
+      }
+
+      async function tradingGet(path) {
+        const baseUrl = apiHttpBaseUrl();
+        const resp = await fetch(`${baseUrl}${path}`);
+        const data = await resp.json();
+        if (!resp.ok) {
+          throw new Error(data.message || data.error || resp.statusText);
+        }
+        return data;
+      }
+
+      function renderOrderList(orders) {
+        if (!orders || orders.length === 0) {
+          return "<p style='color:#848e9c;margin:0;'>No orders found.</p>";
+        }
+        let html =
+          '<table style="width:100%;font-size:11px;border-collapse:collapse;"><thead><tr style="color:#848e9c;text-align:left;"><th>Order ID</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Price</th><th>Status</th></tr></thead><tbody>';
+        const statusLabels = {
+          1: "New",
+          2: "Filled",
+          3: "Partial",
+          4: "Canceled",
+          5: "Rejected",
+        };
+        const sideLabels = { 1: "Buy", 2: "Sell" };
+        for (const o of orders) {
+          html += `<tr style="border-bottom:1px solid #2b3139;">
+            <td style="padding:4px 6px;">${(o.order_id || "-").slice(0, 14)}</td>
+            <td>${o.symbol || "-"}</td>
+            <td>${sideLabels[o.side] || "-"}</td>
+            <td>${o.quantity || "-"}</td>
+            <td>${o.price != null ? o.price : "-"}</td>
+            <td>${statusLabels[o.status] || "-"}</td>
+          </tr>`;
+        }
+        html += "</tbody></table>";
+        return html;
+      }
+
+      function renderBalances(balances) {
+        if (!balances || balances.length === 0) {
+          return "<p style='color:#848e9c;margin:0;'>No balances found.</p>";
+        }
+        // Filter non-zero
+        const nonZero = balances.filter(
+          (b) => b.free > 0 || b.used > 0 || b.total > 0,
+        );
+        if (nonZero.length === 0) {
+          return "<p style='color:#848e9c;margin:0;'>All balances are zero.</p>";
+        }
+        let html =
+          '<table style="width:100%;font-size:11px;border-collapse:collapse;"><thead><tr style="color:#848e9c;text-align:left;"><th>Asset</th><th>Free</th><th>Used</th><th>Total</th></tr></thead><tbody>';
+        for (const b of nonZero) {
+          html += `<tr style="border-bottom:1px solid #2b3139;">
+            <td style="padding:4px 6px;color:#f0b90b;">${b.asset}</td>
+            <td>${b.free}</td>
+            <td>${b.used}</td>
+            <td>${b.total}</td>
+          </tr>`;
+        }
+        html += "</tbody></table>";
+        return html;
+      }
+
+      // ── Tab switching ──
+
+      document.querySelectorAll(".trading-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          document
+            .querySelectorAll(".trading-tab")
+            .forEach((t) => t.classList.remove("active"));
+          document
+            .querySelectorAll(".trading-form")
+            .forEach((f) => f.classList.remove("active"));
+          tab.classList.add("active");
+          const formId = "form-" + tab.dataset.tab;
+          const form = document.getElementById(formId);
+          if (form) form.classList.add("active");
+        });
+      });
+
+      // Sync symbol fields with current symbol select
+      function syncSymbolInputs() {
+        const sym = getSymbol();
+        ["moSymbol", "loSymbol", "goSymbol", "ooSymbol", "coSymbol", "caSymbol", "calSymbol"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el && !el.value) el.value = sym;
+        });
+      }
+      symbolSelect.addEventListener("change", syncSymbolInputs);
+
+      // ── API call functions ──
+
+      async function createMarketOrder() {
+        try {
+          const creds = getCredentials();
+          if (!creds) throw new Error("API Key and Secret required");
+          const data = await tradingPost("/v1/trading/order", {
+            exchange: getExchangeId(),
+            symbol: document.getElementById("moSymbol").value.trim() || getSymbol(),
+            side: Number(document.getElementById("moSide").value),
+            quantity: Number(document.getElementById("moQuantity").value),
+            credentials: creds,
+          });
+          showTradingResult(data);
+        } catch (err) {
+          showTradingResult(err.message, true);
+        }
+      }
+
+      async function createLimitOrder() {
+        try {
+          const creds = getCredentials();
+          if (!creds) throw new Error("API Key and Secret required");
+          const data = await tradingPost("/v1/trading/order/limit", {
+            exchange: getExchangeId(),
+            symbol: document.getElementById("loSymbol").value.trim() || getSymbol(),
+            side: Number(document.getElementById("loSide").value),
+            quantity: Number(document.getElementById("loQuantity").value),
+            price: Number(document.getElementById("loPrice").value),
+            time_in_force: Number(document.getElementById("loTIF").value),
+            credentials: creds,
+          });
+          showTradingResult(data);
+        } catch (err) {
+          showTradingResult(err.message, true);
+        }
+      }
+
+      async function getOrder() {
+        try {
+          const creds = getCredentials();
+          if (!creds) throw new Error("API Key and Secret required");
+          const orderId = document.getElementById("goOrderId").value.trim();
+          if (!orderId) throw new Error("Order ID required");
+          const sym = document.getElementById("goSymbol").value.trim() || getSymbol();
+          const data = await tradingGet(
+            `/v1/trading/order/${getExchangeId()}/${orderId}?symbol=${encodeURIComponent(sym)}`,
+          );
+          showTradingResult(data);
+        } catch (err) {
+          showTradingResult(err.message, true);
+        }
+      }
+
+      async function listOpenOrders() {
+        try {
+          const creds = getCredentials();
+          if (!creds) throw new Error("API Key and Secret required");
+          const sym = document.getElementById("ooSymbol").value.trim() || getSymbol();
+          const resp = await fetch(
+            `${apiHttpBaseUrl()}/v1/trading/orders/open/${getExchangeId()}?symbol=${encodeURIComponent(sym)}`,
+          );
+          const data = await resp.json();
+          if (!resp.ok) throw new Error(data.message || data.error || resp.statusText);
+          const container = document.getElementById("tradingResult");
+          const content = document.getElementById("tradingResultContent");
+          container.classList.add("active");
+          content.className = "success";
+          content.innerHTML = renderOrderList(data.orders);
+        } catch (err) {
+          showTradingResult(err.message, true);
+        }
+      }
+
+      async function listClosedOrders() {
+        try {
+          const creds = getCredentials();
+          if (!creds) throw new Error("API Key and Secret required");
+          const sym = document.getElementById("coSymbol").value.trim() || getSymbol();
+          const resp = await fetch(
+            `${apiHttpBaseUrl()}/v1/trading/orders/closed/${getExchangeId()}?symbol=${encodeURIComponent(sym)}`,
+          );
+          const data = await resp.json();
+          if (!resp.ok) throw new Error(data.message || data.error || resp.statusText);
+          const container = document.getElementById("tradingResult");
+          const content = document.getElementById("tradingResultContent");
+          container.classList.add("active");
+          content.className = "success";
+          content.innerHTML = renderOrderList(data.orders);
+        } catch (err) {
+          showTradingResult(err.message, true);
+        }
+      }
+
+      async function cancelOrder() {
+        try {
+          const creds = getCredentials();
+          if (!creds) throw new Error("API Key and Secret required");
+          const orderId = document.getElementById("caOrderId").value.trim();
+          if (!orderId) throw new Error("Order ID required");
+          const data = await tradingPost("/v1/trading/order/cancel", {
+            exchange: getExchangeId(),
+            order_id: orderId,
+            symbol: document.getElementById("caSymbol").value.trim() || getSymbol(),
+            credentials: creds,
+          });
+          showTradingResult(data);
+        } catch (err) {
+          showTradingResult(err.message, true);
+        }
+      }
+
+      async function cancelAllOrders() {
+        try {
+          const creds = getCredentials();
+          if (!creds) throw new Error("API Key and Secret required");
+          const sym = document.getElementById("calSymbol").value.trim();
+          const data = await tradingPost("/v1/trading/orders/cancel", {
+            exchange: getExchangeId(),
+            symbol: sym || "",
+            credentials: creds,
+          });
+          showTradingResult(data);
+        } catch (err) {
+          showTradingResult(err.message, true);
+        }
+      }
+
+      async function getBalance() {
+        try {
+          const creds = getCredentials();
+          if (!creds) throw new Error("API Key and Secret required");
+          const data = await tradingPost("/v1/trading/balance", {
+            exchange: getExchangeId(),
+            credentials: creds,
+          });
+          const container = document.getElementById("tradingResult");
+          const content = document.getElementById("tradingResultContent");
+          container.classList.add("active");
+          content.className = "success";
+          content.innerHTML = renderBalances(data.balances);
+        } catch (err) {
+          showTradingResult(err.message, true);
+        }
+      }
+
+      async function testCredentials() {
+        try {
+          const creds = getCredentials();
+          if (!creds) throw new Error("API Key and Secret required");
+          const data = await tradingPost("/v1/trading/credentials/test", {
+            exchange: getExchangeId(),
+            credentials: creds,
+          });
+          showTradingResult(data);
+        } catch (err) {
+          showTradingResult(err.message, true);
+        }
+      }
 
       void init();
     </script>
