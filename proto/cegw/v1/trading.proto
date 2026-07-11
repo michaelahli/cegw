@@ -91,6 +91,17 @@ service TradingService {
       tags: "Trading"
     };
   }
+
+  rpc ListClosedOrders(ListClosedOrdersRequest) returns (ListClosedOrdersResponse) {
+    option (google.api.http) = {
+      get: "/v1/trading/orders/closed/{exchange}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "List Closed Orders"
+      description: "Fetch closed orders for a symbol or all symbols from an exchange."
+      tags: "Trading"
+    };
+  }
 }
 
 message CreateMarketOrderRequest {
@@ -185,5 +196,15 @@ message ListOpenOrdersRequest {
 }
 
 message ListOpenOrdersResponse {
+  repeated Order orders = 1;
+}
+
+message ListClosedOrdersRequest {
+  Exchange exchange = 1;
+  string symbol = 2;
+  Credentials credentials = 3;
+}
+
+message ListClosedOrdersResponse {
   repeated Order orders = 1;
 }

@@ -12,6 +12,7 @@ type Exchange interface {
 	CreateLimitOrder(symbol string, side string, amount float64, price float64, opts ...ccxt.CreateLimitOrderOptions) (ccxt.Order, error)
 	FetchOrder(id string, opts ...ccxt.FetchOrderOptions) (ccxt.Order, error)
 	FetchOpenOrders(opts ...ccxt.FetchOpenOrdersOptions) ([]ccxt.Order, error)
+	FetchClosedOrders(opts ...ccxt.FetchClosedOrdersOptions) ([]ccxt.Order, error)
 	CancelOrder(id string, opts ...ccxt.CancelOrderOptions) (ccxt.Order, error)
 	FetchBalance(params ...any) (ccxt.Balances, error)
 }
