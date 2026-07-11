@@ -102,6 +102,18 @@ service TradingService {
       tags: "Trading"
     };
   }
+
+  rpc CancelAllOrders(CancelAllOrdersRequest) returns (CancelAllOrdersResponse) {
+    option (google.api.http) = {
+      post: "/v1/trading/orders/cancel"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Cancel All Orders"
+      description: "Cancel all open orders, optionally filtered by symbol."
+      tags: "Trading"
+    };
+  }
 }
 
 message CreateMarketOrderRequest {
@@ -207,4 +219,16 @@ message ListClosedOrdersRequest {
 
 message ListClosedOrdersResponse {
   repeated Order orders = 1;
+}
+
+message CancelAllOrdersRequest {
+  Exchange exchange = 1;
+  string symbol = 2;
+  Credentials credentials = 3;
+}
+
+message CancelAllOrdersResponse {
+  bool success = 1;
+  string message = 2;
+  int32 cancelled_count = 3;
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	ccxtlib "github.com/ccxt/ccxt/go/v4"
@@ -561,6 +562,67 @@ func (s *TradingService) CancelOrder(ctx context.Context, req *cegwv1.CancelOrde
 	return &cegwv1.CancelOrderResponse{
 		Success: true,
 		Message: "order cancelled successfully",
+	}, nil
+}
+
+func (s *TradingService) CancelAllOrders(ctx context.Context, req *cegwv1.CancelAllOrdersRequest) (*cegwv1.CancelAllOrdersResponse, error) {
+	log := s.log.WithContext(ctx).
+		WithField("operation", "CancelAllOrders").
+		WithField("exchange", req.Exchange.String()).
+		WithField("symbol", req.Symbol)
+
+	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
+		log.Warnf("invalid request: exchange unspecified")
+		return nil, status.Error(codes.InvalidArgument, "exchange is required")
+	}
+
+	if req.Credentials == nil {
+		log.Warnf("invalid request: credentials missing")
+		return nil, status.Error(codes.InvalidArgument, "credentials are required")
+	}
+
+	if req.Credentials.ApiKey == "" {
+		log.Warnf("invalid request: api_key missing")
+		return nil, status.Error(codes.InvalidArgument, "api_key is required")
+	}
+
+	if req.Credentials.ApiSecret == "" {
+		log.Warnf("invalid request: api_secret missing")
+		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
+	}
+
+	log.Debugf("cancelling all orders")
+
+	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, req.Credentials)
+	if err != nil {
+		log.WithError(err).Errorf("failed to create CCXT client")
+		return nil, err
+	}
+
+	exchange := ccxt.AsExchange(client)
+	if exchange == nil {
+		log.Warnf("exchange not supported")
+		return nil, status.Error(codes.Unimplemented, "exchange not supported")
+	}
+
+	var cancelledOrders []ccxtlib.Order
+	if req.Symbol != "" {
+		cancelledOrders, err = exchange.CancelAllOrders(ccxtlib.WithCancelAllOrdersSymbol(req.Symbol))
+	} else {
+		cancelledOrders, err = exchange.CancelAllOrders()
+	}
+	if err != nil {
+		log.WithError(err).Errorf("failed to cancel all orders")
+		return nil, ccxt.MapError(err)
+	}
+
+	count := len(cancelledOrders)
+	log.WithField("cancelled_count", count).Infof("all orders cancelled successfully")
+
+	return &cegwv1.CancelAllOrdersResponse{
+		Success:        true,
+		Message:        fmt.Sprintf("cancelled %d orders", count),
+		CancelledCount: int32(count),
 	}, nil
 }
 

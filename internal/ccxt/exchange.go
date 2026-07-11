@@ -14,6 +14,7 @@ type Exchange interface {
 	FetchOpenOrders(opts ...ccxt.FetchOpenOrdersOptions) ([]ccxt.Order, error)
 	FetchClosedOrders(opts ...ccxt.FetchClosedOrdersOptions) ([]ccxt.Order, error)
 	CancelOrder(id string, opts ...ccxt.CancelOrderOptions) (ccxt.Order, error)
+	CancelAllOrders(opts ...ccxt.CancelAllOrdersOptions) ([]ccxt.Order, error)
 	FetchBalance(params ...any) (ccxt.Balances, error)
 }
 

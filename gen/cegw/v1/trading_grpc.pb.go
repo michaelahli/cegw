@@ -27,6 +27,7 @@ const (
 	TradingService_CancelOrder_FullMethodName       = "/cegw.v1.TradingService/CancelOrder"
 	TradingService_ListOpenOrders_FullMethodName    = "/cegw.v1.TradingService/ListOpenOrders"
 	TradingService_ListClosedOrders_FullMethodName  = "/cegw.v1.TradingService/ListClosedOrders"
+	TradingService_CancelAllOrders_FullMethodName   = "/cegw.v1.TradingService/CancelAllOrders"
 )
 
 // TradingServiceClient is the client API for TradingService service.
@@ -41,6 +42,7 @@ type TradingServiceClient interface {
 	CancelOrder(ctx context.Context, in *CancelOrderRequest, opts ...grpc.CallOption) (*CancelOrderResponse, error)
 	ListOpenOrders(ctx context.Context, in *ListOpenOrdersRequest, opts ...grpc.CallOption) (*ListOpenOrdersResponse, error)
 	ListClosedOrders(ctx context.Context, in *ListClosedOrdersRequest, opts ...grpc.CallOption) (*ListClosedOrdersResponse, error)
+	CancelAllOrders(ctx context.Context, in *CancelAllOrdersRequest, opts ...grpc.CallOption) (*CancelAllOrdersResponse, error)
 }
 
 type tradingServiceClient struct {
@@ -131,6 +133,16 @@ func (c *tradingServiceClient) ListClosedOrders(ctx context.Context, in *ListClo
 	return out, nil
 }
 
+func (c *tradingServiceClient) CancelAllOrders(ctx context.Context, in *CancelAllOrdersRequest, opts ...grpc.CallOption) (*CancelAllOrdersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CancelAllOrdersResponse)
+	err := c.cc.Invoke(ctx, TradingService_CancelAllOrders_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TradingServiceServer is the server API for TradingService service.
 // All implementations must embed UnimplementedTradingServiceServer
 // for forward compatibility.
@@ -143,6 +155,7 @@ type TradingServiceServer interface {
 	CancelOrder(context.Context, *CancelOrderRequest) (*CancelOrderResponse, error)
 	ListOpenOrders(context.Context, *ListOpenOrdersRequest) (*ListOpenOrdersResponse, error)
 	ListClosedOrders(context.Context, *ListClosedOrdersRequest) (*ListClosedOrdersResponse, error)
+	CancelAllOrders(context.Context, *CancelAllOrdersRequest) (*CancelAllOrdersResponse, error)
 	mustEmbedUnimplementedTradingServiceServer()
 }
 
@@ -176,6 +189,9 @@ func (UnimplementedTradingServiceServer) ListOpenOrders(context.Context, *ListOp
 }
 func (UnimplementedTradingServiceServer) ListClosedOrders(context.Context, *ListClosedOrdersRequest) (*ListClosedOrdersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListClosedOrders not implemented")
+}
+func (UnimplementedTradingServiceServer) CancelAllOrders(context.Context, *CancelAllOrdersRequest) (*CancelAllOrdersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelAllOrders not implemented")
 }
 func (UnimplementedTradingServiceServer) mustEmbedUnimplementedTradingServiceServer() {}
 func (UnimplementedTradingServiceServer) testEmbeddedByValue()                        {}
@@ -342,6 +358,24 @@ func _TradingService_ListClosedOrders_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TradingService_CancelAllOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelAllOrdersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TradingServiceServer).CancelAllOrders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TradingService_CancelAllOrders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TradingServiceServer).CancelAllOrders(ctx, req.(*CancelAllOrdersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TradingService_ServiceDesc is the grpc.ServiceDesc for TradingService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -380,6 +414,10 @@ var TradingService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListClosedOrders",
 			Handler:    _TradingService_ListClosedOrders_Handler,
+		},
+		{
+			MethodName: "CancelAllOrders",
+			Handler:    _TradingService_CancelAllOrders_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
