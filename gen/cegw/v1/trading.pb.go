@@ -1281,7 +1281,7 @@ const file_cegw_v1_trading_proto_rawDesc = "" +
 	"\x17CancelAllOrdersResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12'\n" +
-	"\x0fcancelled_count\x18\x03 \x01(\x05R\x0ecancelledCount2\xc8\x0e\n" +
+	"\x0fcancelled_count\x18\x03 \x01(\x05R\x0ecancelledCount2\xa9\x0e\n" +
 	"\x0eTradingService\x12\xd6\x01\n" +
 	"\x11CreateMarketOrder\x12!.cegw.v1.CreateMarketOrderRequest\x1a\".cegw.v1.CreateMarketOrderResponse\"z\x92A[\n" +
 	"\aTrading\x12\x13Create Market Order\x1a;Place a market buy or sell order on the specified exchange.\x82\xd3\xe4\x93\x02\x16:\x01*\"\x11/v1/trading/order\x12\xd1\x01\n" +
@@ -1291,15 +1291,15 @@ const file_cegw_v1_trading_proto_rawDesc = "" +
 	"\aTrading\x12\x10Test Credentials\x1a)Validate API credentials for an exchange.\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/v1/trading/credentials/test\x12\xa6\x01\n" +
 	"\n" +
 	"GetBalance\x12\x1a.cegw.v1.GetBalanceRequest\x1a\x1b.cegw.v1.GetBalanceResponse\"_\x92A>\n" +
-	"\aTrading\x12\vGet Balance\x1a&Fetch account balance for an exchange.\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/trading/balance\x12\xb7\x01\n" +
-	"\bGetOrder\x12\x18.cegw.v1.GetOrderRequest\x1a\x19.cegw.v1.GetOrderResponse\"v\x92AD\n" +
-	"\aTrading\x12\tGet Order\x1a.Fetch a specific order by ID from an exchange.\x82\xd3\xe4\x93\x02)\x12'/v1/trading/order/{exchange}/{order_id}\x12\xb8\x01\n" +
+	"\aTrading\x12\vGet Balance\x1a&Fetch account balance for an exchange.\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/trading/balance\x12\xa8\x01\n" +
+	"\bGetOrder\x12\x18.cegw.v1.GetOrderRequest\x1a\x19.cegw.v1.GetOrderResponse\"g\x92AD\n" +
+	"\aTrading\x12\tGet Order\x1a.Fetch a specific order by ID from an exchange.\x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/v1/trading/order/get\x12\xb8\x01\n" +
 	"\vCancelOrder\x12\x1b.cegw.v1.CancelOrderRequest\x1a\x1c.cegw.v1.CancelOrderResponse\"n\x92AH\n" +
-	"\aTrading\x12\fCancel Order\x1a/Cancel an open order on the specified exchange.\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/v1/trading/order/cancel\x12\xe1\x01\n" +
-	"\x0eListOpenOrders\x12\x1e.cegw.v1.ListOpenOrdersRequest\x1a\x1f.cegw.v1.ListOpenOrdersResponse\"\x8d\x01\x92A`\n" +
-	"\aTrading\x12\x10List Open Orders\x1aCFetch all open orders for a symbol or all symbols from an exchange.\x82\xd3\xe4\x93\x02$\x12\"/v1/trading/orders/open/{exchange}\x12\xe9\x01\n" +
-	"\x10ListClosedOrders\x12 .cegw.v1.ListClosedOrdersRequest\x1a!.cegw.v1.ListClosedOrdersResponse\"\x8f\x01\x92A`\n" +
-	"\aTrading\x12\x12List Closed Orders\x1aAFetch closed orders for a symbol or all symbols from an exchange.\x82\xd3\xe4\x93\x02&\x12$/v1/trading/orders/closed/{exchange}\x12\xd1\x01\n" +
+	"\aTrading\x12\fCancel Order\x1a/Cancel an open order on the specified exchange.\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/v1/trading/order/cancel\x12\xd9\x01\n" +
+	"\x0eListOpenOrders\x12\x1e.cegw.v1.ListOpenOrdersRequest\x1a\x1f.cegw.v1.ListOpenOrdersResponse\"\x85\x01\x92A`\n" +
+	"\aTrading\x12\x10List Open Orders\x1aCFetch all open orders for a symbol or all symbols from an exchange.\x82\xd3\xe4\x93\x02\x1c:\x01*\"\x17/v1/trading/orders/open\x12\xe1\x01\n" +
+	"\x10ListClosedOrders\x12 .cegw.v1.ListClosedOrdersRequest\x1a!.cegw.v1.ListClosedOrdersResponse\"\x87\x01\x92A`\n" +
+	"\aTrading\x12\x12List Closed Orders\x1aAFetch closed orders for a symbol or all symbols from an exchange.\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/v1/trading/orders/closed\x12\xd1\x01\n" +
 	"\x0fCancelAllOrders\x12\x1f.cegw.v1.CancelAllOrdersRequest\x1a .cegw.v1.CancelAllOrdersResponse\"{\x92AT\n" +
 	"\aTrading\x12\x11Cancel All Orders\x1a6Cancel all open orders, optionally filtered by symbol.\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/v1/trading/orders/cancelB0Z.github.com/michaelahli/cegw/gen/cegw/v1;cegwv1b\x06proto3"
 

@@ -60,7 +60,8 @@ service TradingService {
 
   rpc GetOrder(GetOrderRequest) returns (GetOrderResponse) {
     option (google.api.http) = {
-      get: "/v1/trading/order/{exchange}/{order_id}"
+      post: "/v1/trading/order/get"
+      body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       summary: "Get Order"
@@ -83,7 +84,8 @@ service TradingService {
 
   rpc ListOpenOrders(ListOpenOrdersRequest) returns (ListOpenOrdersResponse) {
     option (google.api.http) = {
-      get: "/v1/trading/orders/open/{exchange}"
+      post: "/v1/trading/orders/open"
+      body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       summary: "List Open Orders"
@@ -94,7 +96,8 @@ service TradingService {
 
   rpc ListClosedOrders(ListClosedOrdersRequest) returns (ListClosedOrdersResponse) {
     option (google.api.http) = {
-      get: "/v1/trading/orders/closed/{exchange}"
+      post: "/v1/trading/orders/closed"
+      body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       summary: "List Closed Orders"

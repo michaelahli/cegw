@@ -1250,16 +1250,6 @@
         return data;
       }
 
-      async function tradingGet(path) {
-        const baseUrl = apiHttpBaseUrl();
-        const resp = await fetch(`${baseUrl}${path}`);
-        const data = await resp.json();
-        if (!resp.ok) {
-          throw new Error(data.message || data.error || resp.statusText);
-        }
-        return data;
-      }
-
       function renderOrderList(orders) {
         if (!orders || orders.length === 0) {
           return "<p style='color:#848e9c;margin:0;'>No orders found.</p>";
@@ -1385,9 +1375,12 @@
           const orderId = document.getElementById("goOrderId").value.trim();
           if (!orderId) throw new Error("Order ID required");
           const sym = document.getElementById("goSymbol").value.trim() || getSymbol();
-          const data = await tradingGet(
-            `/v1/trading/order/${getExchangeId()}/${orderId}?symbol=${encodeURIComponent(sym)}`,
-          );
+          const data = await tradingPost("/v1/trading/order/get", {
+            exchange: getExchangeId(),
+            order_id: orderId,
+            symbol: sym,
+            credentials: creds,
+          });
           showTradingResult(data);
         } catch (err) {
           showTradingResult(err.message, true);
@@ -1399,11 +1392,11 @@
           const creds = getCredentials();
           if (!creds) throw new Error("API Key and Secret required");
           const sym = document.getElementById("ooSymbol").value.trim() || getSymbol();
-          const resp = await fetch(
-            `${apiHttpBaseUrl()}/v1/trading/orders/open/${getExchangeId()}?symbol=${encodeURIComponent(sym)}`,
-          );
-          const data = await resp.json();
-          if (!resp.ok) throw new Error(data.message || data.error || resp.statusText);
+          const data = await tradingPost("/v1/trading/orders/open", {
+            exchange: getExchangeId(),
+            symbol: sym,
+            credentials: creds,
+          });
           const container = document.getElementById("tradingResult");
           const content = document.getElementById("tradingResultContent");
           container.classList.add("active");
@@ -1419,11 +1412,11 @@
           const creds = getCredentials();
           if (!creds) throw new Error("API Key and Secret required");
           const sym = document.getElementById("coSymbol").value.trim() || getSymbol();
-          const resp = await fetch(
-            `${apiHttpBaseUrl()}/v1/trading/orders/closed/${getExchangeId()}?symbol=${encodeURIComponent(sym)}`,
-          );
-          const data = await resp.json();
-          if (!resp.ok) throw new Error(data.message || data.error || resp.statusText);
+          const data = await tradingPost("/v1/trading/orders/closed", {
+            exchange: getExchangeId(),
+            symbol: sym,
+            credentials: creds,
+          });
           const container = document.getElementById("tradingResult");
           const content = document.getElementById("tradingResultContent");
           container.classList.add("active");
