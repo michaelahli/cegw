@@ -315,6 +315,40 @@
         ]
       }
     },
+    "/v1/trading/balance": {
+      "post": {
+        "summary": "Get Balance",
+        "description": "Fetch account balance for an exchange.",
+        "operationId": "TradingService_GetBalance",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetBalanceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1GetBalanceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Trading"
+        ]
+      }
+    },
     "/v1/trading/credentials/test": {
       "post": {
         "summary": "Test Credentials",
@@ -376,6 +410,327 @@
             "schema": {
               "$ref": "#/definitions/v1CreateMarketOrderRequest"
             }
+          }
+        ],
+        "tags": [
+          "Trading"
+        ]
+      }
+    },
+    "/v1/trading/order/cancel": {
+      "post": {
+        "summary": "Cancel Order",
+        "description": "Cancel an open order on the specified exchange.",
+        "operationId": "TradingService_CancelOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CancelOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CancelOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Trading"
+        ]
+      }
+    },
+    "/v1/trading/order/limit": {
+      "post": {
+        "summary": "Create Limit Order",
+        "description": "Place a limit buy or sell order at a specific price.",
+        "operationId": "TradingService_CreateLimitOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateLimitOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateLimitOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Trading"
+        ]
+      }
+    },
+    "/v1/trading/order/{exchange}/{orderId}": {
+      "get": {
+        "summary": "Get Order",
+        "description": "Fetch a specific order by ID from an exchange.",
+        "operationId": "TradingService_GetOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "exchange",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "EXCHANGE_UNSPECIFIED",
+              "EXCHANGE_TOKOCRYPTO",
+              "EXCHANGE_BINANCE",
+              "EXCHANGE_COINBASE",
+              "EXCHANGE_CEXIO",
+              "EXCHANGE_INDODAX",
+              "EXCHANGE_OKX",
+              "EXCHANGE_KUCOIN",
+              "EXCHANGE_CRYPTOCOM",
+              "EXCHANGE_BYBIT",
+              "EXCHANGE_BITGET",
+              "EXCHANGE_COINEX",
+              "EXCHANGE_HASHKEY"
+            ]
+          },
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "credentials.apiKey",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "credentials.apiSecret",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "credentials.sandbox",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Trading"
+        ]
+      }
+    },
+    "/v1/trading/orders/cancel": {
+      "post": {
+        "summary": "Cancel All Orders",
+        "description": "Cancel all open orders, optionally filtered by symbol.",
+        "operationId": "TradingService_CancelAllOrders",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CancelAllOrdersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CancelAllOrdersRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Trading"
+        ]
+      }
+    },
+    "/v1/trading/orders/closed/{exchange}": {
+      "get": {
+        "summary": "List Closed Orders",
+        "description": "Fetch closed orders for a symbol or all symbols from an exchange.",
+        "operationId": "TradingService_ListClosedOrders",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListClosedOrdersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "exchange",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "EXCHANGE_UNSPECIFIED",
+              "EXCHANGE_TOKOCRYPTO",
+              "EXCHANGE_BINANCE",
+              "EXCHANGE_COINBASE",
+              "EXCHANGE_CEXIO",
+              "EXCHANGE_INDODAX",
+              "EXCHANGE_OKX",
+              "EXCHANGE_KUCOIN",
+              "EXCHANGE_CRYPTOCOM",
+              "EXCHANGE_BYBIT",
+              "EXCHANGE_BITGET",
+              "EXCHANGE_COINEX",
+              "EXCHANGE_HASHKEY"
+            ]
+          },
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "credentials.apiKey",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "credentials.apiSecret",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "credentials.sandbox",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Trading"
+        ]
+      }
+    },
+    "/v1/trading/orders/open/{exchange}": {
+      "get": {
+        "summary": "List Open Orders",
+        "description": "Fetch all open orders for a symbol or all symbols from an exchange.",
+        "operationId": "TradingService_ListOpenOrders",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListOpenOrdersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "exchange",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "EXCHANGE_UNSPECIFIED",
+              "EXCHANGE_TOKOCRYPTO",
+              "EXCHANGE_BINANCE",
+              "EXCHANGE_COINBASE",
+              "EXCHANGE_CEXIO",
+              "EXCHANGE_INDODAX",
+              "EXCHANGE_OKX",
+              "EXCHANGE_KUCOIN",
+              "EXCHANGE_CRYPTOCOM",
+              "EXCHANGE_BYBIT",
+              "EXCHANGE_BITGET",
+              "EXCHANGE_COINEX",
+              "EXCHANGE_HASHKEY"
+            ]
+          },
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "credentials.apiKey",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "credentials.apiSecret",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "credentials.sandbox",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -890,6 +1245,119 @@
         }
       }
     },
+    "v1Balance": {
+      "type": "object",
+      "properties": {
+        "asset": {
+          "type": "string"
+        },
+        "free": {
+          "type": "number",
+          "format": "double"
+        },
+        "used": {
+          "type": "number",
+          "format": "double"
+        },
+        "total": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "v1CancelAllOrdersRequest": {
+      "type": "object",
+      "properties": {
+        "exchange": {
+          "$ref": "#/definitions/v1Exchange"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "credentials": {
+          "$ref": "#/definitions/v1Credentials"
+        }
+      }
+    },
+    "v1CancelAllOrdersResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
+        },
+        "cancelledCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1CancelOrderRequest": {
+      "type": "object",
+      "properties": {
+        "exchange": {
+          "$ref": "#/definitions/v1Exchange"
+        },
+        "orderId": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "credentials": {
+          "$ref": "#/definitions/v1Credentials"
+        }
+      }
+    },
+    "v1CancelOrderResponse": {
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "v1CreateLimitOrderRequest": {
+      "type": "object",
+      "properties": {
+        "exchange": {
+          "$ref": "#/definitions/v1Exchange"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "side": {
+          "$ref": "#/definitions/v1OrderSide"
+        },
+        "quantity": {
+          "type": "number",
+          "format": "double"
+        },
+        "price": {
+          "type": "number",
+          "format": "double"
+        },
+        "timeInForce": {
+          "$ref": "#/definitions/v1TimeInForce"
+        },
+        "credentials": {
+          "$ref": "#/definitions/v1Credentials"
+        }
+      }
+    },
+    "v1CreateLimitOrderResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/v1Order"
+        }
+      }
+    },
     "v1CreateMarketOrderRequest": {
       "type": "object",
       "properties": {
@@ -930,6 +1398,61 @@
         },
         "sandbox": {
           "type": "boolean"
+        }
+      }
+    },
+    "v1GetBalanceRequest": {
+      "type": "object",
+      "properties": {
+        "exchange": {
+          "$ref": "#/definitions/v1Exchange"
+        },
+        "credentials": {
+          "$ref": "#/definitions/v1Credentials"
+        }
+      }
+    },
+    "v1GetBalanceResponse": {
+      "type": "object",
+      "properties": {
+        "balances": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Balance"
+          }
+        }
+      }
+    },
+    "v1GetOrderResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/v1Order"
+        }
+      }
+    },
+    "v1ListClosedOrdersResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Order"
+          }
+        }
+      }
+    },
+    "v1ListOpenOrdersResponse": {
+      "type": "object",
+      "properties": {
+        "orders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Order"
+          }
         }
       }
     },
@@ -1004,6 +1527,16 @@
           "type": "string"
         }
       }
+    },
+    "v1TimeInForce": {
+      "type": "string",
+      "enum": [
+        "TIME_IN_FORCE_UNSPECIFIED",
+        "TIME_IN_FORCE_GTC",
+        "TIME_IN_FORCE_IOC",
+        "TIME_IN_FORCE_FOK"
+      ],
+      "default": "TIME_IN_FORCE_UNSPECIFIED"
     },
     "PriceStreamMessage": {
       "type": "object",
