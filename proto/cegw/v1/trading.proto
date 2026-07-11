@@ -33,6 +33,18 @@ service TradingService {
       tags: "Trading"
     };
   }
+
+  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse) {
+    option (google.api.http) = {
+      post: "/v1/trading/balance"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get Balance"
+      description: "Fetch account balance for an exchange."
+      tags: "Trading"
+    };
+  }
 }
 
 message CreateMarketOrderRequest {
@@ -65,4 +77,20 @@ message TestCredentialsRequest {
 message TestCredentialsResponse {
   bool valid = 1;
   string message = 2;
+}
+
+message GetBalanceRequest {
+  Exchange exchange = 1;
+  Credentials credentials = 2;
+}
+
+message Balance {
+  string asset = 1;
+  double free = 2;
+  double used = 3;
+  double total = 4;
+}
+
+message GetBalanceResponse {
+  repeated Balance balances = 1;
 }

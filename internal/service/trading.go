@@ -169,6 +169,87 @@ func (s *TradingService) CreateMarketOrder(ctx context.Context, req *cegwv1.Crea
 	}, nil
 }
 
+func (s *TradingService) GetBalance(ctx context.Context, req *cegwv1.GetBalanceRequest) (*cegwv1.GetBalanceResponse, error) {
+	log := s.log.WithContext(ctx).
+		WithField("operation", "GetBalance").
+		WithField("exchange", req.Exchange.String())
+
+	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
+		log.Warnf("invalid request: exchange unspecified")
+		return nil, status.Error(codes.InvalidArgument, "exchange is required")
+	}
+
+	if req.Credentials == nil {
+		log.Warnf("invalid request: credentials missing")
+		return nil, status.Error(codes.InvalidArgument, "credentials are required")
+	}
+
+	if req.Credentials.ApiKey == "" {
+		log.Warnf("invalid request: api_key missing")
+		return nil, status.Error(codes.InvalidArgument, "api_key is required")
+	}
+
+	if req.Credentials.ApiSecret == "" {
+		log.Warnf("invalid request: api_secret missing")
+		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
+	}
+
+	log.Debugf("fetching balance")
+
+	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, req.Credentials)
+	if err != nil {
+		log.WithError(err).Errorf("failed to create CCXT client")
+		return nil, err
+	}
+
+	exchange := ccxt.AsExchange(client)
+	if exchange == nil {
+		log.Warnf("exchange not supported")
+		return nil, status.Error(codes.Unimplemented, "exchange not supported")
+	}
+
+	balances, err := exchange.FetchBalance()
+	if err != nil {
+		log.WithError(err).Errorf("failed to fetch balance")
+		return nil, ccxt.MapError(err)
+	}
+
+	var result []*cegwv1.Balance
+
+	// Balances has Free, Used, Total as map[string]float64
+	// Collect all unique assets
+	assets := make(map[string]bool)
+	for asset := range balances.Free {
+		assets[asset] = true
+	}
+	for asset := range balances.Used {
+		assets[asset] = true
+	}
+	for asset := range balances.Total {
+		assets[asset] = true
+	}
+
+	for asset := range assets {
+		b := &cegwv1.Balance{
+			Asset: asset,
+			Free:  ccxt.Float64P(balances.Free[asset]),
+			Used:  ccxt.Float64P(balances.Used[asset]),
+			Total: ccxt.Float64P(balances.Total[asset]),
+		}
+		// If total not provided, calculate from free + used
+		if b.Total == 0 && (b.Free > 0 || b.Used > 0) {
+			b.Total = b.Free + b.Used
+		}
+		result = append(result, b)
+	}
+
+	log.WithField("asset_count", len(result)).Infof("balance fetched successfully")
+
+	return &cegwv1.GetBalanceResponse{
+		Balances: result,
+	}, nil
+}
+
 func (s *TradingService) TestCredentials(ctx context.Context, req *cegwv1.TestCredentialsRequest) (*cegwv1.TestCredentialsResponse, error) {
 	log := s.log.WithContext(ctx).
 		WithField("operation", "TestCredentials").
