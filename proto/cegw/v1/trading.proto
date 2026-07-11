@@ -80,6 +80,17 @@ service TradingService {
       tags: "Trading"
     };
   }
+
+  rpc ListOpenOrders(ListOpenOrdersRequest) returns (ListOpenOrdersResponse) {
+    option (google.api.http) = {
+      get: "/v1/trading/orders/open/{exchange}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "List Open Orders"
+      description: "Fetch all open orders for a symbol or all symbols from an exchange."
+      tags: "Trading"
+    };
+  }
 }
 
 message CreateMarketOrderRequest {
@@ -165,4 +176,14 @@ message CreateLimitOrderRequest {
 
 message CreateLimitOrderResponse {
   Order order = 1;
+}
+
+message ListOpenOrdersRequest {
+  Exchange exchange = 1;
+  string symbol = 2;
+  Credentials credentials = 3;
+}
+
+message ListOpenOrdersResponse {
+  repeated Order orders = 1;
 }

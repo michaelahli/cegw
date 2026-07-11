@@ -564,6 +564,110 @@ func (s *TradingService) CancelOrder(ctx context.Context, req *cegwv1.CancelOrde
 	}, nil
 }
 
+func (s *TradingService) ListOpenOrders(ctx context.Context, req *cegwv1.ListOpenOrdersRequest) (*cegwv1.ListOpenOrdersResponse, error) {
+	log := s.log.WithContext(ctx).
+		WithField("operation", "ListOpenOrders").
+		WithField("exchange", req.Exchange.String()).
+		WithField("symbol", req.Symbol)
+
+	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
+		log.Warnf("invalid request: exchange unspecified")
+		return nil, status.Error(codes.InvalidArgument, "exchange is required")
+	}
+
+	if req.Credentials == nil {
+		log.Warnf("invalid request: credentials missing")
+		return nil, status.Error(codes.InvalidArgument, "credentials are required")
+	}
+
+	if req.Credentials.ApiKey == "" {
+		log.Warnf("invalid request: api_key missing")
+		return nil, status.Error(codes.InvalidArgument, "api_key is required")
+	}
+
+	if req.Credentials.ApiSecret == "" {
+		log.Warnf("invalid request: api_secret missing")
+		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
+	}
+
+	log.Debugf("fetching open orders")
+
+	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, req.Credentials)
+	if err != nil {
+		log.WithError(err).Errorf("failed to create CCXT client")
+		return nil, err
+	}
+
+	exchange := ccxt.AsExchange(client)
+	if exchange == nil {
+		log.Warnf("exchange not supported")
+		return nil, status.Error(codes.Unimplemented, "exchange not supported")
+	}
+
+	var orders []ccxtlib.Order
+	if req.Symbol != "" {
+		orders, err = exchange.FetchOpenOrders(ccxtlib.WithFetchOpenOrdersSymbol(req.Symbol))
+	} else {
+		orders, err = exchange.FetchOpenOrders()
+	}
+	if err != nil {
+		log.WithError(err).Errorf("failed to fetch open orders")
+		return nil, ccxt.MapError(err)
+	}
+
+	var result []*cegwv1.Order
+	for _, order := range orders {
+		orderStatus := cegwv1.OrderStatus_ORDER_STATUS_UNSPECIFIED
+		if order.Status != nil {
+			switch *order.Status {
+			case "new":
+				orderStatus = cegwv1.OrderStatus_ORDER_STATUS_NEW
+			case "filled":
+				orderStatus = cegwv1.OrderStatus_ORDER_STATUS_FILLED
+			case "partially_filled":
+				orderStatus = cegwv1.OrderStatus_ORDER_STATUS_PARTIALLY_FILLED
+			case "canceled":
+				orderStatus = cegwv1.OrderStatus_ORDER_STATUS_CANCELED
+			case "rejected":
+				orderStatus = cegwv1.OrderStatus_ORDER_STATUS_REJECTED
+			}
+		}
+
+		orderSide := cegwv1.OrderSide_ORDER_SIDE_UNSPECIFIED
+		if order.Side != nil {
+			switch *order.Side {
+			case "buy":
+				orderSide = cegwv1.OrderSide_ORDER_SIDE_BUY
+			case "sell":
+				orderSide = cegwv1.OrderSide_ORDER_SIDE_SELL
+			}
+		}
+
+		var timestamp *timestamppb.Timestamp
+		if order.Timestamp != nil {
+			timestamp = timestamppb.New(time.UnixMilli(ccxt.Int64P(order.Timestamp)))
+		} else {
+			timestamp = timestamppb.Now()
+		}
+
+		result = append(result, &cegwv1.Order{
+			OrderId:   ccxt.StringP(order.Id),
+			Symbol:    ccxt.StringP(order.Symbol),
+			Side:      orderSide,
+			Quantity:  ccxt.Float64P(order.Amount),
+			Price:     ccxt.Float64P(order.Price),
+			Status:    orderStatus,
+			Timestamp: timestamp,
+		})
+	}
+
+	log.WithField("order_count", len(result)).Infof("open orders fetched successfully")
+
+	return &cegwv1.ListOpenOrdersResponse{
+		Orders: result,
+	}, nil
+}
+
 func (s *TradingService) TestCredentials(ctx context.Context, req *cegwv1.TestCredentialsRequest) (*cegwv1.TestCredentialsResponse, error) {
 	log := s.log.WithContext(ctx).
 		WithField("operation", "TestCredentials").
