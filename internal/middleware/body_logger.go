@@ -36,6 +36,12 @@ func (w *bodyLogResponseWriter) Write(b []byte) (int, error) {
 func HTTPBodyLoggingMiddleware(log *logger.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Skip health check endpoints to reduce noise
+			if r.URL.Path == "/healthz" || r.URL.Path == "/readyz" {
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			// Read and log request body
 			var reqBody []byte
 			if r.Body != nil {
