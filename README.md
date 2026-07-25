@@ -35,6 +35,34 @@ helm install cegw cegw/cegw
 
 See [charts/cegw/README.md](charts/cegw/README.md) for more options.
 
+## Configuration
+
+CEGW is configured via environment variables. Below are the available options.
+
+| Variable | Description | Default |
+|---|---|---|
+| `GRPC_PORT` | gRPC server port | `50051` |
+| `HTTP_PORT` | HTTP server port | `8080` |
+| `LOG_LEVEL` | Log level (`info`, `debug`, `warn`, `error`) | `info` |
+| `LOG_REQUEST_RESPONSE` | Log full request and response bodies (HTTP and gRPC). Requires `LOG_LEVEL=debug` to see output. | `false` |
+| `TIMEZONE` | Timezone for timestamps | `Asia/Jakarta` |
+| `SANDBOX_MODE` | Enable sandbox/test mode for supported exchanges | `false` |
+| `HTTPS_PROXY` / `HTTP_PROXY` | Proxy URL (supports `http`, `https`, `socks5` schemes) | `""` |
+| `NO_PROXY` | Comma-separated list of hosts to bypass proxy | `""` |
+| `AUTH_ENABLED` | Enable authentication | `false` |
+| `AUTH_TYPE` | Auth type: `basic` or `oauth2` | `basic` |
+| `ALLOWED_WS_ORIGINS` | Comma-separated allowed WebSocket origins | `""` (allow all) |
+| `WS_PRICE_POLL_INTERVAL` | WebSocket price stream poll interval fallback | `5s` |
+| `WS_ORDERBOOK_POLL_INTERVAL` | WebSocket order book stream poll interval fallback | `3s` |
+
+> **Note**: `LOG_REQUEST_RESPONSE=true` logs request and response bodies at `debug` level. Response bodies are truncated at 4 KB for HTTP and 2 KB for gRPC to avoid excessive log output. Enable this only for debugging — it may expose sensitive data like API keys in trading requests.
+
+### Quick start with body logging
+
+```bash
+LOG_LEVEL=debug LOG_REQUEST_RESPONSE=true ./bin/cegw
+```
+
 ## API Documentation
 
 View the interactive API documentation:
@@ -146,7 +174,7 @@ CEGW supports a few simple environment variables:
 
 - `GRPC_PORT` (default `50051`)
 - `HTTP_PORT` (default `8080`)
-- `LOG_LEVEL` (default `info`)
+- `LOG_LEVEL` (default `info`) — set to `trace` to enable request/response body logging
 - `TIMEZONE` (default `Asia/Jakarta`)
 - `SANDBOX_MODE` (default `false`)
 - `HTTPS_PROXY` (optional, supports `http://`, `https://`, `socks5://`)
@@ -155,6 +183,8 @@ CEGW supports a few simple environment variables:
 - `ALLOWED_WS_ORIGINS` (optional, comma-separated list of allowed browser WebSocket origins; empty allows all origins)
 - `WS_PRICE_POLL_INTERVAL` (default `5s`) - Price stream polling interval when native WebSocket is unavailable
 - `WS_ORDERBOOK_POLL_INTERVAL` (default `3s`) - Order book stream polling interval when native WebSocket is unavailable
+
+> **Body logging**: Set `LOG_LEVEL=trace` to log full HTTP and gRPC request/response bodies. Response bodies are truncated at 4 KB (HTTP) and 2 KB (gRPC) to avoid excessive output. Use only for debugging — bodies may contain sensitive data like API keys.
 
 For WebSocket origin restriction, supported values include exact origins like `https://app.example.com`, wildcard `*`, and subdomain patterns like `*.example.com`. Non-browser clients without an `Origin` header are still allowed.
 

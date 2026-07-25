@@ -25,8 +25,8 @@ type Config struct {
 	Timezone              *time.Location
 	SandboxMode           bool
 	Auth                  AuthConfig
-	AllowedWSOrigins      []string      // Allowed WebSocket origins (empty = allow all)
-	WSPricePollInterval   time.Duration // WebSocket price stream poll interval (fallback)
+	AllowedWSOrigins        []string      // Allowed WebSocket origins (empty = allow all)
+	WSPricePollInterval     time.Duration // WebSocket price stream poll interval (fallback)
 	WSOrderBookPollInterval time.Duration // WebSocket order book stream poll interval (fallback)
 }
 
@@ -82,8 +82,8 @@ func Load() (*Config, error) {
 			OAuth2Issuer:   oauth2Issuer,
 			OAuth2Audience: oauth2Audience,
 		},
-		AllowedWSOrigins:       allowedOrigins,
-		WSPricePollInterval:    wsPricePoll,
+		AllowedWSOrigins:        allowedOrigins,
+		WSPricePollInterval:     wsPricePoll,
 		WSOrderBookPollInterval: wsOrderBookPoll,
 	}, nil
 }

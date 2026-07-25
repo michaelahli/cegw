@@ -67,6 +67,7 @@ See [values.yaml](charts/cegw/values.yaml) for all configuration options.
 | `config.auth.basicPassword` | Basic auth password | `""` |
 | `config.auth.oauth2Issuer` | OAuth2 issuer URL | `""` |
 | `config.auth.oauth2Audience` | OAuth2 audience | `""` |
+| `config.logLevel` | Log level (`info`, `debug`, `trace`) — `trace` enables request/response body logging | `"info"` |
 
 ## Uninstall
 

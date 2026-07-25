@@ -76,7 +76,7 @@ config:
   noProxy: ""
   auth:
     enabled: false
-    type: "basic"  # basic or oauth2
+    type: "basic" # basic or oauth2
     basicUsername: ""
     basicPassword: ""
     oauth2Issuer: ""
