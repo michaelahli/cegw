@@ -103,6 +103,11 @@ func HTTPBodyLoggingMiddleware(log *logger.Logger) func(http.Handler) http.Handl
 // adds overhead for large payloads.
 func GRPCBodyLoggingInterceptor(log *logger.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		// Skip health check to reduce noise
+		if info.FullMethod == "/grpc.health.v1.Health/Check" {
+			return handler(ctx, req)
+		}
+
 		log.WithContext(ctx).
 			WithFields(map[string]interface{}{
 				"grpc_method": info.FullMethod,
