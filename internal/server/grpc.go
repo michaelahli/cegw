@@ -31,8 +31,8 @@ func NewGRPCServer(cfg *config.Config, log *logger.Logger) *GRPCServer {
 	}
 
 	interceptors := []grpc.UnaryServerInterceptor{
-middleware.GRPCBodyLoggingInterceptor(log),
 		middleware.GRPCUnaryLoggingInterceptor(log),
+		middleware.GRPCBodyLoggingInterceptor(log),
 	}
 	if m != nil {
 		interceptors = append(interceptors, middleware.GRPCMetricsInterceptor(m))
