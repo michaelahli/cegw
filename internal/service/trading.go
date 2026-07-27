@@ -811,14 +811,6 @@ func (s *TradingService) TestCredentials(ctx context.Context, req *cegwv1.TestCr
 		}, nil
 	}
 
-	if len(balances.Balances) < 1 {
-		log.Warnf("no balances found for credentials")
-		return &cegwv1.TestCredentialsResponse{
-			Valid:   false,
-			Message: "invalid credentials",
-		}, nil
-	}
-
 	log.WithField("balance_count", len(balances.Balances)).Infof("credentials validated successfully")
 	return &cegwv1.TestCredentialsResponse{
 		Valid:   true,
