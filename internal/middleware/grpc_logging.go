@@ -68,7 +68,7 @@ func GRPCUnaryLoggingInterceptor(log *logger.Logger) grpc.UnaryServerInterceptor
 			WithDuration(duration)
 
 		if err != nil {
-			logEntry.WithError(err).Warnf("gRPC request failed")
+logEntry.WithError(err).Errorf("gRPC request failed")
 		} else {
 			logEntry.Debugf("gRPC request completed")
 		}
@@ -134,7 +134,7 @@ func GRPCStreamLoggingInterceptor(log *logger.Logger) grpc.StreamServerIntercept
 			WithDuration(duration)
 
 		if err != nil {
-			logEntry.WithError(err).Warnf("gRPC stream failed")
+logEntry.WithError(err).Errorf("gRPC stream failed")
 		} else {
 			logEntry.Debugf("gRPC stream completed")
 		}

@@ -119,9 +119,9 @@ func (p *ClientPool) Release(ctx context.Context, exchange cegwv1.Exchange) {
 
 	ref, ok := p.clients[exchange]
 	if !ok {
-		p.log.WithContext(ctx).
-			WithField("exchange", exchange.String()).
-			Warnf("client pool: release called for unknown client")
+p.log.WithContext(ctx).
+		WithField("exchange", exchange.String()).
+		Infof("client pool: release called for unknown client")
 		return
 	}
 
@@ -209,7 +209,7 @@ func newClientForExchange(ctx context.Context, exchange cegwv1.Exchange, creds *
 	default:
 		log.WithContext(ctx).
 			WithField("exchange", exchange.String()).
-			Warnf("unsupported exchange")
+Errorf("unsupported exchange")
 		return nil, nil
 	}
 }

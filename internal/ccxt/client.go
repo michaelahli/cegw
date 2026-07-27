@@ -102,7 +102,7 @@ func (c *TokocryptoClient) Client(ctx context.Context) (*ccxt.Tokocrypto, error)
 		log.Debugf("HTTP client transport updated with proxy configuration")
 	}
 
-	log.Infof("Tokocrypto client initialized successfully")
+log.Debugf("initialized")
 	return exchange, nil
 }
 
@@ -192,7 +192,7 @@ func (c *BinanceClient) Client(ctx context.Context) (*ccxt.Binance, error) {
 		log.Debugf("HTTP client transport updated with proxy configuration")
 	}
 
-	log.Infof("Binance client initialized successfully")
+log.Debugf("initialized")
 	return exchange, nil
 }
 
@@ -281,7 +281,7 @@ func (c *CoinbaseClient) Client(ctx context.Context) (*ccxt.Coinbase, error) {
 		log.Debugf("HTTP client transport updated with proxy configuration")
 	}
 
-	log.Infof("Coinbase client initialized successfully")
+log.Debugf("initialized")
 	return exchange, nil
 }
 
@@ -361,7 +361,7 @@ func (c *IndodaxClient) Client(ctx context.Context) (*ccxt.Indodax, error) {
 		log.Debugf("HTTP client transport updated with proxy configuration")
 	}
 
-	log.Infof("Indodax client initialized successfully")
+log.Debugf("initialized")
 	return exchange, nil
 }
 
@@ -450,7 +450,7 @@ func (c *OKXClient) Client(ctx context.Context) (*ccxt.Okx, error) {
 		log.Debugf("HTTP client transport updated with proxy configuration")
 	}
 
-	log.Infof("OKX client initialized successfully")
+log.Debugf("initialized")
 	return exchange, nil
 }
 
@@ -530,7 +530,7 @@ func (c *CEXIOClient) Client(ctx context.Context) (*ccxt.Cex, error) {
 		log.Debugf("HTTP client transport updated with proxy configuration")
 	}
 
-	log.Infof("CEXIO client initialized successfully")
+log.Debugf("initialized")
 	return exchange, nil
 }
 
@@ -619,7 +619,7 @@ func (c *KuCoinClient) Client(ctx context.Context) (*ccxt.Kucoin, error) {
 		log.Debugf("HTTP client transport updated with proxy configuration")
 	}
 
-	log.Infof("KuCoin client initialized successfully")
+log.Debugf("initialized")
 	return exchange, nil
 }
 
@@ -708,7 +708,7 @@ func (c *CryptocomClient) Client(ctx context.Context) (*ccxt.Cryptocom, error) {
 		log.Debugf("HTTP client transport updated with proxy configuration")
 	}
 
-	log.Infof("Crypto.com client initialized successfully")
+log.Debugf("initialized")
 	return exchange, nil
 }
 
@@ -797,7 +797,7 @@ func (c *BybitClient) Client(ctx context.Context) (*ccxt.Bybit, error) {
 		log.Debugf("HTTP client transport updated with proxy configuration")
 	}
 
-	log.Infof("Bybit client initialized successfully")
+log.Debugf("initialized")
 	return exchange, nil
 }
 
@@ -886,7 +886,7 @@ func (c *BitgetClient) Client(ctx context.Context) (*ccxt.Bitget, error) {
 		log.Debugf("HTTP client transport updated with proxy configuration")
 	}
 
-	log.Infof("Bitget client initialized successfully")
+log.Debugf("initialized")
 	return exchange, nil
 }
 
@@ -966,7 +966,7 @@ func (c *CoinexClient) Client(ctx context.Context) (*ccxt.Coinex, error) {
 		log.Debugf("HTTP client transport updated with proxy configuration")
 	}
 
-	log.Infof("Coinex client initialized successfully")
+log.Debugf("initialized")
 	return exchange, nil
 }
 
@@ -1055,7 +1055,7 @@ func (c *HashkeyClient) Client(ctx context.Context) (*ccxt.Hashkey, error) {
 		log.Debugf("HTTP client transport updated with proxy configuration")
 	}
 
-	log.Infof("Hashkey client initialized successfully")
+log.Debugf("initialized")
 	return exchange, nil
 }
 
@@ -1071,15 +1071,15 @@ func ProxyFromEnv(log *logger.Logger) *url.URL {
 
 	proxyURL, err := url.Parse(proxyStr)
 	if err != nil {
-		log.WithError(err).
-			WithField("proxy_url", proxyStr).
-			Warnf("invalid proxy URL configuration")
+	log.WithError(err).
+		WithField("proxy_url", proxyStr).
+		Errorf("invalid proxy URL configuration")
 		return nil
 	}
 
 	log.WithField("proxy_scheme", proxyURL.Scheme).
 		WithField("proxy_host", proxyURL.Host).
-		Infof("proxy loaded from environment")
+		Debugf("proxy loaded from environment")
 
 	return proxyURL
 }

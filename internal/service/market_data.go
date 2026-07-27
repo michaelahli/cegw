@@ -47,20 +47,20 @@ func (s *MarketDataService) cacheMarkets(exchangeID cegwv1.Exchange) {
 
 	client, err := ccxt.NewClientForExchange(ctx, exchangeID, nil)
 	if err != nil || client == nil {
-		log.WithError(err).WithField("exchange", exchangeID.String()).Warnf("failed to initialize CCXT client for market cache")
+		log.WithError(err).WithField("exchange", exchangeID.String()).Errorf("failed to initialize CCXT client for market cache")
 		return
 	}
 
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
-		log.Warnf("failed to cast client to exchange interface")
+		log.Errorf("failed to cast client to exchange interface")
 		return
 	}
 
 	log.Debugf("loading markets from exchange")
 	markets, err := exchange.LoadMarkets()
 	if err != nil {
-		log.WithError(err).Errorf("failed to load markets from Tokocrypto")
+		log.WithError(err).Errorf("failed to load markets")
 		return
 	}
 
@@ -76,7 +76,7 @@ func (s *MarketDataService) cacheMarkets(exchangeID cegwv1.Exchange) {
 	s.cacheReady[exchangeID] = true
 	s.availMutex.Unlock()
 
-	log.WithField("ticker_count", len(tickers)).Infof("market cache initialized successfully")
+	log.WithField("ticker_count", len(tickers)).Infof("market cache initialized")
 }
 
 func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotesRequest) (*cegwv1.GetQuotesResponse, error) {
@@ -86,24 +86,24 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 		WithField("exchange", req.Exchange.String())
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		log.Warnf("invalid request: exchange unspecified")
+		log.Infof("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.Symbol == "" {
-		log.Warnf("invalid request: symbol empty")
+		log.Infof("invalid request: symbol empty")
 		return nil, status.Error(codes.InvalidArgument, "symbol is required")
 	}
 
 	// Validate interval support for the exchange
 	if !ccxt.IsIntervalSupported(req.Exchange, req.Interval) {
-		log.WithField("interval", req.Interval.String()).Warnf("interval not supported by exchange")
+		log.WithField("interval", req.Interval.String()).Infof("interval not supported by exchange")
 		return nil, status.Errorf(codes.InvalidArgument, "interval %s is not supported by %s", req.Interval.String(), req.Exchange.String())
 	}
 
 	interval := ccxt.MapInterval(req.Interval)
 	if interval == "" {
-		log.WithField("interval", req.Interval).Warnf("invalid interval")
+		log.WithField("interval", req.Interval).Infof("invalid interval")
 		return nil, status.Error(codes.InvalidArgument, "invalid interval")
 	}
 
@@ -118,7 +118,7 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange not supported")
+		log.Errorf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
@@ -242,7 +242,7 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 		quotesCount = 2147483647
 	}
 
-	log.WithField("quote_count", quotesCount).WithField("batch_count", batchCount).Infof("quotes fetched successfully")
+	log.WithField("quote_count", quotesCount).WithField("batch_count", batchCount).Debugf("quotes fetched")
 	return &cegwv1.GetQuotesResponse{
 		Quotes: quotes,
 		Count:  int32(quotesCount), // #nosec G115
@@ -256,12 +256,12 @@ func (s *MarketDataService) GetCurrentPrice(ctx context.Context, req *cegwv1.Get
 		WithField("exchange", req.Exchange.String())
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		log.Warnf("invalid request: exchange unspecified")
+		log.Infof("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.Symbol == "" {
-		log.Warnf("invalid request: symbol empty")
+		log.Infof("invalid request: symbol empty")
 		return nil, status.Error(codes.InvalidArgument, "symbol is required")
 	}
 
@@ -275,7 +275,7 @@ func (s *MarketDataService) GetCurrentPrice(ctx context.Context, req *cegwv1.Get
 
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange not supported")
+		log.Errorf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
@@ -286,7 +286,7 @@ func (s *MarketDataService) GetCurrentPrice(ctx context.Context, req *cegwv1.Get
 	}
 
 	price := ccxt.Float64P(ticker.Close)
-	log.WithField("price", price).Infof("current price fetched successfully")
+	log.WithField("price", price).Debugf("current price fetched")
 
 	return &cegwv1.GetCurrentPriceResponse{
 		Symbol:    req.Symbol,
@@ -303,17 +303,17 @@ func (s *MarketDataService) GetOrderBook(ctx context.Context, req *cegwv1.GetOrd
 		WithField("limit", req.Limit)
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		log.Warnf("invalid request: exchange unspecified")
+		log.Infof("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.Symbol == "" {
-		log.Warnf("invalid request: symbol empty")
+		log.Infof("invalid request: symbol empty")
 		return nil, status.Error(codes.InvalidArgument, "symbol is required")
 	}
 
 	if req.Limit < 0 {
-		log.Warnf("invalid request: negative limit")
+		log.Infof("invalid request: negative limit")
 		return nil, status.Error(codes.InvalidArgument, "limit must be greater than or equal to 0")
 	}
 
@@ -327,7 +327,7 @@ func (s *MarketDataService) GetOrderBook(ctx context.Context, req *cegwv1.GetOrd
 
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange not supported")
+		log.Errorf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
@@ -345,7 +345,7 @@ func (s *MarketDataService) GetOrderBook(ctx context.Context, req *cegwv1.GetOrd
 	bids := orderBookLevelsToProto(orderBook.Bids, req.Limit)
 	asks := orderBookLevelsToProto(orderBook.Asks, req.Limit)
 
-	log.WithField("bid_count", len(bids)).WithField("ask_count", len(asks)).Infof("order book fetched successfully")
+	log.WithField("bid_count", len(bids)).WithField("ask_count", len(asks)).Debugf("order book fetched")
 	return &cegwv1.GetOrderBookResponse{
 		Symbol:    req.Symbol,
 		Bids:      bids,
@@ -362,12 +362,12 @@ func (s *MarketDataService) StreamCurrentPrice(req *cegwv1.GetCurrentPriceReques
 		WithField("exchange", req.Exchange.String())
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		log.Warnf("invalid request: exchange unspecified")
+		log.Infof("invalid request: exchange unspecified")
 		return status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.Symbol == "" {
-		log.Warnf("invalid request: symbol empty")
+		log.Infof("invalid request: symbol empty")
 		return status.Error(codes.InvalidArgument, "symbol is required")
 	}
 
@@ -382,7 +382,7 @@ func (s *MarketDataService) StreamCurrentPrice(req *cegwv1.GetCurrentPriceReques
 
 	exchange := ccxt.AsStreamingExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange streaming not supported, falling back to ticker polling")
+		log.Infof("exchange streaming not supported, falling back to ticker polling")
 		return s.pollCurrentPrice(ctx, client, req.Symbol, func(resp *cegwv1.GetCurrentPriceResponse) error {
 			return stream.Send(resp)
 		})
@@ -491,12 +491,12 @@ func (s *MarketDataService) SearchTicker(ctx context.Context, req *cegwv1.Search
 		WithField("exchange", req.Exchange.String())
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		log.Warnf("invalid request: exchange unspecified")
+		log.Infof("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.Query == "" {
-		log.Warnf("invalid request: query empty")
+		log.Infof("invalid request: query empty")
 		return nil, status.Error(codes.InvalidArgument, "query is required")
 	}
 
@@ -530,7 +530,7 @@ func (s *MarketDataService) SearchTicker(ctx context.Context, req *cegwv1.Search
 		}
 	}
 
-	log.WithField("result_count", len(filtered)).Infof("search completed")
+	log.WithField("result_count", len(filtered)).Debugf("search completed")
 	return &cegwv1.SearchTickerResponse{Tickers: filtered}, nil
 }
 
@@ -540,7 +540,7 @@ func (s *MarketDataService) ListMarkets(ctx context.Context, req *cegwv1.ListMar
 		WithField("exchange", req.Exchange.String())
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		log.Warnf("invalid request: exchange unspecified")
+		log.Infof("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
@@ -554,7 +554,7 @@ func (s *MarketDataService) ListMarkets(ctx context.Context, req *cegwv1.ListMar
 
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange not supported")
+		log.Errorf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
@@ -587,7 +587,7 @@ func (s *MarketDataService) ListMarkets(ctx context.Context, req *cegwv1.ListMar
 		marketsCount = 2147483647
 	}
 
-	log.WithField("market_count", marketsCount).Infof("markets loaded successfully")
+	log.WithField("market_count", marketsCount).Debugf("markets loaded")
 	return &cegwv1.ListMarketsResponse{
 		Markets: markets,
 		Count:   int32(marketsCount), // #nosec G115

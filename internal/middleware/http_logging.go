@@ -37,7 +37,7 @@ func HTTPLoggingMiddleware(log *logger.Logger) func(http.Handler) http.Handler {
 					"user_agent":  r.UserAgent(),
 				})
 
-			reqLog.Infof("HTTP request started")
+reqLog.Debugf("HTTP request started")
 
 			// Wrap response writer to capture status and size
 			wrapped := &responseWriter{
@@ -49,11 +49,11 @@ func HTTPLoggingMiddleware(log *logger.Logger) func(http.Handler) http.Handler {
 			next.ServeHTTP(wrapped, r.WithContext(ctx))
 			duration := time.Since(start)
 
-			reqLog.
-				WithField("http_status", wrapped.statusCode).
-				WithField("response_bytes", wrapped.bytesWritten).
-				WithDuration(duration).
-				Infof("HTTP request completed")
+reqLog.
+		WithField("http_status", wrapped.statusCode).
+		WithField("response_bytes", wrapped.bytesWritten).
+		WithDuration(duration).
+		Debugf("HTTP request completed")
 		})
 	}
 }

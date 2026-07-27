@@ -41,37 +41,37 @@ func (s *TradingService) CreateMarketOrder(ctx context.Context, req *cegwv1.Crea
 		WithField("quantity", req.Quantity)
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		log.Warnf("invalid request: exchange unspecified")
+		log.Infof("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.Symbol == "" {
-		log.Warnf("invalid request: symbol empty")
+		log.Infof("invalid request: symbol empty")
 		return nil, status.Error(codes.InvalidArgument, "symbol is required")
 	}
 
 	if req.Side == cegwv1.OrderSide_ORDER_SIDE_UNSPECIFIED {
-		log.Warnf("invalid request: side unspecified")
+		log.Infof("invalid request: side unspecified")
 		return nil, status.Error(codes.InvalidArgument, "order side is required")
 	}
 
 	if req.Quantity <= 0 {
-		log.Warnf("invalid request: quantity not positive")
+		log.Infof("invalid request: quantity not positive")
 		return nil, status.Error(codes.InvalidArgument, "quantity must be positive")
 	}
 
 	if req.Credentials == nil {
-		log.Warnf("invalid request: credentials missing")
+		log.Infof("invalid request: credentials missing")
 		return nil, status.Error(codes.InvalidArgument, "credentials are required")
 	}
 
 	if req.Credentials.ApiKey == "" {
-		log.Warnf("invalid request: api_key missing")
+		log.Infof("invalid request: api_key missing")
 		return nil, status.Error(codes.InvalidArgument, "api_key is required")
 	}
 
 	if req.Credentials.ApiSecret == "" {
-		log.Warnf("invalid request: api_secret missing")
+		log.Infof("invalid request: api_secret missing")
 		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
 	}
 
@@ -85,7 +85,7 @@ func (s *TradingService) CreateMarketOrder(ctx context.Context, req *cegwv1.Crea
 
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange not supported")
+		log.Errorf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
@@ -126,13 +126,13 @@ func (s *TradingService) CreateMarketOrder(ctx context.Context, req *cegwv1.Crea
 		}
 
 	default:
-		log.Warnf("invalid order side")
+		log.Infof("invalid order side")
 		return nil, status.Error(codes.InvalidArgument, "invalid order side")
 	}
 
 	log.WithField("order_id", order.Id).
 		WithField("order_status", mapOrderStatus(order.Status).String()).
-		Infof("market order created successfully")
+Debugf("market order created")
 
 	return &cegwv1.CreateMarketOrderResponse{
 		Order: buildOrder(order, ccxt.Float64P(order.Price)),
@@ -232,42 +232,42 @@ func (s *TradingService) CreateLimitOrder(ctx context.Context, req *cegwv1.Creat
 		WithField("price", req.Price)
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		log.Warnf("invalid request: exchange unspecified")
+		log.Infof("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.Symbol == "" {
-		log.Warnf("invalid request: symbol empty")
+		log.Infof("invalid request: symbol empty")
 		return nil, status.Error(codes.InvalidArgument, "symbol is required")
 	}
 
 	if req.Side == cegwv1.OrderSide_ORDER_SIDE_UNSPECIFIED {
-		log.Warnf("invalid request: side unspecified")
+		log.Infof("invalid request: side unspecified")
 		return nil, status.Error(codes.InvalidArgument, "order side is required")
 	}
 
 	if req.Quantity <= 0 {
-		log.Warnf("invalid request: quantity not positive")
+		log.Infof("invalid request: quantity not positive")
 		return nil, status.Error(codes.InvalidArgument, "quantity must be positive")
 	}
 
 	if req.Price <= 0 {
-		log.Warnf("invalid request: price not positive")
+		log.Infof("invalid request: price not positive")
 		return nil, status.Error(codes.InvalidArgument, "price must be positive")
 	}
 
 	if req.Credentials == nil {
-		log.Warnf("invalid request: credentials missing")
+		log.Infof("invalid request: credentials missing")
 		return nil, status.Error(codes.InvalidArgument, "credentials are required")
 	}
 
 	if req.Credentials.ApiKey == "" {
-		log.Warnf("invalid request: api_key missing")
+		log.Infof("invalid request: api_key missing")
 		return nil, status.Error(codes.InvalidArgument, "api_key is required")
 	}
 
 	if req.Credentials.ApiSecret == "" {
-		log.Warnf("invalid request: api_secret missing")
+		log.Infof("invalid request: api_secret missing")
 		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
 	}
 
@@ -281,7 +281,7 @@ func (s *TradingService) CreateLimitOrder(ctx context.Context, req *cegwv1.Creat
 
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange not supported")
+		log.Errorf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
@@ -292,7 +292,7 @@ func (s *TradingService) CreateLimitOrder(ctx context.Context, req *cegwv1.Creat
 	case cegwv1.OrderSide_ORDER_SIDE_SELL:
 		side = "sell"
 	default:
-		log.Warnf("invalid order side")
+		log.Infof("invalid order side")
 		return nil, status.Error(codes.InvalidArgument, "invalid order side")
 	}
 
@@ -313,7 +313,7 @@ func (s *TradingService) CreateLimitOrder(ctx context.Context, req *cegwv1.Creat
 
 	log.WithField("order_id", order.Id).
 		WithField("order_status", mapOrderStatus(order.Status).String()).
-		Infof("limit order created successfully")
+Debugf("limit order created")
 
 	return &cegwv1.CreateLimitOrderResponse{
 		Order: buildOrder(order, req.Price),
@@ -326,22 +326,22 @@ func (s *TradingService) GetBalance(ctx context.Context, req *cegwv1.GetBalanceR
 		WithField("exchange", req.Exchange.String())
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		log.Warnf("invalid request: exchange unspecified")
+		log.Infof("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.Credentials == nil {
-		log.Warnf("invalid request: credentials missing")
+		log.Infof("invalid request: credentials missing")
 		return nil, status.Error(codes.InvalidArgument, "credentials are required")
 	}
 
 	if req.Credentials.ApiKey == "" {
-		log.Warnf("invalid request: api_key missing")
+		log.Infof("invalid request: api_key missing")
 		return nil, status.Error(codes.InvalidArgument, "api_key is required")
 	}
 
 	if req.Credentials.ApiSecret == "" {
-		log.Warnf("invalid request: api_secret missing")
+		log.Infof("invalid request: api_secret missing")
 		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
 	}
 
@@ -355,7 +355,7 @@ func (s *TradingService) GetBalance(ctx context.Context, req *cegwv1.GetBalanceR
 
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange not supported")
+		log.Errorf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
@@ -408,27 +408,27 @@ func (s *TradingService) GetOrder(ctx context.Context, req *cegwv1.GetOrderReque
 		WithField("order_id", req.OrderId)
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		log.Warnf("invalid request: exchange unspecified")
+		log.Infof("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.OrderId == "" {
-		log.Warnf("invalid request: order_id empty")
+		log.Infof("invalid request: order_id empty")
 		return nil, status.Error(codes.InvalidArgument, "order_id is required")
 	}
 
 	if req.Credentials == nil {
-		log.Warnf("invalid request: credentials missing")
+		log.Infof("invalid request: credentials missing")
 		return nil, status.Error(codes.InvalidArgument, "credentials are required")
 	}
 
 	if req.Credentials.ApiKey == "" {
-		log.Warnf("invalid request: api_key missing")
+		log.Infof("invalid request: api_key missing")
 		return nil, status.Error(codes.InvalidArgument, "api_key is required")
 	}
 
 	if req.Credentials.ApiSecret == "" {
-		log.Warnf("invalid request: api_secret missing")
+		log.Infof("invalid request: api_secret missing")
 		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
 	}
 
@@ -442,7 +442,7 @@ func (s *TradingService) GetOrder(ctx context.Context, req *cegwv1.GetOrderReque
 
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange not supported")
+		log.Errorf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
@@ -474,32 +474,32 @@ func (s *TradingService) CancelOrder(ctx context.Context, req *cegwv1.CancelOrde
 		WithField("symbol", req.Symbol)
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		log.Warnf("invalid request: exchange unspecified")
+		log.Infof("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.OrderId == "" {
-		log.Warnf("invalid request: order_id empty")
+		log.Infof("invalid request: order_id empty")
 		return nil, status.Error(codes.InvalidArgument, "order_id is required")
 	}
 
 	if req.Symbol == "" {
-		log.Warnf("invalid request: symbol empty")
+		log.Infof("invalid request: symbol empty")
 		return nil, status.Error(codes.InvalidArgument, "symbol is required")
 	}
 
 	if req.Credentials == nil {
-		log.Warnf("invalid request: credentials missing")
+		log.Infof("invalid request: credentials missing")
 		return nil, status.Error(codes.InvalidArgument, "credentials are required")
 	}
 
 	if req.Credentials.ApiKey == "" {
-		log.Warnf("invalid request: api_key missing")
+		log.Infof("invalid request: api_key missing")
 		return nil, status.Error(codes.InvalidArgument, "api_key is required")
 	}
 
 	if req.Credentials.ApiSecret == "" {
-		log.Warnf("invalid request: api_secret missing")
+		log.Infof("invalid request: api_secret missing")
 		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
 	}
 
@@ -513,7 +513,7 @@ func (s *TradingService) CancelOrder(ctx context.Context, req *cegwv1.CancelOrde
 
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange not supported")
+		log.Errorf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
@@ -538,22 +538,22 @@ func (s *TradingService) CancelAllOrders(ctx context.Context, req *cegwv1.Cancel
 		WithField("symbol", req.Symbol)
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		log.Warnf("invalid request: exchange unspecified")
+		log.Infof("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.Credentials == nil {
-		log.Warnf("invalid request: credentials missing")
+		log.Infof("invalid request: credentials missing")
 		return nil, status.Error(codes.InvalidArgument, "credentials are required")
 	}
 
 	if req.Credentials.ApiKey == "" {
-		log.Warnf("invalid request: api_key missing")
+		log.Infof("invalid request: api_key missing")
 		return nil, status.Error(codes.InvalidArgument, "api_key is required")
 	}
 
 	if req.Credentials.ApiSecret == "" {
-		log.Warnf("invalid request: api_secret missing")
+		log.Infof("invalid request: api_secret missing")
 		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
 	}
 
@@ -567,7 +567,7 @@ func (s *TradingService) CancelAllOrders(ctx context.Context, req *cegwv1.Cancel
 
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange not supported")
+		log.Errorf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
@@ -603,22 +603,22 @@ func (s *TradingService) ListOpenOrders(ctx context.Context, req *cegwv1.ListOpe
 		WithField("symbol", req.Symbol)
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		log.Warnf("invalid request: exchange unspecified")
+		log.Infof("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.Credentials == nil {
-		log.Warnf("invalid request: credentials missing")
+		log.Infof("invalid request: credentials missing")
 		return nil, status.Error(codes.InvalidArgument, "credentials are required")
 	}
 
 	if req.Credentials.ApiKey == "" {
-		log.Warnf("invalid request: api_key missing")
+		log.Infof("invalid request: api_key missing")
 		return nil, status.Error(codes.InvalidArgument, "api_key is required")
 	}
 
 	if req.Credentials.ApiSecret == "" {
-		log.Warnf("invalid request: api_secret missing")
+		log.Infof("invalid request: api_secret missing")
 		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
 	}
 
@@ -632,7 +632,7 @@ func (s *TradingService) ListOpenOrders(ctx context.Context, req *cegwv1.ListOpe
 
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange not supported")
+		log.Errorf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
@@ -666,22 +666,22 @@ func (s *TradingService) ListClosedOrders(ctx context.Context, req *cegwv1.ListC
 		WithField("symbol", req.Symbol)
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		log.Warnf("invalid request: exchange unspecified")
+		log.Infof("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.Credentials == nil {
-		log.Warnf("invalid request: credentials missing")
+		log.Infof("invalid request: credentials missing")
 		return nil, status.Error(codes.InvalidArgument, "credentials are required")
 	}
 
 	if req.Credentials.ApiKey == "" {
-		log.Warnf("invalid request: api_key missing")
+		log.Infof("invalid request: api_key missing")
 		return nil, status.Error(codes.InvalidArgument, "api_key is required")
 	}
 
 	if req.Credentials.ApiSecret == "" {
-		log.Warnf("invalid request: api_secret missing")
+		log.Infof("invalid request: api_secret missing")
 		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
 	}
 
@@ -695,7 +695,7 @@ func (s *TradingService) ListClosedOrders(ctx context.Context, req *cegwv1.ListC
 
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange not supported")
+		log.Errorf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
@@ -728,22 +728,22 @@ func (s *TradingService) TestCredentials(ctx context.Context, req *cegwv1.TestCr
 		WithField("exchange", req.Exchange.String())
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		log.Warnf("invalid request: exchange unspecified")
+		log.Infof("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if req.Credentials == nil {
-		log.Warnf("invalid request: credentials missing")
+		log.Infof("invalid request: credentials missing")
 		return nil, status.Error(codes.InvalidArgument, "credentials are required")
 	}
 
 	if req.Credentials.ApiKey == "" {
-		log.Warnf("invalid request: api_key missing")
+		log.Infof("invalid request: api_key missing")
 		return nil, status.Error(codes.InvalidArgument, "api_key is required")
 	}
 
 	if req.Credentials.ApiSecret == "" {
-		log.Warnf("invalid request: api_secret missing")
+		log.Infof("invalid request: api_secret missing")
 		return nil, status.Error(codes.InvalidArgument, "api_secret is required")
 	}
 
@@ -761,7 +761,7 @@ func (s *TradingService) TestCredentials(ctx context.Context, req *cegwv1.TestCr
 
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange not supported")
+		log.Errorf("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 

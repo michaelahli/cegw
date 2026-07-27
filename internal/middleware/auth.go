@@ -46,7 +46,7 @@ func AuthMiddleware(cfg *config.Config, log *logger.Logger) func(http.Handler) h
 					return
 				}
 			default:
-				log.WithContext(ctx).WithField("auth_type", cfg.Auth.Type).Warnf("unknown auth type")
+log.WithContext(ctx).WithField("auth_type", cfg.Auth.Type).Errorf("unknown auth type")
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 				return
 			}

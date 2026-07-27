@@ -35,12 +35,12 @@ func (s *MonitoringService) CheckPriceAlerts(ctx context.Context, req *cegwv1.Ch
 		WithField("exchange", req.Exchange.String())
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
-		log.Warnf("invalid request: exchange unspecified")
+log.Infof("invalid request: exchange unspecified")
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
 	if len(req.Alerts) == 0 {
-		log.Warnf("invalid request: alerts empty")
+log.Infof("invalid request: alerts empty")
 		return nil, status.Error(codes.InvalidArgument, "alerts cannot be empty")
 	}
 
@@ -49,17 +49,17 @@ func (s *MonitoringService) CheckPriceAlerts(ctx context.Context, req *cegwv1.Ch
 
 	for _, alert := range req.Alerts {
 		if alert.Symbol == "" {
-			log.WithField("alert_id", alert.Id).Warnf("invalid alert: symbol empty")
+log.WithField("alert_id", alert.Id).Infof("invalid alert: symbol empty")
 			return nil, status.Error(codes.InvalidArgument, "alert symbol is required")
 		}
 		if alert.TargetPrice <= 0 {
 			log.WithField("alert_id", alert.Id).
 				WithField("target_price", alert.TargetPrice).
-				Warnf("invalid alert: target_price not positive")
+Infof("invalid alert: target_price not positive")
 			return nil, status.Error(codes.InvalidArgument, "target_price must be greater than 0")
 		}
 		if alert.Operator == cegwv1.ComparisonOperator_COMPARISON_OPERATOR_UNSPECIFIED {
-			log.WithField("alert_id", alert.Id).Warnf("invalid alert: operator unspecified")
+log.WithField("alert_id", alert.Id).Infof("invalid alert: operator unspecified")
 			return nil, status.Error(codes.InvalidArgument, "alert operator is required")
 		}
 	}
@@ -73,7 +73,7 @@ func (s *MonitoringService) CheckPriceAlerts(ctx context.Context, req *cegwv1.Ch
 
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
-		log.Warnf("exchange not supported")
+log.Infof("exchange not supported")
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
@@ -93,7 +93,7 @@ func (s *MonitoringService) CheckPriceAlerts(ctx context.Context, req *cegwv1.Ch
 			alertLog.Debugf("fetching ticker price")
 			ticker, err := exchange.FetchTicker(alert.Symbol)
 			if err != nil {
-				alertLog.WithError(err).Warnf("failed to fetch ticker, keeping alert pending")
+	alertLog.WithError(err).Infof("failed to fetch ticker, keeping alert pending")
 				updatedAlerts = append(updatedAlerts, alert)
 				continue
 			}
@@ -136,7 +136,7 @@ func (s *MonitoringService) CheckPriceAlerts(ctx context.Context, req *cegwv1.Ch
 
 	log.WithField("triggered_count", triggeredCount).
 		WithField("pending_count", len(req.Alerts)-triggeredCount).
-		Infof("price alerts checked successfully")
+Debugf("price alerts checked")
 
 	return &cegwv1.CheckPriceAlertsResponse{
 		Alerts:    updatedAlerts,
