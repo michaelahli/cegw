@@ -122,7 +122,10 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
-	start := req.Start.AsTime()
+	start := time.Time{}
+	if req.Start != nil {
+		start = req.Start.AsTime()
+	}
 	end := time.Time{}
 	if req.End != nil && !req.End.AsTime().IsZero() {
 		end = req.End.AsTime()
@@ -142,23 +145,17 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 	batchCount := 0
 
 	if start.IsZero() {
-		// No start date: fetch the latest candles by calculating since from now
-		candleDur := ccxt.IntervalDuration(req.Interval)
-		if candleDur <= 0 {
-			candleDur = 3600000 // default 1h in ms
-		}
-
+		// No start date: fetch the latest candles by specifying only limit.
+		// Do NOT set "since" — that would fetch candles starting from a past
+		// timestamp moving forward. Without "since", the exchange returns the
+		// most recent candles.
 		fetchLimit := batchLimit
 		if userLimit > 0 && userLimit < fetchLimit {
 			fetchLimit = userLimit
 		}
 
-		// Calculate since: now - (limit * candleDuration) to get the latest candles
-		sinceMs := time.Now().UnixMilli() - (fetchLimit * candleDur)
-
 		opts := []ccxtlib.FetchOHLCVOptions{
 			ccxtlib.WithFetchOHLCVTimeframe(interval),
-			ccxtlib.WithFetchOHLCVSince(sinceMs),
 			ccxtlib.WithFetchOHLCVLimit(fetchLimit),
 		}
 

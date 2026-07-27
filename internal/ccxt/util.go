@@ -121,8 +121,14 @@ func IntervalDuration(interval cegwv1.Interval) int64 {
 		return 300000
 	case cegwv1.Interval_INTERVAL_30M:
 		return 1800000
+	case cegwv1.Interval_INTERVAL_45M:
+		return 2700000
 	case cegwv1.Interval_INTERVAL_1H:
 		return 3600000
+	case cegwv1.Interval_INTERVAL_2H:
+		return 7200000
+	case cegwv1.Interval_INTERVAL_4H:
+		return 14400000
 	case cegwv1.Interval_INTERVAL_1D:
 		return 86400000
 	case cegwv1.Interval_INTERVAL_1W:
