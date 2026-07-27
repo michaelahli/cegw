@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -34,7 +36,7 @@ type websocketErrorMessage struct {
 	Error string `json:"error"`
 }
 
-// checkWebSocketOrigin validates the Origin header against allowed origins.
+	// checkWebSocketOrigin validates the Origin header against allowed origins.
 func checkWebSocketOrigin(cfg *config.Config) func(r *http.Request) bool {
 	return func(r *http.Request) bool {
 		// If no origins configured, allow all (backward compatible)
@@ -48,20 +50,31 @@ func checkWebSocketOrigin(cfg *config.Config) func(r *http.Request) bool {
 			return true
 		}
 
+		// Parse origin to extract hostname for proper wildcard matching
+		originURL, err := url.Parse(origin)
+		if err != nil || originURL.Host == "" {
+			return false
+		}
+		host := originURL.Host
+		// Strip port if present (e.g., "example.com:8080" -> "example.com")
+		if h, _, err := net.SplitHostPort(host); err == nil {
+			host = h
+		}
+
 		// Check if origin is in allowed list
 		for _, allowed := range cfg.AllowedWSOrigins {
 			// Support wildcard matching
 			if allowed == "*" {
 				return true
 			}
-			// Exact match
+			// Exact match against full origin URL
 			if origin == allowed {
 				return true
 			}
 			// Wildcard subdomain matching (e.g., "*.example.com")
 			if strings.HasPrefix(allowed, "*.") {
-				domain := allowed[2:]
-				if strings.HasSuffix(origin, domain) || origin == "https://"+domain || origin == "http://"+domain {
+				domain := allowed[1:] // "*.example.com" -> ".example.com"
+				if strings.HasSuffix(host, domain) && host != domain[1:] {
 					return true
 				}
 			}
