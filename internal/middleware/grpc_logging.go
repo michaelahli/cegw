@@ -15,6 +15,11 @@ import (
 // GRPCUnaryLoggingInterceptor logs gRPC unary RPC calls with structured data
 func GRPCUnaryLoggingInterceptor(log *logger.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		// Skip health check to reduce noise
+		if info.FullMethod == "/grpc.health.v1.Health/Check" {
+			return handler(ctx, req)
+		}
+
 		// Extract or generate request ID and trace ID
 		md, _ := metadata.FromIncomingContext(ctx)
 		requestID := ""
