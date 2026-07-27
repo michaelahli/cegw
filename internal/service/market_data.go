@@ -142,14 +142,23 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 	batchCount := 0
 
 	if start.IsZero() {
-		// No start date: fetch the latest candles (no since parameter)
+		// No start date: fetch the latest candles by calculating since from now
+		candleDur := ccxt.IntervalDuration(req.Interval)
+		if candleDur <= 0 {
+			candleDur = 3600000 // default 1h in ms
+		}
+
 		fetchLimit := batchLimit
 		if userLimit > 0 && userLimit < fetchLimit {
 			fetchLimit = userLimit
 		}
 
+		// Calculate since: now - (limit * candleDuration) to get the latest candles
+		sinceMs := time.Now().UnixMilli() - (fetchLimit * candleDur)
+
 		opts := []ccxtlib.FetchOHLCVOptions{
 			ccxtlib.WithFetchOHLCVTimeframe(interval),
+			ccxtlib.WithFetchOHLCVSince(sinceMs),
 			ccxtlib.WithFetchOHLCVLimit(fetchLimit),
 		}
 
