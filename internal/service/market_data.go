@@ -122,20 +122,11 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 		return nil, status.Error(codes.Unimplemented, "exchange not supported")
 	}
 
-	var mergedKlines []ccxtlib.OHLCV
 	start := req.Start.AsTime()
-	if start.IsZero() {
-		start = time.Now().In(s.cfg.Timezone).Add(-24 * time.Hour)
-	}
-
-	shiftedStart := start
 	end := time.Time{}
 	if req.End != nil && !req.End.AsTime().IsZero() {
 		end = req.End.AsTime()
 	}
-
-	// Default batch limit for CCXT API
-	batchLimit := int64(1000)
 
 	// Apply user-supplied limit if specified
 	userLimit := int64(0)
@@ -144,67 +135,98 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 		log = log.WithField("user_limit", userLimit)
 	}
 
-	batchCount := 0
-	for {
-		limit := batchLimit
-		if !end.IsZero() {
-			candleDur := ccxt.IntervalDuration(req.Interval)
-			if candleDur > 0 {
-				remaining := end.Sub(shiftedStart)
-				if remaining > 0 {
-					if calc := remaining.Milliseconds() / candleDur; calc < limit {
-						limit = calc
-					}
-					if limit < 1 {
-						limit = 1
-					}
-				}
-			}
-		}
+	// Default batch limit for CCXT API
+	batchLimit := int64(1000)
 
-		// Stop batching if user limit is reached
-		if userLimit > 0 && int64(len(mergedKlines)) >= userLimit {
-			log.WithField("merged_count", len(mergedKlines)).Debugf("user limit reached, stopping fetch")
-			break
+	var mergedKlines []ccxtlib.OHLCV
+	batchCount := 0
+
+	if start.IsZero() {
+		// No start date: fetch the latest candles (no since parameter)
+		fetchLimit := batchLimit
+		if userLimit > 0 && userLimit < fetchLimit {
+			fetchLimit = userLimit
 		}
 
 		opts := []ccxtlib.FetchOHLCVOptions{
 			ccxtlib.WithFetchOHLCVTimeframe(interval),
-			ccxtlib.WithFetchOHLCVSince(shiftedStart.UnixMilli()),
-			ccxtlib.WithFetchOHLCVLimit(limit),
+			ccxtlib.WithFetchOHLCVLimit(fetchLimit),
 		}
 
 		klines, err := exchange.FetchOHLCV(req.Symbol, opts...)
 		if err != nil {
-			log.WithError(err).WithField("batch_number", batchCount+1).Errorf("failed to fetch OHLCV data")
+			log.WithError(err).Errorf("failed to fetch latest OHLCV data")
 			return nil, ccxt.MapError(err)
 		}
 		batchCount++
-		log.WithField("batch_number", batchCount).WithField("batch_size", len(klines)).Debugf("fetched OHLCV batch")
+		log.WithField("batch_size", len(klines)).Debugf("fetched latest OHLCV batch")
 
-		mergedKlines = append(mergedKlines, klines...)
+		mergedKlines = klines
+	} else {
+		// Start date provided: batch fetch from start forward
+		shiftedStart := start
 
-		// Stop if user limit is reached after appending
-		if userLimit > 0 && int64(len(mergedKlines)) >= userLimit {
-			log.WithField("merged_count", len(mergedKlines)).Debugf("user limit reached after batch append")
-			break
+		for {
+			limit := batchLimit
+			if !end.IsZero() {
+				candleDur := ccxt.IntervalDuration(req.Interval)
+				if candleDur > 0 {
+					remaining := end.Sub(shiftedStart)
+					if remaining > 0 {
+						if calc := remaining.Milliseconds() / candleDur; calc < limit {
+							limit = calc
+						}
+						if limit < 1 {
+							limit = 1
+						}
+					}
+				}
+			}
+
+			// Stop batching if user limit is reached
+			if userLimit > 0 && int64(len(mergedKlines)) >= userLimit {
+				log.WithField("merged_count", len(mergedKlines)).Debugf("user limit reached, stopping fetch")
+				break
+			}
+
+			opts := []ccxtlib.FetchOHLCVOptions{
+				ccxtlib.WithFetchOHLCVTimeframe(interval),
+				ccxtlib.WithFetchOHLCVSince(shiftedStart.UnixMilli()),
+				ccxtlib.WithFetchOHLCVLimit(limit),
+			}
+
+			klines, err := exchange.FetchOHLCV(req.Symbol, opts...)
+			if err != nil {
+				log.WithError(err).WithField("batch_number", batchCount+1).Errorf("failed to fetch OHLCV data")
+				return nil, ccxt.MapError(err)
+			}
+			batchCount++
+			log.WithField("batch_number", batchCount).WithField("batch_size", len(klines)).Debugf("fetched OHLCV batch")
+
+			mergedKlines = append(mergedKlines, klines...)
+
+			// Stop if user limit is reached after appending
+			if userLimit > 0 && int64(len(mergedKlines)) >= userLimit {
+				log.WithField("merged_count", len(mergedKlines)).Debugf("user limit reached after batch append")
+				break
+			}
+
+			if len(klines) < 1000 {
+				break
+			}
+
+			last := klines[len(klines)-1]
+			shiftedStart = time.UnixMilli(last.Timestamp).Add(time.Millisecond)
+			if !end.IsZero() && shiftedStart.After(end) {
+				break
+			}
 		}
 
-		if len(klines) < 1000 {
-			break
+		// Truncate to user limit if specified
+		if userLimit > 0 && int64(len(mergedKlines)) > userLimit {
+			mergedKlines = mergedKlines[:userLimit]
+			log.WithField("truncated_to", userLimit).Debugf("truncated quotes to user limit")
 		}
-
-		last := klines[len(klines)-1]
-		shiftedStart = time.UnixMilli(last.Timestamp).Add(time.Millisecond)
-		if !end.IsZero() && shiftedStart.After(end) {
-			break
-		}
-	}
-
-	// Truncate to user limit if specified
-	if userLimit > 0 && int64(len(mergedKlines)) > userLimit {
-		mergedKlines = mergedKlines[:userLimit]
-		log.WithField("truncated_to", userLimit).Debugf("truncated quotes to user limit")
 	}
 
 	quotes := make([]*cegwv1.Quote, 0, len(mergedKlines))
