@@ -54,6 +54,9 @@ CEGW is configured via environment variables. Below are the available options.
 | `ALLOWED_WS_ORIGINS` | Comma-separated allowed WebSocket origins | `""` (allow all) |
 | `WS_PRICE_POLL_INTERVAL` | WebSocket price stream poll interval fallback | `5s` |
 | `WS_ORDERBOOK_POLL_INTERVAL` | WebSocket order book stream poll interval fallback | `3s` |
+| `GRPC_MAX_CONN_AGE` | Max connection age for gRPC keepalive (e.g., `30s`, `5m`). Forces server to close connections periodically so clients reconnect and discover new pods. `0` = disabled | `0` |
+| `GRPC_KEEPALIVE_TIME` | gRPC server keepalive ping interval | `2h` |
+| `GRPC_KEEPALIVE_TIMEOUT` | gRPC server keepalive ping timeout | `20s` |
 
 > **Note**: `LOG_REQUEST_RESPONSE=true` logs request and response bodies at `debug` level. Response bodies are truncated at 4 KB for HTTP and 2 KB for gRPC to avoid excessive log output. Enable this only for debugging — it may expose sensitive data like API keys in trading requests.
 
@@ -183,6 +186,9 @@ CEGW supports a few simple environment variables:
 - `ALLOWED_WS_ORIGINS` (optional, comma-separated list of allowed browser WebSocket origins; empty allows all origins)
 - `WS_PRICE_POLL_INTERVAL` (default `5s`) - Price stream polling interval when native WebSocket is unavailable
 - `WS_ORDERBOOK_POLL_INTERVAL` (default `3s`) - Order book stream polling interval when native WebSocket is unavailable
+- `GRPC_MAX_CONN_AGE` (default `0`) - Max connection age for gRPC keepalive (e.g., `30s`, `5m`). Forces server to close connections periodically so clients reconnect and discover new pods. `0` = disabled
+- `GRPC_KEEPALIVE_TIME` (default `2h`) - gRPC server keepalive ping interval
+- `GRPC_KEEPALIVE_TIMEOUT` (default `20s`) - gRPC server keepalive ping timeout
 
 > **Body logging**: Set `LOG_LEVEL=trace` to log full HTTP and gRPC request/response bodies. Response bodies are truncated at 4 KB (HTTP) and 2 KB (gRPC) to avoid excessive output. Use only for debugging — bodies may contain sensitive data like API keys.
 

@@ -84,6 +84,13 @@ config:
   allowedWsOrigins: []
   wsPricePollInterval: "5s"
   wsOrderBookPollInterval: "3s"
+  # gRPC max connection age (e.g., "30s", "5m"). Server closes connections after this duration
+  # so clients reconnect and discover new pods. 0 = disabled.
+  grpcMaxConnAge: "0"
+  # gRPC server keepalive ping interval
+  grpcKeepaliveTime: "2h"
+  # gRPC server keepalive ping timeout
+  grpcKeepaliveTimeout: "20s"
 
 livenessProbe:
   httpGet:

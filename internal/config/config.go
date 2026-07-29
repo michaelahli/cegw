@@ -28,6 +28,9 @@ type Config struct {
 	AllowedWSOrigins        []string      // Allowed WebSocket origins (empty = allow all)
 	WSPricePollInterval     time.Duration // WebSocket price stream poll interval (fallback)
 	WSOrderBookPollInterval time.Duration // WebSocket order book stream poll interval (fallback)
+	GRPCMaxConnAge          time.Duration // Max connection age for gRPC keepalive (0 = disabled)
+	GRPCKeepaliveTime       time.Duration // gRPC server keepalive ping interval
+	GRPCKeepaliveTimeout    time.Duration // gRPC server keepalive ping timeout
 }
 
 func Load() (*Config, error) {
@@ -66,6 +69,11 @@ func Load() (*Config, error) {
 	wsPricePoll := getEnvDuration("WS_PRICE_POLL_INTERVAL", 5*time.Second)
 	wsOrderBookPoll := getEnvDuration("WS_ORDERBOOK_POLL_INTERVAL", 3*time.Second)
 
+	// Load gRPC max connection age (e.g., "30s", "5m"). 0 = disabled.
+	grpcMaxConnAge := getEnvDuration("GRPC_MAX_CONN_AGE", 0)
+	grpcKeepaliveTime := getEnvDuration("GRPC_KEEPALIVE_TIME", 2*time.Hour)
+	grpcKeepaliveTimeout := getEnvDuration("GRPC_KEEPALIVE_TIMEOUT", 20*time.Second)
+
 	return &Config{
 		GRPCPort:               grpcPort,
 		HTTPPort:               httpPort,
@@ -85,6 +93,9 @@ func Load() (*Config, error) {
 		AllowedWSOrigins:        allowedOrigins,
 		WSPricePollInterval:     wsPricePoll,
 		WSOrderBookPollInterval: wsOrderBookPoll,
+		GRPCMaxConnAge:          grpcMaxConnAge,
+		GRPCKeepaliveTime:       grpcKeepaliveTime,
+		GRPCKeepaliveTimeout:    grpcKeepaliveTimeout,
 	}, nil
 }
 

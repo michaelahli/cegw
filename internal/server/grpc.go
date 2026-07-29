@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -41,6 +42,11 @@ func NewGRPCServer(cfg *config.Config, log *logger.Logger) *GRPCServer {
 	s := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(interceptors...),
 		grpc.StreamInterceptor(middleware.GRPCStreamLoggingInterceptor(log)),
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			MaxConnectionAge: cfg.GRPCMaxConnAge,
+			Time:            cfg.GRPCKeepaliveTime,
+			Timeout:         cfg.GRPCKeepaliveTimeout,
+		}),
 	)
 
 	marketDataSvc := service.NewMarketDataService(cfg, log, m)

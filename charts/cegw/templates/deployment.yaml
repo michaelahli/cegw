@@ -71,6 +71,12 @@ spec:
           value: {{ .Values.config.wsPricePollInterval | quote }}
         - name: WS_ORDERBOOK_POLL_INTERVAL
           value: {{ .Values.config.wsOrderBookPollInterval | quote }}
+        - name: GRPC_MAX_CONN_AGE
+          value: {{ .Values.config.grpcMaxConnAge | quote }}
+        - name: GRPC_KEEPALIVE_TIME
+          value: {{ .Values.config.grpcKeepaliveTime | quote }}
+        - name: GRPC_KEEPALIVE_TIMEOUT
+          value: {{ .Values.config.grpcKeepaliveTimeout | quote }}
         {{- if .Values.config.auth.enabled }}
         - name: AUTH_ENABLED
           value: {{ .Values.config.auth.enabled | quote }}
