@@ -233,6 +233,79 @@ func TestMarketDataService_ListMarkets(t *testing.T) {
 	}
 }
 
+func TestContains(t *testing.T) {
+	tests := []struct {
+		name     string
+		s        string
+		substr   string
+		wantMatch bool
+	}{
+		{
+			name:      "exact match lowercase",
+			s:         "BTC/USDT",
+			substr:    "btc",
+			wantMatch: true,
+		},
+		{
+			name:      "case insensitive match",
+			s:         "BTC/USDT",
+			substr:    "btc",
+			wantMatch: true,
+		},
+		{
+			name:      "uppercase query against lowercase symbol",
+			s:         "eth/usdt",
+			substr:    "ETH",
+			wantMatch: true,
+		},
+		{
+			name:      "mixed case match",
+			s:         "BtC/UsDt",
+			substr:    "bTc",
+			wantMatch: true,
+		},
+		{
+			name:      "substring in middle",
+			s:         "BTC/USDT",
+			substr:    "/",
+			wantMatch: true,
+		},
+		{
+			name:      "no match",
+			s:         "BTC/USDT",
+			substr:    "ADA",
+			wantMatch: false,
+		},
+		{
+			name:      "no match case insensitive",
+			s:         "BTC/USDT",
+			substr:    "ada",
+			wantMatch: false,
+		},
+		{
+			name:      "empty substr matches everything",
+			s:         "BTC/USDT",
+			substr:    "",
+			wantMatch: true,
+		},
+		{
+			name:      "query longer than symbol",
+			s:         "BTC",
+			substr:    "BTCUSDT",
+			wantMatch: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := contains(tt.s, tt.substr)
+			if result != tt.wantMatch {
+				t.Errorf("contains(%q, %q) = %v, want %v", tt.s, tt.substr, result, tt.wantMatch)
+			}
+		})
+	}
+}
+
 func TestMarketDataService_SearchTicker(t *testing.T) {
 	cfg := &config.Config{
 		LogLevel:    "error",
