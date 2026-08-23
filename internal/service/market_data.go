@@ -2,11 +2,13 @@ package service
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 
 	ccxtlib "github.com/ccxt/ccxt/go/v4"
+	"golang.org/x/sync/singleflight"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -18,68 +20,211 @@ import (
 	"github.com/michaelahli/cegw/internal/metrics"
 )
 
-type MarketDataService struct {
-	cegwv1.UnimplementedMarketDataServiceServer
-	cfg         *config.Config
-	log         *logger.Logger
-	availByExch map[cegwv1.Exchange][]*cegwv1.Ticker
-	availMutex  sync.RWMutex
-	cacheReady  map[cegwv1.Exchange]bool
-	metrics     *metrics.Metrics
+// cacheTTL bounds how long a per-exchange market cache is considered fresh.
+// After this elapses, the next SearchTicker/ListMarkets call will refresh
+// the cache in the background.
+const cacheTTL = 15 * time.Minute
+
+// defaultSearchLimit is applied when a client does not pass a limit.
+const defaultSearchLimit = 50
+
+// maxSearchLimit caps the requested limit to avoid pathological responses.
+const maxSearchLimit = 500
+
+// cachedTicker is the internal representation of a market with pre-indexed
+// lowercase fields for fast case-insensitive search and base/quote matching.
+type cachedTicker struct {
+	proto         *cegwv1.Ticker
+	symbolLower   string
+	baseLower     string
+	quoteLower    string
+	active        bool
 }
 
+// marketCache holds the market list for a single exchange along with metadata.
+type marketCache struct {
+	tickers    []cachedTicker
+	loadedAt   time.Time
+	loadInProg bool
+}
+
+// MarketDataService implements the gRPC MarketDataService.
+type MarketDataService struct {
+	cegwv1.UnimplementedMarketDataServiceServer
+	cfg     *config.Config
+	log     *logger.Logger
+	metrics *metrics.Metrics
+
+	caches    map[cegwv1.Exchange]*marketCache
+	cacheMux  sync.RWMutex
+	loadGroup singleflight.Group
+}
+
+// NewMarketDataService creates a service and kicks off background cache
+// priming for every supported exchange. Each exchange's cache is loaded
+// exactly once via singleflight, so duplicate concurrent loads collapse.
 func NewMarketDataService(cfg *config.Config, log *logger.Logger, m *metrics.Metrics) *MarketDataService {
 	svc := &MarketDataService{
-		cfg:         cfg,
-		log:         log,
-		availByExch: make(map[cegwv1.Exchange][]*cegwv1.Ticker),
-		cacheReady:  make(map[cegwv1.Exchange]bool),
-		metrics:     m,
+		cfg:     cfg,
+		log:     log,
+		metrics: m,
+		caches:  make(map[cegwv1.Exchange]*marketCache),
 	}
-	go svc.cacheMarkets(cegwv1.Exchange_EXCHANGE_TOKOCRYPTO)
+
+	for _, exch := range supportedExchanges() {
+		go svc.cacheMarkets(exch)
+	}
 	return svc
 }
 
+// supportedExchanges returns the list of exchanges whose market cache should
+// be pre-warmed at startup.
+func supportedExchanges() []cegwv1.Exchange {
+	return []cegwv1.Exchange{
+		cegwv1.Exchange_EXCHANGE_TOKOCRYPTO,
+		cegwv1.Exchange_EXCHANGE_BINANCE,
+		cegwv1.Exchange_EXCHANGE_COINBASE,
+		cegwv1.Exchange_EXCHANGE_CEXIO,
+		cegwv1.Exchange_EXCHANGE_INDODAX,
+		cegwv1.Exchange_EXCHANGE_OKX,
+		cegwv1.Exchange_EXCHANGE_KUCOIN,
+		cegwv1.Exchange_EXCHANGE_CRYPTOCOM,
+		cegwv1.Exchange_EXCHANGE_BYBIT,
+		cegwv1.Exchange_EXCHANGE_BITGET,
+		cegwv1.Exchange_EXCHANGE_COINEX,
+		cegwv1.Exchange_EXCHANGE_HASHKEY,
+	}
+}
+
+// cacheMarkets loads (or refreshes) the market cache for a single exchange.
+// Concurrent calls for the same exchange are deduplicated via singleflight.
 func (s *MarketDataService) cacheMarkets(exchangeID cegwv1.Exchange) {
 	ctx := context.Background()
-	log := s.log.WithContext(ctx).WithField("operation", "cacheMarkets")
+	_, _, _ = s.loadGroup.Do(exchangeID.String(), func() (any, error) {
+		s.loadMarketsInto(ctx, exchangeID)
+		return nil, nil
+	})
+}
 
-	log.Debugf("initializing market cache")
+// loadMarketsInto performs the actual LoadMarkets + cache write.
+func (s *MarketDataService) loadMarketsInto(ctx context.Context, exchangeID cegwv1.Exchange) {
+	log := s.log.WithContext(ctx).WithField("operation", "cacheMarkets").
+		WithField("exchange", exchangeID.String())
+
+	s.markLoading(exchangeID, true)
 
 	client, err := ccxt.NewClientForExchange(ctx, exchangeID, nil)
 	if err != nil || client == nil {
-		log.WithError(err).WithField("exchange", exchangeID.String()).Errorf("failed to initialize CCXT client for market cache")
+		log.WithError(err).Errorf("failed to initialize CCXT client for market cache")
+		s.markLoading(exchangeID, false)
 		return
 	}
 
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
 		log.Errorf("failed to cast client to exchange interface")
+		s.markLoading(exchangeID, false)
 		return
 	}
 
-	log.Debugf("loading markets from exchange")
 	markets, err := exchange.LoadMarkets()
 	if err != nil {
 		log.WithError(err).Errorf("failed to load markets")
+		s.markLoading(exchangeID, false)
 		return
 	}
 
-	tickers := make([]*cegwv1.Ticker, 0, len(markets))
-	for _, market := range markets {
-		tickers = append(tickers, &cegwv1.Ticker{
-			Symbol: ccxt.StringP(market.Symbol),
+cached := make([]cachedTicker, 0, len(markets))
+	for _, m := range markets {
+		symbol := ccxt.StringP(m.Symbol)
+		base := ccxt.StringP(m.BaseCurrency)
+		quote := ccxt.StringP(m.QuoteCurrency)
+		cached = append(cached, cachedTicker{
+			proto: &cegwv1.Ticker{
+				Symbol: symbol,
+				Base:   base,
+				Quote:  quote,
+			},
+			symbolLower: strings.ToLower(symbol),
+			baseLower:   strings.ToLower(base),
+			quoteLower:  strings.ToLower(quote),
+			active:      m.Active != nil && *m.Active,
 		})
 	}
 
-	s.availMutex.Lock()
-	s.availByExch[exchangeID] = tickers
-	s.cacheReady[exchangeID] = true
-	s.availMutex.Unlock()
+	s.cacheMux.Lock()
+	s.caches[exchangeID] = &marketCache{
+		tickers:  cached,
+		loadedAt: time.Now(),
+	}
+	s.cacheMux.Unlock()
 
-	log.WithField("ticker_count", len(tickers)).Infof("market cache initialized")
+	log.WithField("ticker_count", len(cached)).Infof("market cache loaded")
 }
 
+// markLoading toggles the in-progress flag on a cache entry without
+// overwriting any existing ticker list.
+func (s *MarketDataService) markLoading(exchangeID cegwv1.Exchange, loading bool) {
+	s.cacheMux.Lock()
+	defer s.cacheMux.Unlock()
+
+	c, ok := s.caches[exchangeID]
+	if !ok {
+		if loading {
+			s.caches[exchangeID] = &marketCache{loadInProg: true}
+		}
+		return
+	}
+	c.loadInProg = loading
+}
+
+// snapshotCache returns a copy of the cached tickers and the cache load time.
+func (s *MarketDataService) snapshotCache(exchangeID cegwv1.Exchange) ([]cachedTicker, time.Time, bool) {
+	s.cacheMux.RLock()
+	defer s.cacheMux.RUnlock()
+
+	c, ok := s.caches[exchangeID]
+	if !ok || c == nil {
+		return nil, time.Time{}, false
+	}
+	out := make([]cachedTicker, len(c.tickers))
+	copy(out, c.tickers)
+	return out, c.loadedAt, c.loadInProg
+}
+
+// ensureCache returns tickers for the given exchange, triggering a load
+// if the cache is empty or stale. It blocks until at least one load attempt
+// completes (either from a fresh kickoff or by joining an in-progress one).
+func (s *MarketDataService) ensureCache(ctx context.Context, exchangeID cegwv1.Exchange) ([]cachedTicker, error) {
+	tickers, loadedAt, inProg := s.snapshotCache(exchangeID)
+	fresh := !loadedAt.IsZero() && time.Since(loadedAt) < cacheTTL
+
+	if fresh {
+		return tickers, nil
+	}
+
+	// Use singleflight to coalesce concurrent loads for the same exchange.
+	_, _, _ = s.loadGroup.Do(exchangeID.String(), func() (any, error) {
+		// Re-check inside the singleflight callback to avoid races where
+		// another goroutine refreshed while we waited to enter.
+		s.cacheMux.RLock()
+		c := s.caches[exchangeID]
+		s.cacheMux.RUnlock()
+		if c != nil && !c.loadedAt.IsZero() && time.Since(c.loadedAt) < cacheTTL && !c.loadInProg {
+			return nil, nil
+		}
+		s.loadMarketsInto(ctx, exchangeID)
+		return nil, nil
+	})
+
+	tickers, _, inProg = s.snapshotCache(exchangeID)
+	if inProg || len(tickers) == 0 {
+		return nil, status.Error(codes.Unavailable, "market cache is still loading, please retry")
+	}
+	return tickers, nil
+}
+
+// GetQuotes fetches historical OHLCV data with batching support.
 func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotesRequest) (*cegwv1.GetQuotesResponse, error) {
 	log := s.log.WithContext(ctx).
 		WithField("operation", "GetQuotes").
@@ -96,7 +241,6 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 		return nil, status.Error(codes.InvalidArgument, "symbol is required")
 	}
 
-	// Validate interval support for the exchange
 	if !ccxt.IsIntervalSupported(req.Exchange, req.Interval) {
 		log.WithField("interval", req.Interval.String()).Infof("interval not supported by exchange")
 		return nil, status.Errorf(codes.InvalidArgument, "interval %s is not supported by %s", req.Interval.String(), req.Exchange.String())
@@ -132,24 +276,18 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 		end = req.End.AsTime()
 	}
 
-	// Apply user-supplied limit if specified
 	userLimit := int64(0)
 	if req.Limit > 0 {
 		userLimit = int64(req.Limit)
 		log = log.WithField("user_limit", userLimit)
 	}
 
-	// Default batch limit for CCXT API
 	batchLimit := int64(1000)
 
 	var mergedKlines []ccxtlib.OHLCV
 	batchCount := 0
 
 	if start.IsZero() {
-		// No start date: fetch the latest candles by specifying only limit.
-		// Do NOT set "since" — that would fetch candles starting from a past
-		// timestamp moving forward. Without "since", the exchange returns the
-		// most recent candles.
 		fetchLimit := batchLimit
 		if userLimit > 0 && userLimit < fetchLimit {
 			fetchLimit = userLimit
@@ -170,7 +308,6 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 
 		mergedKlines = klines
 	} else {
-		// Start date provided: batch fetch from start forward
 		shiftedStart := start
 
 		for {
@@ -190,7 +327,6 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 				}
 			}
 
-			// Stop batching if user limit is reached
 			if userLimit > 0 && int64(len(mergedKlines)) >= userLimit {
 				log.WithField("merged_count", len(mergedKlines)).Debugf("user limit reached, stopping fetch")
 				break
@@ -212,7 +348,6 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 
 			mergedKlines = append(mergedKlines, klines...)
 
-			// Stop if user limit is reached after appending
 			if userLimit > 0 && int64(len(mergedKlines)) >= userLimit {
 				log.WithField("merged_count", len(mergedKlines)).Debugf("user limit reached after batch append")
 				break
@@ -229,7 +364,6 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 			}
 		}
 
-		// Truncate to user limit if specified
 		if userLimit > 0 && int64(len(mergedKlines)) > userLimit {
 			mergedKlines = mergedKlines[:userLimit]
 			log.WithField("truncated_to", userLimit).Debugf("truncated quotes to user limit")
@@ -256,6 +390,7 @@ func (s *MarketDataService) GetQuotes(ctx context.Context, req *cegwv1.GetQuotes
 	}, nil
 }
 
+// GetCurrentPrice fetches the latest ticker price for a single symbol.
 func (s *MarketDataService) GetCurrentPrice(ctx context.Context, req *cegwv1.GetCurrentPriceRequest) (*cegwv1.GetCurrentPriceResponse, error) {
 	log := s.log.WithContext(ctx).
 		WithField("operation", "GetCurrentPrice").
@@ -302,6 +437,7 @@ func (s *MarketDataService) GetCurrentPrice(ctx context.Context, req *cegwv1.Get
 	}, nil
 }
 
+// GetOrderBook fetches the latest order book depth for a symbol.
 func (s *MarketDataService) GetOrderBook(ctx context.Context, req *cegwv1.GetOrderBookRequest) (*cegwv1.GetOrderBookResponse, error) {
 	log := s.log.WithContext(ctx).
 		WithField("operation", "GetOrderBook").
@@ -361,6 +497,8 @@ func (s *MarketDataService) GetOrderBook(ctx context.Context, req *cegwv1.GetOrd
 	}, nil
 }
 
+// StreamCurrentPrice streams ticker updates via WebSocket when supported,
+// falling back to REST polling otherwise.
 func (s *MarketDataService) StreamCurrentPrice(req *cegwv1.GetCurrentPriceRequest, stream cegwv1.MarketDataService_StreamCurrentPriceServer) error {
 	ctx := stream.Context()
 	log := s.log.WithContext(ctx).
@@ -430,6 +568,8 @@ func (s *MarketDataService) StreamCurrentPrice(req *cegwv1.GetCurrentPriceReques
 	}
 }
 
+// pollCurrentPrice is the REST polling fallback used when WebSocket streams
+// are unavailable for the requested exchange.
 func (s *MarketDataService) pollCurrentPrice(ctx context.Context, client interface{}, symbol string, send func(*cegwv1.GetCurrentPriceResponse) error) error {
 	exchange := ccxt.AsExchange(client)
 	if exchange == nil {
@@ -460,6 +600,7 @@ func (s *MarketDataService) pollCurrentPrice(ctx context.Context, client interfa
 	}
 }
 
+// tickerToCurrentPriceResponse converts a CCXT ticker into the proto response.
 func tickerToCurrentPriceResponse(symbol string, ticker ccxtlib.Ticker) *cegwv1.GetCurrentPriceResponse {
 	price := ccxt.Float64P(ticker.Close)
 	if price == 0 {
@@ -473,6 +614,7 @@ func tickerToCurrentPriceResponse(symbol string, ticker ccxtlib.Ticker) *cegwv1.
 	}
 }
 
+// orderBookLevelsToProto converts a CCXT order book side into the proto form.
 func orderBookLevelsToProto(levels [][]float64, limit int32) []*cegwv1.OrderBookLevel {
 	if limit > 0 && len(levels) > int(limit) {
 		levels = levels[:limit]
@@ -491,10 +633,13 @@ func orderBookLevelsToProto(levels [][]float64, limit int32) []*cegwv1.OrderBook
 	return result
 }
 
+// SearchTicker returns tickers whose symbol, base, or quote currency
+// contains the query (case-insensitive). Results are ranked with prefix
+// matches on the symbol first, then matches on base/quote. The response
+// is capped at req.Limit (default 50, max 500).
 func (s *MarketDataService) SearchTicker(ctx context.Context, req *cegwv1.SearchTickerRequest) (*cegwv1.SearchTickerResponse, error) {
 	log := s.log.WithContext(ctx).
 		WithField("operation", "SearchTicker").
-		WithField("query", req.Query).
 		WithField("exchange", req.Exchange.String())
 
 	if req.Exchange == cegwv1.Exchange_EXCHANGE_UNSPECIFIED {
@@ -502,45 +647,114 @@ func (s *MarketDataService) SearchTicker(ctx context.Context, req *cegwv1.Search
 		return nil, status.Error(codes.InvalidArgument, "exchange is required")
 	}
 
-	if req.Query == "" {
+	query := strings.TrimSpace(req.Query)
+	if query == "" {
 		log.Infof("invalid request: query empty")
 		return nil, status.Error(codes.InvalidArgument, "query is required")
 	}
+	log = log.WithField("query", query)
+
+	if req.Limit < 0 {
+		log.Infof("invalid request: negative limit")
+		return nil, status.Error(codes.InvalidArgument, "limit must be greater than or equal to 0")
+	}
+	limit := int(req.Limit)
+	if limit == 0 {
+		limit = defaultSearchLimit
+	}
+	if limit > maxSearchLimit {
+		limit = maxSearchLimit
+	}
+	log = log.WithField("limit", limit)
 
 	log.Debugf("searching tickers")
 
-	s.availMutex.RLock()
-	ready := s.cacheReady[req.Exchange]
-	_, exists := s.availByExch[req.Exchange]
-	s.availMutex.RUnlock()
-
-	if !ready || !exists {
-		log.WithField("exchange", req.Exchange.String()).Debugf("market cache missing for exchange, loading on demand")
-		s.cacheMarkets(req.Exchange)
+	tickers, err := s.ensureCache(ctx, req.Exchange)
+	if err != nil {
+		log.WithError(err).Warnf("cache unavailable")
+		return nil, err
 	}
 
-	s.availMutex.RLock()
-	if !s.cacheReady[req.Exchange] {
-		s.availMutex.RUnlock()
-		log.WithField("exchange", req.Exchange.String()).Warnf("market cache not ready yet")
-		return nil, status.Error(codes.Unavailable, "market cache is still loading, please retry")
-	}
-	availForExchange := s.availByExch[req.Exchange]
-	availCopy := make([]*cegwv1.Ticker, len(availForExchange))
-	copy(availCopy, availForExchange)
-	s.availMutex.RUnlock()
+	q := strings.ToLower(query)
+	results := rankTickerMatches(tickers, q, limit)
 
-	var filtered []*cegwv1.Ticker
-	for _, ticker := range availCopy {
-		if contains(ticker.Symbol, req.Query) {
-			filtered = append(filtered, ticker)
-		}
-	}
-
-	log.WithField("result_count", len(filtered)).Debugf("search completed")
-	return &cegwv1.SearchTickerResponse{Tickers: filtered}, nil
+	log.WithField("result_count", len(results)).Debugf("search completed")
+	return &cegwv1.SearchTickerResponse{Tickers: results}, nil
 }
 
+// matchRank describes how a ticker matches a query:
+//  - rankSymbolPrefix: best — symbol starts with the query
+//  - rankSymbolContains: symbol contains the query
+//  - rankBaseOrQuote: query matches the base or quote currency
+type matchRank int
+
+const (
+	rankNoMatch matchRank = iota
+	rankBaseOrQuote
+	rankSymbolContains
+	rankSymbolPrefix
+)
+
+// rankedTicker holds a ticker and its match rank for sorting.
+type rankedTicker struct {
+	ticker *cegwv1.Ticker
+	rank   matchRank
+}
+
+// rankTickerMatches scans the cache for tickers matching the lowercased
+// query, sorts them by match quality (prefix > contains > base/quote),
+// breaks ties alphabetically by symbol, and returns up to `limit` results.
+func rankTickerMatches(cached []cachedTicker, qLower string, limit int) []*cegwv1.Ticker {
+	if limit <= 0 || len(cached) == 0 {
+		return nil
+	}
+
+	matches := make([]rankedTicker, 0, 16)
+	for i := range cached {
+		t := &cached[i]
+		rank := classifyMatch(t, qLower)
+		if rank == rankNoMatch {
+			continue
+		}
+		matches = append(matches, rankedTicker{ticker: t.proto, rank: rank})
+	}
+
+	sort.SliceStable(matches, func(i, j int) bool {
+		if matches[i].rank != matches[j].rank {
+			return matches[i].rank > matches[j].rank
+		}
+		return matches[i].ticker.Symbol < matches[j].ticker.Symbol
+	})
+
+	if len(matches) > limit {
+		matches = matches[:limit]
+	}
+
+	out := make([]*cegwv1.Ticker, len(matches))
+	for i, m := range matches {
+		out[i] = m.ticker
+	}
+	return out
+}
+
+// classifyMatch returns the best match rank for a ticker against qLower.
+func classifyMatch(t *cachedTicker, qLower string) matchRank {
+	switch {
+	case strings.HasPrefix(t.symbolLower, qLower):
+		return rankSymbolPrefix
+	case strings.Contains(t.symbolLower, qLower):
+		return rankSymbolContains
+	case t.baseLower != "" && strings.Contains(t.baseLower, qLower):
+		return rankBaseOrQuote
+	case t.quoteLower != "" && strings.Contains(t.quoteLower, qLower):
+		return rankBaseOrQuote
+	default:
+		return rankNoMatch
+	}
+}
+
+// ListMarkets returns the full market list for an exchange, loading it on
+// demand if the cache is empty or stale.
 func (s *MarketDataService) ListMarkets(ctx context.Context, req *cegwv1.ListMarketsRequest) (*cegwv1.ListMarketsResponse, error) {
 	log := s.log.WithContext(ctx).
 		WithField("operation", "ListMarkets").
@@ -553,39 +767,20 @@ func (s *MarketDataService) ListMarkets(ctx context.Context, req *cegwv1.ListMar
 
 	log.Debugf("loading markets")
 
-	client, err := ccxt.NewClientForExchange(ctx, req.Exchange, nil)
+	cached, err := s.ensureCache(ctx, req.Exchange)
 	if err != nil {
-		log.WithError(err).Errorf("failed to create CCXT client")
+		log.WithError(err).Warnf("cache unavailable")
 		return nil, err
 	}
 
-	exchange := ccxt.AsExchange(client)
-	if exchange == nil {
-		log.Errorf("exchange not supported")
-		return nil, status.Error(codes.Unimplemented, "exchange not supported")
-	}
-
-	marketData, err := exchange.LoadMarkets()
-	if err != nil {
-		log.WithError(err).Errorf("failed to load markets")
-		return nil, ccxt.MapError(err)
-	}
-
-	markets := make([]*cegwv1.Market, 0, len(marketData))
-	for _, m := range marketData {
-		base := ""
-		quote := ""
-		if m.BaseId != nil {
-			base = *m.BaseId
-		}
-		if m.QuoteId != nil {
-			quote = *m.QuoteId
-		}
+markets := make([]*cegwv1.Market, 0, len(cached))
+	for i := range cached {
+		t := &cached[i]
 		markets = append(markets, &cegwv1.Market{
-			Symbol: ccxt.StringP(m.Symbol),
-			Base:   base,
-			Quote:  quote,
-			Active: m.Active != nil && *m.Active,
+			Symbol: t.proto.Symbol,
+			Base:   t.proto.Base,
+			Quote:  t.proto.Quote,
+			Active: t.active,
 		})
 	}
 
@@ -599,11 +794,4 @@ func (s *MarketDataService) ListMarkets(ctx context.Context, req *cegwv1.ListMar
 		Markets: markets,
 		Count:   int32(marketsCount), // #nosec G115
 	}, nil
-}
-
-func contains(s, substr string) bool {
-	if substr == "" {
-		return true
-	}
-	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
 }

@@ -126,6 +126,7 @@ message GetOrderBookResponse {
 message SearchTickerRequest {
   Exchange exchange = 1;
   string query = 2;
+  int32 limit = 3;
 }
 
 message Ticker {

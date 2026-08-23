@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -233,74 +234,120 @@ func TestMarketDataService_ListMarkets(t *testing.T) {
 	}
 }
 
-func TestContains(t *testing.T) {
-	tests := []struct {
-		name     string
-		s        string
-		substr   string
-		wantMatch bool
-	}{
-		{
-			name:      "exact match lowercase",
-			s:         "BTC/USDT",
-			substr:    "btc",
-			wantMatch: true,
-		},
-		{
-			name:      "case insensitive match",
-			s:         "BTC/USDT",
-			substr:    "btc",
-			wantMatch: true,
-		},
-		{
-			name:      "uppercase query against lowercase symbol",
-			s:         "eth/usdt",
-			substr:    "ETH",
-			wantMatch: true,
-		},
-		{
-			name:      "mixed case match",
-			s:         "BtC/UsDt",
-			substr:    "bTc",
-			wantMatch: true,
-		},
-		{
-			name:      "substring in middle",
-			s:         "BTC/USDT",
-			substr:    "/",
-			wantMatch: true,
-		},
-		{
-			name:      "no match",
-			s:         "BTC/USDT",
-			substr:    "ADA",
-			wantMatch: false,
-		},
-		{
-			name:      "no match case insensitive",
-			s:         "BTC/USDT",
-			substr:    "ada",
-			wantMatch: false,
-		},
-		{
-			name:      "empty substr matches everything",
-			s:         "BTC/USDT",
-			substr:    "",
-			wantMatch: true,
-		},
-		{
-			name:      "query longer than symbol",
-			s:         "BTC",
-			substr:    "BTCUSDT",
-			wantMatch: false,
-		},
+func TestRankTickerMatches(t *testing.T) {
+	mkTicker := func(symbol, base, quote string) cachedTicker {
+		return cachedTicker{
+			proto: &cegwv1.Ticker{
+				Symbol: symbol,
+				Base:   base,
+				Quote:  quote,
+			},
+			symbolLower: strings.ToLower(symbol),
+			baseLower:   strings.ToLower(base),
+			quoteLower:  strings.ToLower(quote),
+		}
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := contains(tt.s, tt.substr)
-			if result != tt.wantMatch {
-				t.Errorf("contains(%q, %q) = %v, want %v", tt.s, tt.substr, result, tt.wantMatch)
+	cached := []cachedTicker{
+		mkTicker("BTC/USDT", "BTC", "USDT"),
+		mkTicker("ETH/BTC", "ETH", "BTC"),
+		mkTicker("1INCH/BTC", "1INCH", "BTC"),
+		mkTicker("ADA/USDT", "ADA", "USDT"),
+		mkTicker("btc/idr", "BTC", "IDR"),
+	}
+
+	t.Run("prefix matches come first", func(t *testing.T) {
+		got := rankTickerMatches(cached, "btc", 10)
+		if len(got) == 0 {
+			t.Fatalf("expected matches, got none")
+		}
+		// Top result should be a prefix match on BTC/USDT or btc/idr (symbol starts with btc).
+		if !strings.HasPrefix(strings.ToLower(got[0].Symbol), "btc") {
+			t.Errorf("expected first result to start with btc, got %q", got[0].Symbol)
+		}
+	})
+
+	t.Run("base and quote matches are included", func(t *testing.T) {
+		// Querying BTC should match ETH/BTC (quote) and 1INCH/BTC (quote)
+		// and ADA/USDT-like pairs via base.
+		got := rankTickerMatches(cached, "btc", 10)
+		symbols := map[string]bool{}
+		for _, g := range got {
+			symbols[g.Symbol] = true
+		}
+		if !symbols["ETH/BTC"] {
+			t.Errorf("expected ETH/BTC in results, got %v", got)
+		}
+		if !symbols["1INCH/BTC"] {
+			t.Errorf("expected 1INCH/BTC in results, got %v", got)
+		}
+	})
+
+t.Run("case insensitive", func(t *testing.T) {
+		got := rankTickerMatches(cached, strings.ToLower("BTC"), 10)
+		if len(got) == 0 {
+			t.Fatalf("expected matches for BTC, got none")
+		}
+	})
+
+	t.Run("limit caps results", func(t *testing.T) {
+		got := rankTickerMatches(cached, "btc", 1)
+		if len(got) != 1 {
+			t.Errorf("expected exactly 1 result, got %d", len(got))
+		}
+	})
+
+	t.Run("no match returns empty", func(t *testing.T) {
+		got := rankTickerMatches(cached, "doge", 10)
+		if len(got) != 0 {
+			t.Errorf("expected no results, got %d", len(got))
+		}
+	})
+
+	t.Run("zero or negative limit returns empty", func(t *testing.T) {
+		if got := rankTickerMatches(cached, "btc", 0); len(got) != 0 {
+			t.Errorf("limit 0: expected empty, got %d", len(got))
+		}
+		if got := rankTickerMatches(cached, "btc", -1); len(got) != 0 {
+			t.Errorf("limit -1: expected empty, got %d", len(got))
+		}
+	})
+
+	t.Run("empty cache returns empty", func(t *testing.T) {
+		if got := rankTickerMatches(nil, "btc", 10); len(got) != 0 {
+			t.Errorf("expected empty, got %d", len(got))
+		}
+	})
+}
+
+func TestClassifyMatch(t *testing.T) {
+	mk := func(symbol, base, quote string) *cachedTicker {
+		return &cachedTicker{
+			symbolLower: strings.ToLower(symbol),
+			baseLower:   strings.ToLower(base),
+			quoteLower:  strings.ToLower(quote),
+		}
+	}
+
+	cases := []struct {
+		name  string
+		t     *cachedTicker
+		query string
+		want  matchRank
+	}{
+		{"symbol prefix", mk("BTC/USDT", "BTC", "USDT"), "btc", rankSymbolPrefix},
+		{"symbol contains", mk("1INCH/BTC", "1INCH", "BTC"), "inch", rankSymbolContains},
+		{"base contains", mk("ETH/USDT", "ETH", "USDT"), "eth", rankSymbolPrefix},
+		{"quote contains only", mk("ETH/BTC", "ETH", "BTC"), "btc", rankSymbolContains},
+		{"no match", mk("ETH/USDT", "ETH", "USDT"), "doge", rankNoMatch},
+		{"empty base skipped", mk("BTC/USDT", "", "USDT"), "btc", rankSymbolPrefix},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := classifyMatch(c.t, strings.ToLower(c.query))
+			if got != c.want {
+				t.Errorf("classifyMatch(%q, %q) = %d, want %d", c.t.symbolLower, c.query, got, c.want)
 			}
 		})
 	}
@@ -331,11 +378,30 @@ func TestMarketDataService_SearchTicker(t *testing.T) {
 			wantErr:  true,
 			wantCode: codes.InvalidArgument,
 		},
-		{
+{
 			name: "empty query",
 			req: &cegwv1.SearchTickerRequest{
 				Exchange: cegwv1.Exchange_EXCHANGE_TOKOCRYPTO,
 				Query:    "",
+			},
+			wantErr:  true,
+			wantCode: codes.InvalidArgument,
+		},
+		{
+			name: "whitespace-only query",
+			req: &cegwv1.SearchTickerRequest{
+				Exchange: cegwv1.Exchange_EXCHANGE_TOKOCRYPTO,
+				Query:    "   ",
+			},
+			wantErr:  true,
+			wantCode: codes.InvalidArgument,
+		},
+		{
+			name: "negative limit",
+			req: &cegwv1.SearchTickerRequest{
+				Exchange: cegwv1.Exchange_EXCHANGE_TOKOCRYPTO,
+				Query:    "BTC",
+				Limit:    -1,
 			},
 			wantErr:  true,
 			wantCode: codes.InvalidArgument,

@@ -508,6 +508,7 @@ type SearchTickerRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Exchange      Exchange               `protobuf:"varint,1,opt,name=exchange,proto3,enum=cegw.v1.Exchange" json:"exchange,omitempty"`
 	Query         string                 `protobuf:"bytes,2,opt,name=query,proto3" json:"query,omitempty"`
+	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -554,6 +555,13 @@ func (x *SearchTickerRequest) GetQuery() string {
 		return x.Query
 	}
 	return ""
+}
+
+func (x *SearchTickerRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
 }
 
 type Ticker struct {
@@ -868,10 +876,11 @@ const file_cegw_v1_market_data_proto_rawDesc = "" +
 	"\x06symbol\x18\x01 \x01(\tR\x06symbol\x12+\n" +
 	"\x04bids\x18\x02 \x03(\v2\x17.cegw.v1.OrderBookLevelR\x04bids\x12+\n" +
 	"\x04asks\x18\x03 \x03(\v2\x17.cegw.v1.OrderBookLevelR\x04asks\x128\n" +
-	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\"Z\n" +
+	"\ttimestamp\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\"p\n" +
 	"\x13SearchTickerRequest\x12-\n" +
 	"\bexchange\x18\x01 \x01(\x0e2\x11.cegw.v1.ExchangeR\bexchange\x12\x14\n" +
-	"\x05query\x18\x02 \x01(\tR\x05query\"^\n" +
+	"\x05query\x18\x02 \x01(\tR\x05query\x12\x14\n" +
+	"\x05limit\x18\x03 \x01(\x05R\x05limit\"^\n" +
 	"\x06Ticker\x12\x16\n" +
 	"\x06symbol\x18\x01 \x01(\tR\x06symbol\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
