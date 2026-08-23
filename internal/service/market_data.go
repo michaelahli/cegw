@@ -196,7 +196,7 @@ func (s *MarketDataService) snapshotCache(exchangeID cegwv1.Exchange) ([]cachedT
 // if the cache is empty or stale. It blocks until at least one load attempt
 // completes (either from a fresh kickoff or by joining an in-progress one).
 func (s *MarketDataService) ensureCache(ctx context.Context, exchangeID cegwv1.Exchange) ([]cachedTicker, error) {
-	tickers, loadedAt, inProg := s.snapshotCache(exchangeID)
+	tickers, loadedAt, _ := s.snapshotCache(exchangeID)
 	fresh := !loadedAt.IsZero() && time.Since(loadedAt) < cacheTTL
 
 	if fresh {
@@ -217,6 +217,7 @@ func (s *MarketDataService) ensureCache(ctx context.Context, exchangeID cegwv1.E
 		return nil, nil
 	})
 
+	var inProg bool
 	tickers, _, inProg = s.snapshotCache(exchangeID)
 	if inProg || len(tickers) == 0 {
 		return nil, status.Error(codes.Unavailable, "market cache is still loading, please retry")
